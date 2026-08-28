@@ -1,0 +1,39 @@
+{
+  "@context": "https://doi.org/10.5062/schema.codemeta-2.0",
+  "@type": "SoftwareSourceCode",
+  "name": "OverheatLens",
+  "description": "Open, version-aware research-software platform for building overheating assessment: EPW weather intelligence, model readiness, EnergyPlus simulation, versioned overheating standards rule packs (TM59:2017, TM59:2026, Approved Document O dynamic route, TM52), thermal-comfort analytics and reproducible evidence export.",
+  "version": "0.1.0-dev",
+  "dateCreated": "2026-08-28",
+  "dateModified": "2026-08-28",
+  "license": "https://spdx.org/licenses/MIT",
+  "author": [
+    {
+      "@type": "Person",
+      "familyName": "Ali",
+      "givenName": "Mohamed Hamdy",
+      "affiliation": {
+        "@type": "Organization",
+        "name": "Leeds Beckett University"
+      }
+    }
+  ],
+  "codeRepository": "https://github.com/mohamedHamdy-1991/overheatlens",
+  "programmingLanguage": [
+    "Python",
+    "TypeScript"
+  ],
+  "runtimePlatform": "Python >= 3.11",
+  "keywords": [
+    "overheating",
+    "EnergyPlus",
+    "TM59",
+    "thermal comfort",
+    "weather files",
+    "reproducible research",
+    "building simulation"
+  ],
+  "developmentStatus": "https://schema.org/InTheMaking",
+  "isAccessibleForFree": true,
+  "funder": {}
+}

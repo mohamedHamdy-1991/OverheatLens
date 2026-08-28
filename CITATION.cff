@@ -1,0 +1,29 @@
+cff-version: 1.2.0
+title: OverheatLens — Open Building Overheating & Climate-Resilience Hub
+message: >-
+  If you use this software, please cite it using the metadata from this file.
+type: software
+authors:
+  - alias: mohamedHamdy-1991
+    name-surname: Ali
+    name-given-names: Mohamed Hamdy
+    affiliation: Leeds Beckett University
+version: 0.1.0-dev
+date-released: "2026-08-28"
+license: MIT
+repository-code: "https://github.com/mohamedHamdy-1991/overheatlens"
+abstract: >-
+  OverheatLens is an open, version-aware research-software platform for building
+  overheating assessment: weather-file intelligence, model readiness, EnergyPlus
+  simulation, versioned overheating standards rule packs (TM59:2017, TM59:2026,
+  Approved Document O dynamic route, TM52), thermal-comfort analytics and
+  reproducible evidence export. Research and decision support only; not a
+  certified compliance instrument.
+keywords:
+  - overheating
+  - EnergyPlus
+  - TM59
+  - thermal comfort
+  - weather files
+  - reproducible research
+  - building simulation

@@ -1,0 +1,38 @@
+# --- Python ---
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+dist/
+build/
+
+# --- Node / web ---
+node_modules/
+apps/web/dist/
+apps/web/coverage/
+playwright-report/
+test-results/
+
+# --- macOS / OneDrive noise ---
+.DS_Store
+
+# --- Real weather files are copyrighted (CIBSE/Met Office) and must
+#     never leave this machine via git. Synthetic fixtures are fine. ---
+examples/real_weather/*.epw
+examples/real_weather/*.csv
+examples/real_weather/*.dsy
+data/real_weather/
+fixtures/epw/real/
+
+# --- Licensed standards PDFs: stored locally for verification, never
+#     redistributed via git (CIBSE copyright; gov.uk PDF is OGL but we
+#     link to it instead of hosting) ---
+docs/standards/official_sources/*.pdf
+
+# --- Job/run outputs ---
+runs/
+*.epwout*
+eplusout.*/
