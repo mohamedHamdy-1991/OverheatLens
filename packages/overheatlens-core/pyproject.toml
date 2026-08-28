@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "overheatlens-core"
+version = "0.1.0.dev0"
+description = "Authoritative scientific core for OverheatLens: EPW intelligence, versioned overheating standards rule packs, provenance"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { file = "../../LICENSE" }
+authors = [{ name = "Mohamed Hamdy Ali" }]
+keywords = ["overheating", "EnergyPlus", "EPW", "TM59", "thermal comfort", "building simulation"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Scientific/Engineering",
+]
+dependencies = ["numpy>=1.24", "PyYAML>=6.0"]
+
+[project.optional-dependencies]
+dev = ["pytest>=7", "pytest-cov", "hypothesis>=6"]
+
+[project.scripts]
+overheatlens = "overheatlens.cli.main:main"
+
+[project.urls]
+Homepage = "https://github.com/mohamedHamdy-1991/overheatlens"
+
+[tool.setuptools.packages.find]
+include = ["overheatlens*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.coverage.run]
+source = ["overheatlens"]
