@@ -1,0 +1,31 @@
+name: core-tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  core:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install core + test deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install numpy PyYAML pythermalcomfort pytest pytest-cov hypothesis
+      - name: Run core test suite with coverage
+        env:
+          PYTHONPATH: packages/overheatlens-core
+        run: |
+          python -m pytest packages/overheatlens-core/tests -q --cov=overheatlens --cov-report=term
+      - name: Rule packs must validate
+        env:
+          PYTHONPATH: packages/overheatlens-core
+        run: python -m overheatlens rule-packs
