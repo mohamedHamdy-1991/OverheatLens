@@ -87,6 +87,7 @@ def check_tm59_2026_weather(filename: str) -> dict[str, Any]:
     legacy = _is_legacy_naming(filename)
     if present == MINIMUM_TOKENS and "_V1.1" in upper and not legacy:
         verdict["status"] = "compatible"
+        verdict["closest_available_match"] = False
         verdict["reason"] = ("Filename matches the TM59:2026 minimum requirement "
                              "(DSY1, 2050s, HIGH50, v1.1).")
     else:
@@ -99,6 +100,13 @@ def check_tm59_2026_weather(filename: str) -> dict[str, Any]:
             extra.append(f"epoch {found_epoch} differs from the required 2050s")
         if found_pct and found_pct != "HIGH50":
             extra.append(f"percentile label {found_pct} differs from HIGH50 (50th)")
+        # "Closest available match": right DSY type + epoch + percentile, but the file
+        # predates the CIBSE 2025 release. The project's designated fallback when the
+        # v1.1 files are not held (ADR-0012) — always a stated limitation, never
+        # presented as the required file.
+        closest = (found_dsy == "DSY1" and found_epoch == "2050s"
+                   and found_pct == "HIGH50")
+        verdict["closest_available_match"] = closest
         if legacy:
             extra.append(
                 "legacy pre-2025-release naming: TM59:2026 requires the CIBSE 2025 "
@@ -106,11 +114,19 @@ def check_tm59_2026_weather(filename: str) -> dict[str, Any]:
         elif "_V1.1" not in upper:
             extra.append("the v1.1 CIBSE 2025 release marker is absent from the filename, "
                          "so the file cannot be confirmed as the required release")
+        if closest:
+            extra.append(
+                "CLOSEST AVAILABLE MATCH to the requirement (same DSY type, epoch and "
+                "percentile) — usable for TM59:2026 assessments ONLY as a stated "
+                "limitation (ADR-0012): the CIBSE 2016 release is UKCP09-based and is "
+                "not the required 2025-release file; results must carry this "
+                "limitation in reports")
         verdict["reason"] = (
             "Traceable CIBSE DSY file but NOT confirmed as the TM59:2026 minimum: "
             + "; ".join(extra or sorted(missing))
-            + ". Per S-08 §4 alternative files are for research/thoroughness — flagged "
-              "accordingly."
+            + ("" if closest else
+               ". Per S-08 §4 alternative files are for research/thoroughness — flagged "
+               "accordingly.")
         )
     return verdict
 

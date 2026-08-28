@@ -53,7 +53,10 @@ flip at the exact 0.5 K ΔT boundary (epsilon guard added).
    source-verified) — UI work, Phase 8+.
 2. EnergyPlus 26.1.0 pin decision deferred (ADR-0004) — working pin 25.1.0.
 3. No UI yet (Phase 8+) — launchers expose the CLI honestly.
-4. Weather files: the author holds the CIBSE 2016-release Leeds DSY family (57 files).
-   The TM59:2026 minimum (`DSY1_2050s_HIGH50_CIBSE_v1.1`, CIBSE 2025 release) is NOT held —
-   TM59:2026 assessments will be flagged research-only until those files are acquired.
-   TM59:2017/Part O assessments are fully supported with the held files.
+4. **Accepted limitation (ADR-0012):** the TM59:2026 minimum weather files
+   (`DSY1_2050s_HIGH50_CIBSE_v1.1`, CIBSE 2025 release) are NOT held. Assessments use the
+   designated fallback `Leeds_DSY1_2050High50` (CIBSE 2016 release, same DSY type/epoch/
+   percentile) — flagged `research_only` + `closest_available_match` by the guard, with a
+   machine-readable `fallback_limitation` in the pack, and results must state
+   "assessed with the CIBSE 2016-release weather file, not the required 2025-release v1.1
+   file". TM59:2017/Part O assessments are fully supported with the held files.

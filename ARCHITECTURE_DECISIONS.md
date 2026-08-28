@@ -138,3 +138,25 @@ engine because TM59:2017 criteria are route-specific.
 
 **Consequences.** Anyone who evaluated results with the 0.1.0-dev 2017 pack must discard
 them (research-mode only, never compliance). The standards diff viewer is unblocked.
+
+
+## ADR-0012 — TM59:2026 assessments use the CIBSE 2016-release fallback weather file until the 2025 release is acquired (2026-08-28)
+
+**Context.** TM59:2026 requires the CIBSE 2025 Weather Data v1.1 files
+(`{Zone}_DSY1_2050s_HIGH50_CIBSE_v1.1`), which the project does not hold. The author
+holds the CIBSE 2016-release Leeds DSY family (57 files) and has decided assessments
+proceed with those, accepting the limitation.
+
+**Decision.** The designated fallback is `<Site>_DSY1_2050High50` (CIBSE 2016 release,
+UKCP09-based) — same DSY type, epoch and percentile as the requirement. The
+compatibility guard classifies it `research_only` with `closest_available_match=true`
+and a reason naming the limitation. The `uk_tm59_2026` pack carries a machine-readable
+`weather_requirements.fallback_limitation`. TM59:2026 results with this file are
+research-labelled and MUST state the limitation in reports. It never presents as
+"compatible"; when the v1.1 files are acquired the fallback flips off by changing
+`fallback_limitation.applicable` to false.
+
+**Consequences.** 2016-release vs 2025-release differences (UKCP09 vs UKCP18
+projections, regional vs 28-zone geography, CAMS solar) are an acknowledged bias of
+unknown sign and magnitude in all current TM59:2026 numbers; documented here, in the
+pack, and in IMPLEMENTATION_STATUS honest-gaps.

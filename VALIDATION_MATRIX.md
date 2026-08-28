@@ -95,6 +95,8 @@ Status: `PASS` / `FAIL` / `PENDING` (fixture exists, run pending) / `BLOCKED` (s
 |---|---|---|---|---|---|---|
 | VAL-REAL-04 | `…/LEEDS Weather Files/Weather File MET Office/Leeds_DSY1_2020High50_.epw` (TM59:2017 minimum) | — | parses PASS; compat 2017 = compatible; compat 2026 = research_only (legacy naming) | PASS | 2026-08-28 | annual mean 11.487 C; hottest 31.3 C; 102 h > 26 C |
 | VAL-REAL-05 | 57-file Leeds DSY family sweep (compatibility guard, 2017 rule) | — | exactly 1 compatible (the DSY1_2020High50 minimum), 56 research_only with reasons | PASS | 2026-08-28 | guard distinguishes epochs/scenarios/percentiles and flags legacy naming |
+| VAL-REAL-06 | `…/Weather File MET Office/Leeds_DSY1_2050High50_.epw` — TM59:2026 designated fallback (ADR-0012) | — | guard: research_only + closest_available_match=true; parses PASS; TM59:2026 research-mode demo evaluates (illustrative indoor = outdoor + 3 K, NOT a simulation: a FAIL 215 h / b PASS / c FAIL 431 h) | PASS | 2026-08-28 | limitation "CIBSE 2016 release, not required 2025 v1.1" carried in guard reason, pack fallback_limitation, and demo output |
+
 
 ## C. Provenance / reproducibility
 

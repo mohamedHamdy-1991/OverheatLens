@@ -44,6 +44,34 @@ def test_legacy_2026_style_tokens_without_v11_is_research_only():
     assert "v1.1" in v["reason"]
 
 
+def test_legacy_dsy1_2050_high50_is_closest_available_match():
+    """ADR-0012: the held CIBSE 2016-release DSY1_2050High50 file is the designated
+    fallback for TM59:2026 assessments — research_only, flagged as the closest
+    available match with the limitation spelled out, never 'compatible'."""
+    v = check_tm59_2026_weather("Leeds_DSY1_2050High50_.epw")
+    assert v["status"] == "research_only"
+    assert v["closest_available_match"] is True
+    assert "CLOSEST AVAILABLE MATCH" in v["reason"]
+    assert "2016" in v["reason"]  # the limitation names the actual release
+
+
+def test_dsy3_2050_high50_is_not_closest_match():
+    v = check_tm59_2026_weather("Leeds_DSY3_2050High50_.epw")
+    assert v["status"] == "research_only"
+    assert v["closest_available_match"] is False
+    assert "DSY3" in v["reason"]
+
+
+def test_tm59_2026_pack_carries_fallback_limitation():
+    from overheatlens.schemas import load_bundled_pack
+
+    wr = load_bundled_pack("uk_tm59_2026")["weather_requirements"]
+    fb = wr["fallback_limitation"]
+    assert fb["applicable"] is True
+    assert "DSY1_2050High50" in fb["designated_fallback"]
+    assert "2016" in fb["note"] and "v1.1" in fb["note"]
+
+
 # ---- TM59:2017 requirement (S-02 §3.2: DSY1 2020s High50) ----------------------
 
 def test_tm59_2017_minimum_legacy_naming():

@@ -24,6 +24,19 @@ weather_requirements:
     (DSY2/DSY3, 10th/90th percentiles, other epochs/scenarios) are for more thorough
     assessments. DSY1 = moderate year, ~7-year return period heat events; DSY2 = most
     intense events; DSY3 = longest events.
+  fallback_limitation:
+    designated_fallback: "<Site>_DSY1_2050High50 (CIBSE 2016 release, UKCP09-based)"
+    applicable: true
+    note: >-
+      ADR-0012 (2026-08-28): the CIBSE 2025-release v1.1 weather files are NOT held by
+      this project. Until they are acquired, TM59:2026 assessments use the closest
+      available match — the CIBSE 2016-release DSY1 2050s high-emissions 50th-percentile
+      file (same DSY type, epoch and percentile; different underlying projection set and
+      28-zone-vs-regional geography). Every such assessment MUST carry the limitation
+      'assessed with the CIBSE 2016-release weather file, not the required 2025-release
+      v1.1 file' in its results and reports, and results are research-labelled. The
+      compatibility guard flags these files as research_only with
+      closest_available_match=true.
 
 assessment:
   period: may_to_september

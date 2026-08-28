@@ -43,7 +43,16 @@
         "family": {"type": "string"},
         "recommended_minimum": {"type": "string"},
         "note": {"type": "string"},
-        "verified": {"type": "boolean"}
+        "verified": {"type": "boolean"},
+        "fallback_limitation": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "designated_fallback": {"type": "string"},
+            "applicable": {"type": "boolean"},
+            "note": {"type": "string"}
+          }
+        }
       }
     },
     "assessment": {
