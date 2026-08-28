@@ -48,9 +48,16 @@ def _cmd_check_epw(args: argparse.Namespace) -> int:
         return 2
     report = check_epw(epw)
 
-    payload = report.to_dict()
+    summary = None
     if not report.errors:
-        payload["weather_summary"] = weather_summary(epw).to_dict()
+        try:
+            summary = weather_summary(epw).to_dict()
+        except ValueError as e:
+            summary = None
+            summary_unavailable = str(e)
+    payload = report.to_dict()
+    if summary is not None:
+        payload["weather_summary"] = summary
 
     if args.json:
         # --json is a machine-readable contract: emit only the JSON payload.
@@ -63,14 +70,15 @@ def _cmd_check_epw(args: argparse.Namespace) -> int:
     print(f"Status: {report.status}")
     for i in report.issues:
         print(f"  [{i.severity.upper():7}] {i.code}: {i.message}")
-    if not report.errors:
-        s = payload["weather_summary"]
+    if summary is not None:
         print("\nWeather summary (dry-bulb):")
-        print(f"  Annual mean        : {s['annual_mean_dry_bulb']} °C")
-        print(f"  Hottest hour       : {s['hottest_hour']} °C (row {s['hottest_hour_row']})")
-        print(f"  Coldest hour       : {s['coldest_hour']} °C")
-        print(f"  Exceedance > 26 °C : {s['exceedance_hours_26c']} h")
-        print(f"  Degree-hours >26 °C: {s['degree_hours_26c']} Kh")
+        print(f"  Annual mean        : {summary['annual_mean_dry_bulb']} °C")
+        print(f"  Hottest hour       : {summary['hottest_hour']} °C (row {summary['hottest_hour_row']})")
+        print(f"  Coldest hour       : {summary['coldest_hour']} °C")
+        print(f"  Exceedance > 26 °C : {summary['exceedance_hours_26c']} h")
+        print(f"  Degree-hours >26 °C: {summary['degree_hours_26c']} Kh")
+    elif not report.errors:
+        print(f"\nWeather summary unavailable: {summary_unavailable}")
     return 0 if report.status != "FAIL" else 1
 
 

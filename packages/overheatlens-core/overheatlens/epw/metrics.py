@@ -55,6 +55,10 @@ def degree_hours(temp: np.ndarray, threshold: float) -> float:
 
 def weather_summary(epw: EpwFile) -> WeatherSummary:
     db = _clean(epw.dry_bulb, SENTINELS[6])
+    if np.isnan(db).all():
+        raise ValueError(
+            "no valid dry-bulb data in this file (all values missing or sentinel); "
+            "weather summary is an explicit non-result")
     hottest_row = int(np.nanargmax(db))
     daily_max = np.nanmax(db.reshape(-1, 24), axis=1)
     jja = np.isin(epw.data.month, (6, 7, 8))

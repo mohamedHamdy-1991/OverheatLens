@@ -171,14 +171,21 @@ def parse_epw(path: str | Path) -> EpwFile:
     day = np.zeros(n, dtype=np.int32)
     hour = np.zeros(n, dtype=np.int32)
     minute = np.zeros(n, dtype=np.int32)
-    flag = np.zeros(n, dtype="U8")
+    flag = np.empty(n, dtype=object)
+
+    # Some real distributions (e.g. CIBSE DSY conversions) truncate the standard
+    # 35-field layout, omitting trailing fields that are all sentinels anyway
+    # (albedo, rain). Fields present are indexed as in the standard layout; missing
+    # trailing fields stay NaN and the checker reports the truncation as INFO.
+    MIN_FIELDS = 32
 
     for i, ln in enumerate(data_lines):
         parts = ln.split(",")
-        if len(parts) < FIELDS:
+        if not (MIN_FIELDS <= len(parts) <= FIELDS):
             raise EpwParseError(
-                f"Data row {i + 1} (line {HEADER_LINES + i + 1}) has {len(parts)} fields; "
-                f"expected {FIELDS}."
+                f"Data row {i + 1} (line {HEADER_LINES + i + 1}) has {len(parts)} "
+                f"fields; expected {MIN_FIELDS}-{FIELDS} (35-field standard; some "
+                "CIBSE distributions ship 32)."
             )
         try:
             year[i] = int(parts[0])
@@ -187,11 +194,12 @@ def parse_epw(path: str | Path) -> EpwFile:
             hour[i] = int(parts[3])
             minute[i] = int(parts[4])
             flag[i] = parts[5]
-            # Column 5 (data-source flag) is non-numeric in the EPW layout.
-            for j in range(FIELDS):
-                if j == 5:
-                    continue
-                values[i, j] = float(parts[j])
+            # Column 5 (data-source flag) is non-numeric in the EPW layout. Empty
+            # numeric cells (seen in some writer outputs) are stored as NaN — the
+            # checker reports them as missing values, never silent zeros.
+            for j in range(6, min(len(parts), FIELDS)):
+                cell = parts[j].strip()
+                values[i, j] = float(cell) if cell else np.nan
         except ValueError as e:
             raise EpwParseError(f"Non-numeric value in data row {i + 1}: {e}") from e
 

@@ -62,6 +62,13 @@ def test_stuck_sensor_caught(fixtures_dir):
     assert rep.status == "PASS_WITH_WARNINGS"
 
 
+def test_truncated_fields_variant_flags_info_but_passes(fixtures_dir):
+    rep = check_epw(parse_epw(fixtures_dir / "truncated_fields.epw"))
+    codes = {i.code for i in rep.issues}
+    assert "TRUNCATED_FIELDS" in codes
+    assert rep.status == "PASS"  # info does not degrade the verdict
+
+
 def test_report_shape(fixtures_dir):
     rep = check_epw(parse_epw(fixtures_dir / "good_file.epw"))
     d = rep.to_dict()

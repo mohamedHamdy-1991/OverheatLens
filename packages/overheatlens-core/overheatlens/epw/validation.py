@@ -127,8 +127,27 @@ def check_epw(epw: EpwFile) -> CheckReport:
         ))
 
     # --- Field-level checks ----------------------------------------------
+    # 32-field truncated variant (e.g. CIBSE DSY distributions): the parser stores
+    # missing trailing fields as NaN. Column 32 (albedo) is never legitimately empty
+    # in a full 35-field file, so all-NaN there identifies the variant.
+    if rows and np.isnan(v[:, 32]).all():
+        issues.append(Issue(
+            "TRUNCATED_FIELDS", "info",
+            "File uses a reduced field layout (trailing fields absent, as in some "
+            "CIBSE DSY distributions). Fields used by OverheatLens are unaffected.",
+            {"expected_fields": 35, "detected_layout": "32-field variant"},
+        ))
+
     for idx, (name, lo, hi) in RANGES.items():
         col = v[:, idx]
+        # Empty/unreadable cells arrive as NaN: report them, never treat as data.
+        nan_mask = np.isnan(col)
+        if nan_mask.any():
+            issues.append(Issue(
+                "MISSING_VALUES", "warning",
+                f"{name}: {int(nan_mask.sum())} empty/unreadable value(s).",
+                {"field": name, "count": int(nan_mask.sum())},
+            ))
         sentinel_mask = np.isclose(col, SENTINELS.get(idx, -99999.0))
         if sentinel_mask.any():
             issues.append(Issue(
