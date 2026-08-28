@@ -22,7 +22,10 @@ Status: `PASS` / `FAIL` / `PENDING` (fixture exists, run pending) / `BLOCKED` (s
 | V-EPW-10 | checker | temperature discontinuity (planted spike) | `fixtures/epw/synthetic/temp_spike.epw` | QC design; calibration: healthy ≤5.2 K/h, spike 16.2 K/h | DISCONTINUITY error (>15 K/h) | detected, FAIL | exact | PASS | 2026-08-28 | 8–15 K/h = warning band |
 | V-EPW-11 | metrics | constant-offset shift invariance of exceedance counts | hypothesis-generated | metamorphic (plan §27.3) | counts identical under joint series+threshold shift | verified (150+60 examples) | exact, modulo float ties | PASS | 2026-08-28 | exact-tie comparisons excluded (IEEE-754); documented in test |
 | V-EPW-12 | metrics | observation order never changes aggregates | shuffled series | metamorphic (plan §27.3) | identical counts/degree-hours | verified | exact | PASS | 2026-08-28 | |
-| V-EPW-13 | suite | full local suite green | all of `packages/overheatlens-core/tests` | — | 65 passed, 0 skipped | 65 passed | — | PASS | 2026-08-28 | command: `PYTHONPATH=packages/overheatlens-core python -m pytest packages/overheatlens-core/tests -q`; coverage 85% (engine 96%) |
+| V-EPW-13 | suite | full local suite green | all of `packages/overheatlens-core/tests` | — | 95 passed, 0 skipped | 95 passed | — | PASS | 2026-08-28 | command: `PYTHONPATH=packages/overheatlens-core python -m pytest packages/overheatlens-core/tests -q` |
+| V-EPW-14 | parser | 32-field truncated CIBSE variant parses; present fields keep standard indices | `fixtures/epw/synthetic/truncated_fields.epw` (new synthetic fixture) | W-04 finding from real CIBSE DSY | dry-bulb identical to 35-field source; trailing fields NaN | verified | exact | PASS | 2026-08-28 | checker emits TRUNCATED_FIELDS info; verdict stays PASS |
+| V-EPW-15 | parser | empty numeric cells → NaN, checker reports MISSING_VALUES on used fields | mutated good_file (empty dry bulb) | W-04 | explicit non-result, never zero, never crash | verified | behavioural | PASS | 2026-08-28 | all-missing dry bulb makes weather_summary raise (explicit non-result) |
+| V-EPW-16 | parser | reduced row layouts below 32 fields still rejected | mutated good_file (20 fields) | EPW format | EpwParseError | verified | behavioural | PASS | 2026-08-28 | |
 
 ## B. Standards engine
 
@@ -36,6 +39,39 @@ Status: `PASS` / `FAIL` / `PENDING` (fixture exists, run pending) / `BLOCKED` (s
 | VAL-STD-06 | rule packs | every pack validates against JSON Schema; every criterion has id/source/clause/verification fields | all packs in `overheatlens/rules/` | ADR-0007 | schema-valid, provenance-complete | verified | schema | PASS | 2026-08-28 | |
 | VAL-STD-07 | TM59:2017 | sleep-window geometry: hour-ending labels 23,24,1..7 span 22:00–07:00 | synthetic series | hour-ending convention | label 22 (21:00–22:00) excluded; label 7 (06:00–07:00) included | verified — test caught and fixed an initial off-by-one during development | exact | PASS | 2026-08-28 | boundary-test discipline working as intended (RULE 7) |
 | VAL-STD-08 | dwelling logic | dwelling result is FAIL if any criterion fails; INCOMPLETE (never PASS) when any criterion NOT_EVALUATED | synthetic rooms | TM59 dwelling semantics | exact trichotomy | verified | behavioural | PASS | 2026-08-28 | |
+
+## B2. TM59:2026 (source-verified pack, S-03/S-08) — added 2026-08-28
+
+| ID | Method | Rule | Fixture | Source | Expected | Actual | Tolerance | Status | Date | Notes |
+|---|---|---|---|---|---|---|---|---|---|---|
+| VAL-TM26-01 | engine gate | source_verified pack passes compliance gate | `uk_tm59_2026.yaml` v1.0.0 | S-03 MACHINE-VERIFIED | compliance mode allowed | verified | behavioural | PASS | 2026-08-28 | flipped from blocked in previous session |
+| VAL-TM26-02 | Criterion a | hour limits: 59 h living (1989 occupied h) / 110 h bedroom (3672 h) | synthetic May series | S-03 §2.4.1 + Table 2 | exact flip 59→PASS/60→FAIL (living); 110/111 (bedroom) | verified both | exact integer | PASS | 2026-08-28 | |
+| VAL-TM26-03 | Criterion a | ΔT rounding per TM52: raw ΔT ≥ 0.5 K counts, 0.49 does not | constant-series at threshold+0.49/+0.5 | S-03 §2.4.1 quoting TM52 | exact boundary | verified | exact | PASS | 2026-08-28 | differs from 2017 interpretation |
+| VAL-TM26-04 | Criterion a | adaptive thresholds: Cat I 24.1→30.7 °C, Cat II = +1 K, clamped outside Trm 10–30 | constant daily-mean inputs at 5/10/20/30/40 °C | S-03 §2.4.1 | exact clamp values; II−I = 1.0 K | verified | exact | PASS | 2026-08-28 | slope 0.33 implied by source values |
+| VAL-TM26-05 | Trm chain | TM52 Eq 2.2 recursion + Eq 2.3 7-day weighted initialiser (0.8 weights), 1 May–30 Sep = 153 days | step-response daily-mean series + constant series | S-03 §2.4.1 (constants cross-referenced from S-04, flagged) | hand-computed chain values | verified | tight float | PASS | 2026-08-28 | boundary test caught an off-by-one in the 30 April base index during development |
+| VAL-TM26-06 | Criterion b | nights-based: Tn 26 (I) / 27 (II) fixed; limit 4 nights; window 11 pm–8 am | synthetic hot nights | S-03 §2.4.2 | exact flip 4→PASS/5→FAIL; Cat I/II divergence at 26.5 °C means | verified | exact | PASS | 2026-08-28 | 153 nights assessed; night N = 11 pm day N → 8 am day N+1 |
+| VAL-TM26-07 | Criterion b | mean night temperature, not peak | one 34 °C hour in an otherwise 25 °C night | S-03 §2.4.2 | mean 26.44 ≤ 27 → PASS | verified | exact | PASS | 2026-08-28 | |
+| VAL-TM26-08 | Criterion c | fixed 26 °C; limits 59/110; exactly 26.0 does not exceed | synthetic June occupied-hour series | S-03 §2.4.3 | exact flips; strict inequality | verified | exact | PASS | 2026-08-28 | bedroom variant uses all-hours basis |
+| VAL-TM26-09 | Criterion c | ceiling-fan uplift 2.1 K flips a failing result | 100 h at 27.5 °C ± fan uplift array | S-03 §2.4.3 | FAIL without uplift, PASS with | verified | exact | PASS | 2026-08-28 | uplift supplied as array from modelled air speeds |
+| VAL-TM26-10 | Criterion d | communal: fixed 28 °C, limit 110 h, strict inequality | synthetic May series | S-03 §2.4.4 | exact flip 110/111; 28.0 not counted | verified | exact | PASS | 2026-08-28 | |
+| VAL-TM26-11 | Stages | stage definitions and criteria mapping | pack metadata | S-03 §2.5/Fig.1 | stage_1 a+b; stage_3 b+c; d at all stages | verified | structural | PASS | 2026-08-28 | the ≥50 %-open mode-selection rule is stored for readiness checks (Phase 5) |
+| VAL-TM26-12 | occupancy | living occupancy 9 am–10 pm excluded night heat; bedroom counts all hours | night-only + day-only heat placements | S-03 Table 2 | exact counts | verified | exact | PASS | 2026-08-28 | hour-ending labels 10..22 |
+
+## B3. Weather compatibility guard (S-08)
+
+| ID | Method | Rule | Fixture | Expected | Actual | Status | Date | Notes |
+|---|---|---|---|---|---|---|---|---|
+| VAL-WCG-01 | compatibility | minimum file → compatible | `*_DSY1_2050s_HIGH50_CIBSE_v1.1.epw` | compatible | verified | PASS | 2026-08-28 | filename-traceability only |
+| VAL-WCG-02 | compatibility | DSY3 / 2080s / HIGH10 → research_only with reason | variant filenames | research_only + reason naming the difference | verified | PASS | 2026-08-28 | per S-08 §4 alternatives |
+| VAL-WCG-03 | compatibility | untraceable filename → unknown, never guessed | `my_site_2023.epw` | unknown + "not machine-verifiable" | verified | PASS | 2026-08-28 | plan §10.2 wording |
+
+## B4. Real-file local validation (copyrighted files used locally, never committed)
+
+| ID | File (local) | SHA-256 | Result | Status | Date | Notes |
+|---|---|---|---|---|---|---|
+| VAL-REAL-01 | epw_doctor `examples/real_weather/Leeds_DSY1.epw` | `6f6598a7…` | parses PASS; 32-field variant INFO; annual mean 10.69 °C; compat research_only (no 2050s/HIGH50 labels) | PASS | 2026-08-28 | first real CIBSE DSY validated end-to-end |
+| VAL-REAL-02 | `~/Downloads/leeds_2050.epw` | `382fee23…` | PASS_WITH_WARNINGS (stuck-run 12 h warning — plausible for morphed future years); compat unknown | PASS_WITH_WARNINGS | 2026-08-28 | warnings are informative, not failures |
+| VAL-REAL-03 | `~/Downloads/my_site_2023.epw`, `savetest_2001.epw` | `5a63b5e7…` / — | parse OK after empty-cell tolerance; 99.9 temperature sentinel convention caught by range checks (FAIL, correctly) | FAIL (correct) | 2026-08-28 | template files with all-missing met fields; honest verdicts, no crashes |
 
 ## C. Provenance / reproducibility
 
