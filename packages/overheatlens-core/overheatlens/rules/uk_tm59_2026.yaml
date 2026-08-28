@@ -1,0 +1,37 @@
+rule_pack: uk_tm59_2026
+version: 0.1.0-dev
+title: "CIBSE TM59 (2026 edition) — BLOCKED PENDING SOURCE ACQUISITION"
+publisher: CIBSE
+edition: "2026"
+source_status: blocked_no_source
+source_refs: [S-03]
+blocked: SOURCE_NOT_ACQUIRED
+verification_note: >-
+  The 2026 edition (published July 2026 per the project plan) has NOT been acquired.
+  No criterion value from this edition exists anywhere in this repository — none has
+  been guessed, inferred from the 2017 edition, or copied from secondary reports.
+  The standards engine refuses to evaluate this pack (ADR-0005). Acquire the document,
+  transcribe criteria with clause references, flip source_status, and add boundary
+  tests before any evaluation becomes possible.
+
+weather_requirements:
+  family: "CIBSE weather files (2025 set / DSY v1.1 per project plan §1.1 — unverified)"
+  verified: false
+  note: >-
+    Plan records that TM59:2026 requires the newer 2025 weather-file set and v1.1
+    replacements. This must be verified from the acquired source before implementation.
+
+assessment:
+  period: pending_source
+  hour_basis: 8760
+
+space_types:
+  unverified:
+    aliases: []
+    criteria: []
+    note: "Space-type logic of the 2026 edition is unknown to this project until the source is acquired."
+
+criteria: []
+
+changelog:
+  - "0.1.0-dev (2026-08-28): blocked scaffold created. No transcribed content. Evaluation forbidden."

@@ -1,0 +1,129 @@
+rule_pack: uk_part_o_dynamic
+version: 0.1.0-dev
+title: "Approved Document O (England, 2021) — dynamic thermal modelling method"
+publisher: "MHCLG / HMSO"
+edition: "2021 (republished 2022-02-25 with corrections per Circular 01/2022)"
+inherits: uk_tm59_2017
+source_status: secondary_pending
+source_refs: [S-01, S-02]
+verification_note: >-
+  Part-O-specific content (window-control limits, strategy exclusions, report content)
+  is MACHINE-VERIFIED against the official ADO 2021 PDF (S-01, see
+  docs/standards/ADO_VERIFICATION.md). The overheating criteria themselves are inherited
+  from uk_tm59_2017, whose values remain SECONDARY-PENDING (S-02); the pack therefore
+  stays evaluation-gated until TM59:2017 is source-verified.
+
+weather_note: >-
+  ADO 2021 does NOT name a weather file, epoch or percentile anywhere in its text
+  (machine-verified negative finding). The weather requirement is inherited from the
+  referenced TM59:2017 methodology. OverheatLens states this inheritance explicitly and
+  never cites ADO directly for weather-file requirements.
+
+assessment:
+  period: full_year
+  hour_basis: 8760
+  note: "Dynamic route per ADO §2.1-2.6: TM59 assessment with ADO-specific limits."
+
+space_types:
+  living:
+    aliases: [living room, lounge, kitchen, kitchen diner, open plan living kitchen]
+    criteria: [A]
+  bedroom:
+    aliases: [bedroom, master bedroom, single bedroom, double bedroom, twin bedroom]
+    criteria: [B, C]
+  other:
+    aliases: [circulation, hall, study, home office]
+    criteria: [D]
+
+criteria:
+  - id: A
+    applies_to: [living]
+    clause: "ADO §2.3(a) via TM59:2017 Criterion A"
+    metric: inherited
+    method_ref: uk_tm59_2017
+    window: all_hours
+    aggregation: percent_of_annual_hours
+    threshold: 3.0
+    units: percent
+    operator: ">"
+    verification: {source: S-02, status: secondary_pending}
+  - id: B
+    applies_to: [bedroom]
+    clause: "ADO §2.3(a) via TM59:2017 Criterion B"
+    metric: inherited
+    method_ref: uk_tm59_2017
+    window: sleep_hours
+    aggregation: percent_of_annual_hours
+    threshold: 1.0
+    units: percent
+    operator: ">"
+    verification: {source: S-02, status: secondary_pending}
+  - id: C
+    applies_to: [bedroom]
+    clause: "ADO §2.3(a) via TM59:2017 Criterion C"
+    metric: inherited
+    method_ref: uk_tm59_2017
+    window: sleep_hours
+    aggregation: total_hours
+    threshold: 32
+    units: hours
+    operator: ">"
+    verification: {source: S-02, status: secondary_pending}
+  - id: D
+    applies_to: [other]
+    clause: "ADO §2.3(a) via TM59:2017 Criterion D"
+    metric: delegated_method
+    method_ref: uk_tm52
+    not_implemented: true
+    window: all_hours
+    aggregation: none
+    threshold: 0
+    units: none
+    operator: ">="
+    verification: {source: S-02, status: secondary_pending}
+
+model_limits:
+  - id: PO-WIN-01
+    clause: "ADO §2.6(a)"
+    requirement: >-
+      Day-occupied hours (08:00-23:00): openings start to open above 22 degC internal,
+      fully open above 26 degC, start to close below 26 degC, fully closed below
+      22 degC.
+    parameters: {start_open_c: 22.0, fully_open_c: 26.0, day_start_hour: 8, day_end_hour: 23}
+    verification: {source: S-01, status: source_verified}
+  - id: PO-WIN-02
+    clause: "ADO §2.6(b)"
+    requirement: >-
+      Night (23:00-08:00): openings modelled fully open only if first floor or above,
+      not easily accessible, AND internal temperature exceeds 23 degC at 23:00.
+    parameters: {night_threshold_c_at_23: 23.0}
+    verification: {source: S-01, status: source_verified}
+  - id: PO-WIN-03
+    clause: "ADO §2.6(c)"
+    requirement: >-
+      Unoccupied ground-floor or easily-accessible rooms: day openings open only if it
+      can be done securely (ADO §3.7); night openings modelled closed.
+    verification: {source: S-01, status: source_verified}
+  - id: PO-WIN-04
+    clause: "ADO §2.6(d)"
+    requirement: "An entrance door must be included in the model and modelled shut at all times."
+    verification: {source: S-01, status: source_verified}
+
+strategy_exclusions:
+  - id: PO-EXC-01
+    clause: "ADO §2.8"
+    requirement: "Internal blinds and curtains must NOT be counted towards overheating mitigation."
+    verification: {source: S-01, status: source_verified}
+  - id: PO-EXC-02
+    clause: "ADO §2.9"
+    requirement: "Foliage / tree cover must NOT be counted towards solar-gain mitigation."
+    verification: {source: S-01, status: source_verified}
+
+report_requirements:
+  - "ADO §2.4: report must demonstrate the building passes CIBSE TM59 assessment; contents per TM59 §2.3"
+  - "ADO Appendix B Part 2b.1: dynamic software name and version; weather file location used incl. any additional more extreme weather files; number of sample units modelled and selection rationale"
+  - "ADO Appendix B Part 2b.2: occupancy, equipment and opening profiles"
+  - "ADO Appendix B Part 2b.3: free areas, infiltration and mechanical flow rates, window g-value, shading strategy, mechanical cooling"
+
+changelog:
+  - "0.1.0-dev (2026-08-28): created from machine-verified ADO 2021 text (S-01); criteria inherited from gated uk_tm59_2017."

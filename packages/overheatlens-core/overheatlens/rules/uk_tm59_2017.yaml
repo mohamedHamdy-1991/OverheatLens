@@ -1,0 +1,127 @@
+rule_pack: uk_tm59_2017
+version: 0.1.0-dev
+title: "CIBSE TM59: Design methodology for the assessment of overheating risk in homes (2017)"
+publisher: CIBSE
+edition: "2017"
+source_status: secondary_pending
+source_refs: [S-02, S-06]
+verification_note: >-
+  Criterion values transcribed from widely published secondary literature (multiple
+  journal papers reproduce them consistently). The original CIBSE document has NOT yet
+  been acquired or checked; the pack is therefore evaluation-gated: compliance mode
+  refuses it, and any research-mode result carries a 'source not verified' label.
+  Window/occupancy interpretation points are flagged per criterion.
+
+weather_requirements:
+  family: CIBSE DSY
+  recommended_minimum: "DSY1 2020s 50th percentile (per TM59:2017 §3.2 as widely reported)"
+  verified: false
+  note: >-
+    Weather requirement itself is SECONDARY-PENDING: verify against TM59:2017 §3.2 before
+    any compliance use. Note that Approved Document O does NOT name a weather file; the
+    requirement is inherited from this methodology (see uk_part_o_dynamic, ADO-verified).
+
+assessment:
+  period: full_year
+  hour_basis: 8760
+  note: >-
+    TM59:2017 assesses a full simulation year with CIBSE DSY weather. Leap years (8784 h)
+    are normalised to the 8760 basis by proportional scaling of the percent thresholds;
+    hour counts keep the raw totals.
+
+space_types:
+  living:
+    aliases:
+      - living room
+      - lounge
+      - kitchen
+      - kitchen diner
+      - open plan living kitchen
+      - living kitchen
+      - living dining
+    criteria: [A]
+  bedroom:
+    aliases:
+      - bedroom
+      - master bedroom
+      - single bedroom
+      - double bedroom
+      - twin bedroom
+    criteria: [B, C]
+  other:
+    aliases: [circulation, hall, study, home office]
+    criteria: [D]
+    note: >-
+      Criterion D delegates to CIBSE TM52. TM52 evaluation is not implemented in this
+      release; criterion D is reported as NOT_EVALUATED, never as PASS.
+
+criteria:
+  - id: A
+    applies_to: [living]
+    clause: "TM59:2017 §6.1 Criterion A (clause number pending verification)"
+    metric: exceedance_hours
+    condition: "top_c - 26.0 >= 1.0"
+    window: all_hours
+    aggregation: percent_of_annual_hours
+    threshold: 3.0
+    units: percent
+    operator: ">"
+    rounding: "count integer hours; percent = 100 * count / hour_basis"
+    interpretation_note: >-
+      'Annual hours' basis (8760) as reported by secondary sources; whether the
+      denominator is occupied-hours-weighted is an interpretation point to verify
+      against the original document before compliance use.
+    verification: {source: S-02, status: secondary_pending}
+
+  - id: B
+    applies_to: [bedroom]
+    clause: "TM59:2017 §6.1 Criterion B (clause number pending verification)"
+    metric: exceedance_hours
+    condition: "top_c - 26.0 >= 1.0"
+    window: sleep_hours        # 22:00-07:00, hour-ending convention
+    aggregation: percent_of_annual_hours
+    threshold: 1.0
+    units: percent
+    operator: ">"
+    rounding: "count integer hours; percent = 100 * count / hour_basis"
+    interpretation_note: >-
+      Sleep window 22:00-07:00 local implemented with hour-ending labels 23,24,1..7
+      (label H covers (H-1:00, H], so label 23 is 22:00-23:00 and label 7 is
+      06:00-07:00). Verify the window definition against the source document.
+    verification: {source: S-02, status: secondary_pending}
+
+  - id: C
+    applies_to: [bedroom]
+    clause: "TM59:2017 §6.1 Criterion C (clause number pending verification)"
+    metric: exceedance_hours
+    condition: "top_c > 26.0"
+    window: sleep_hours
+    aggregation: total_hours
+    threshold: 32
+    units: hours
+    operator: ">"
+    rounding: "count integer hours"
+    interpretation_note: >-
+      Secondary sources differ on whether Criterion C counts all hours or sleep-window
+      hours only; implemented over the sleep window (matching its sleep-quality purpose)
+      pending verification against the original text.
+    verification: {source: S-02, status: secondary_pending}
+
+  - id: D
+    applies_to: [other]
+    clause: "TM59:2017 §6.1 Criterion D (clause number pending verification)"
+    metric: delegated_method
+    method_ref: uk_tm52
+    not_implemented: true
+    window: all_hours
+    aggregation: none
+    threshold: 0
+    units: none
+    operator: ">="
+    interpretation_note: >-
+      Reported as NOT_EVALUATED until uk_tm52 is implemented and verified.
+      Never silently passes.
+    verification: {source: S-02, status: secondary_pending}
+
+changelog:
+  - "0.1.0-dev (2026-08-28): initial transcription from secondary literature; evaluation-gated."
