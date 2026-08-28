@@ -98,6 +98,25 @@ Status: `PASS` / `FAIL` / `PENDING` (fixture exists, run pending) / `BLOCKED` (s
 | VAL-REAL-06 | `…/Weather File MET Office/Leeds_DSY1_2050High50_.epw` — TM59:2026 designated fallback (ADR-0012) | — | guard: research_only + closest_available_match=true; parses PASS; TM59:2026 research-mode demo evaluates (illustrative indoor = outdoor + 3 K, NOT a simulation: a FAIL 215 h / b PASS / c FAIL 431 h) | PASS | 2026-08-28 | limitation "CIBSE 2016 release, not required 2025 v1.1" carried in guard reason, pack fallback_limitation, and demo output |
 
 
+## B7. Comfort wrappers (Phase 4, RULE 4)
+
+| ID | Model | Property | Fixture | Source | Expected | Actual | Status | Date | Notes |
+|---|---|---|---|---|---|---|---|---|---|
+| VAL-CMF-01 | PMV/PPD | parity with direct library call (never reimplemented) | neutral condition | pythermalcomfort 4.4.2, ISO 7730:2025 model | wrapper == library | verified exactly | PASS | 2026-08-28 | edition recorded in provenance |
+| VAL-CMF-02 | PMV/PPD | applicability gates | tdb 35, vr 2.0 | ISO 7730 ranges | OUTSIDE_APPLICABILITY + reason, no values | verified | PASS | 2026-08-28 | explicit non-result (plan 14.3) |
+| VAL-CMF-03 | adaptive EN | parity + Trm 10-30 gate + v<1.2 | Trm 31 / v 1.5 | EN 16798-1 | gates fire with reasons | verified | PASS | 2026-08-28 | |
+| VAL-CMF-04 | UTCI | parity + v 0.5-17 gate | v 0.1 | UTCI polynomial | gate fires; parity verified | verified | PASS | 2026-08-28 | 4.4.2 requires tr explicitly |
+| VAL-CMF-05 | all | results JSON-serialisable with native types | all wrappers | RULE 6 | json round-trip | verified | PASS | 2026-08-28 | numpy scalars coerced in wrapper |
+
+## B8. EnergyPlus worker + end-to-end (Phase 6)
+
+| ID | Method | Property | Fixture | Expected | Actual | Status | Date | Notes |
+|---|---|---|---|---|---|---|---|---|
+| VAL-XSIM-01 | runner | official binary probe + isolated run + clean completion | synthetic_dwelling.idf + Leeds_DSY1_2020High50 (local) | status complete, 0 fatal/severe, manifest with input hashes | verified (E+ 25.1.0-68a4a7c774, 0.8 s) | PASS | 2026-08-28 | first real simulation of the project |
+| VAL-XSIM-02 | harvest | 8760 hourly MAT/MRT per zone; Top = 0.5(MAT+MRT) | eplusout.csv | derived metric consistent | verified both zones | PASS | 2026-08-28 | Top labelled derived (RULE 6) |
+| VAL-XSIM-03 | end-to-end | readiness -> simulate -> harvest -> TM59:2017 compliance evaluation | full chain | overall in PASS/FAIL/INCOMPLETE with provenance on every criterion | verified: dwelling PASS, all criteria source_verified | PASS | 2026-08-28 | illustrative fixture, not a validated archetype |
+| VAL-XSIM-04 | err interpreter | severity grouping + unusable-on-severe | crafted .err file | fatal/severe/warning/recurring groups; is_usable false on severe | verified | PASS | 2026-08-28 | plan 12.5 |
+
 ## C. Provenance / reproducibility
 
 | ID | Method | Property | Fixture | Expected | Actual | Status | Date | Notes |

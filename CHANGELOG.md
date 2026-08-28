@@ -3,6 +3,33 @@
 All notable changes to OverheatLens are documented here.
 Format based on Keep a Changelog; versioning is SemVer.
 
+## [0.4.0.dev0] — 2026-08-28 (session 4: Phases 4–6 — comfort, IDF readiness, EnergyPlus worker)
+
+### Added
+- **Comfort engine (Phase 4):** pythermalcomfort 4.4.2 wrapped unmodified (RULE 4) —
+  Fanger PMV/PPD (ISO 7730:2025 library default), EN 16798-1 adaptive comfort, UTCI.
+  Explicit applicability gates return OUTSIDE_APPLICABILITY with reasons (never
+  misleading numbers); library version recorded in every result; native-type
+  JSON-serialisable outputs (VAL-CMF-01..05).
+- **IDF readiness + Passport (Phase 5):** object-level IDF parser (macro detection,
+  SHA-256); readiness battery where every row explains itself — severity, detected,
+  required, why, fix, source (RULE 16): version/timestep/run period/zone classification
+  (bedroom-living detection)/People/schedule references/infiltration/openings with ADO
+  §2.6 + TM59 §3.3 conformance notes/cooling detection/required MAT+MRT outputs; IDF
+  Passport summary; runnable synthetic two-zone dwelling fixture (IDD 25.1-exact).
+- **EnergyPlus worker (Phase 6):** official-binary probe (--version), isolated per-job
+  directories (no shell, size guard, timeout), eplusout.err severity interpreter
+  (unusable on any severe), --readvars harvest to per-zone hourly series with DERIVED
+  operative temperature Top = 0.5(MAT+MRT) (low air speed, labelled), deterministic run
+  manifest with input hashes.
+- **First end-to-end chain (VAL-XSIM-01..04):** readiness PASS -> EnergyPlus 25.1.0 run
+  complete (0 severe, <1 s) -> 8760-hour harvest -> TM59:2017 COMPLIANCE-mode evaluation
+  with full provenance on every criterion. Tests auto-skip when EnergyPlus or the local
+  weather file is absent.
+
+### Changed
+- 142 tests green (from 121). Version 0.4.0.dev0.
+
 ## [0.3.0.dev0] — 2026-08-28 (session 3: TM59:2017 + TM52 verified; all packs source-verified)
 
 ### Added
