@@ -50,6 +50,7 @@ class MissingEvaluationInput(Exception):
 
 class NotEvaluatedStatus(str, Enum):
     NOT_EVALUATED = "NOT_EVALUATED"
+    NOT_APPLICABLE = "NOT_APPLICABLE"
 
 
 # TM59:2017 sleep window 22:00-07:00 in hour-ending labels (label H covers (H-1:00, H]).
@@ -175,20 +176,21 @@ def running_mean_trm(daily_mean_outdoor: np.ndarray) -> np.ndarray:
 
     ``daily_mean_outdoor`` holds 365 daily means (1 Jan..31 Dec, non-leap).
 
-    Per TM59:2026 §2.4.1 (S-03): Trm for 30 April comes from TM52 Eq 2.3 applied to the
-    seven daily means 23-29 April (geometric 0.8 weights); thereafter TM52 Eq 2.2,
-    Trm(d+1) = 0.8*Trm(d) + 0.2*Tdm(d). The 0.8 constant is the TM52 cross-reference
-    flagged in the pack verification note (TM52 PDF not yet held).
+    Verified against the TM52 PDF (S-04, 2013, §Box 2):
+      Eq 2.3 initialiser: Trm = (Tod-1 + 0.8 Tod-2 + 0.6 Tod-3 + 0.5 Tod-4
+                                  + 0.4 Tod-5 + 0.3 Tod-6 + 0.2 Tod-7) / 3.8
+        applied to the seven days ending 29 April to start Trm(30 April);
+      Eq 2.2 recursion: Trm = 0.8*Trm-1 + 0.2*Tod-1  (alpha = 0.8).
     Returns Trm for the days 1 May..30 Sep (153 values, indexed 0 = 1 May).
     """
     dm = np.asarray(daily_mean_outdoor, dtype=np.float64)
     if dm.size != 365:
         raise ValueError(f"expected 365 daily means, got {dm.size}")
-    weights = 0.8 ** np.arange(7)
+    # Published Eq 2.3 weights (most recent day first) and their stated denominator.
+    w = np.array([1.0, 0.8, 0.6, 0.5, 0.4, 0.3, 0.2])
     # 0-based day-of-year index of 30 April = 31 (Jan) + 28 (Feb) + 31 (Mar) + 29
     apr30_idx = 31 + 28 + 31 + 29
-    # Trm(30 Apr) from Tdm(29 Apr)..Tdm(23 Apr) with weights 0.8^0..0.8^6 (TM52 Eq 2.3)
-    trm = float(np.sum(weights * dm[apr30_idx - 1 - np.arange(7)]) / np.sum(weights))
+    trm = float(np.sum(w * dm[apr30_idx - 1 - np.arange(7)]) / 3.8)
     trms = np.empty(153)
     for i in range(153):
         # Eq 2.2 with Trm(30 Apr) as Trm-1: Trm(1 May) = 0.8*Trm(30 Apr) + 0.2*Tdm(30 Apr);
@@ -278,13 +280,14 @@ class StandardsEngine:
         notes: list[str] = []
 
         if cond.startswith("adaptive"):
-            if criterion.get("delta_t_rounding") != "nearest_whole_degree_tm52":
-                raise RulePackError(
-                    f"unsupported rounding {criterion.get('delta_t_rounding')!r}")
+            rounding = criterion.get("delta_t_rounding")
+            raw_4k = rounding == "none_for_criterion_3"
+            if not raw_4k and rounding != "nearest_whole_degree_tm52":
+                raise RulePackError(f"unsupported rounding {rounding!r}")
             if daily_mean_outdoor is None:
                 raise MissingEvaluationInput(
-                    "criterion a needs daily_mean_outdoor (365 daily means) for the "
-                    "adaptive threshold")
+                    "adaptive criteria need daily_mean_outdoor (365 daily means) for "
+                    "the running-mean threshold — none supplied")
             th = self._adaptive_thresholds(criterion, category, daily_mean_outdoor)
             # Map per-day (May-Sep) thresholds onto hours.
             day_index = self._doy - 120  # 0-based day-of-year; 120 = 1 May
@@ -294,11 +297,21 @@ class StandardsEngine:
             delta = top - th_hourly
             if fan_uplift is not None:
                 delta = delta - fan_uplift
+            if raw_4k:
+                # TM52 Criterion 3: raw (unrounded) DT > 4 K at any assessed hour.
+                counted = np.where(np.isnan(delta), False, delta > 4.0) & mask_window
+                notes.append("Raw (unrounded) Delta T > 4 K per TM52 Criterion 3.")
+                return int(counted.sum()), {"threshold_model": "adaptive_tm52_tupp",
+                                            "category": category,
+                                            "notes_extra": notes}
             # TM52 delta-T rounding: raw delta T >= 0.5 K counts as 1 K exceedance.
-            counted = np.where(np.isnan(delta), False, delta >= 0.5) & mask_window
+            # IEEE-754 guard: a raw DT of exactly 0.5 must count, but slope*Trm+offset
+            # carries last-bit noise (e.g. 0.33*20+21.8 -> 28.400000000000002). The
+            # 1e-9 K epsilon absorbs that noise only; the threshold stays 0.5 K.
+            counted = np.where(np.isnan(delta), False, delta >= 0.5 - 1e-9) & mask_window
             notes.append("Delta T rounded to nearest whole degree per TM52: "
                          "raw Delta T >= 0.5 K counts as exceedance.")
-            return int(counted.sum()), {"threshold_model": "adaptive_tm59_2026",
+            return int(counted.sum()), {"threshold_model": "adaptive_tm52",
                                         "category": category, "notes_extra": notes}
 
         # fixed-threshold form: "top_c > 26.0" / "top_c - 26.0 >= 1.0" etc.
@@ -349,8 +362,18 @@ class StandardsEngine:
             occ_mask = np.isin(self._hour, list(_LIVING_HOURS_2026))
         elif occ == "all_hours":
             occ_mask = np.ones(self._n, dtype=bool)
+        elif occ == "model_supplied":
+            occupancy = getattr(self, "_occupancy", None)
+            if occupancy is None:
+                raise MissingEvaluationInput(
+                    "criterion requires modelled occupied hours (pass an occupancy "
+                    "array) — none supplied")
+            occ_mask = np.asarray(occupancy, dtype=bool)
+            if occ_mask.size != self._n:
+                raise ValueError(
+                    f"occupancy array has {occ_mask.size} hours; expected {self._n}")
         else:
-            # TM59:2017 forms
+            # window-based masks (e.g. TM59:2017 criterion b sleep window)
             window = criterion.get("window", "all_hours")
             if window == "sleep_hours":
                 occ_mask = np.isin(self._hour, list(_SLEEP_HOURS_2017))
@@ -361,6 +384,22 @@ class StandardsEngine:
             "occupancy_basis": occ, "occupancy_hours_basis": basis,
             "max_exceedance_hours": limit, "months": months,
         }
+
+    def _evaluate_criterion_checked(
+        self, criterion: dict, top: np.ndarray, room_type: str, **kw
+    ) -> "CriterionResult":
+        result = self._evaluate_criterion(criterion, top, room_type, **kw)
+        if bool(criterion.get("advisory", False)) and result.passed is not None:
+            # Advisory criteria are reported as risk flags, never pass/fail.
+            flagged = result.metric_value is not None and result.status == "FAIL"
+            result = CriterionResult(
+                **{**result.__dict__,
+                   "passed": None,
+                   "status": "FLAG" if flagged else "NO_FLAG",
+                   "notes": list(result.notes) + [
+                       "Advisory criterion: reported as a risk flag only; it never "
+                       "contributes a pass or a fail to the overall result."]})
+        return result
 
     def _evaluate_criterion(
         self,
@@ -399,6 +438,72 @@ class StandardsEngine:
             raise ValueError(
                 f"Expected {_HOUR_BASIS} hourly values, got {t.size}.")
 
+        # Resolve a shared adaptive-threshold definition (e.g. TM52 c2/c3 -> c1).
+        if "adaptive_threshold" not in criterion and criterion.get("adaptive_threshold_ref"):
+            ref = self._criteria.get(criterion["adaptive_threshold_ref"])
+            if ref is None or "adaptive_threshold" not in ref:
+                raise RulePackError(
+                    f"criterion {cid} references adaptive_threshold_ref "
+                    f"{criterion['adaptive_threshold_ref']!r}, which has no "
+                    "adaptive_threshold")
+            criterion = {**criterion,
+                         "adaptive_threshold": ref["adaptive_threshold"],
+                         "delta_t_rounding": criterion.get(
+                             "delta_t_rounding", ref.get("delta_t_rounding"))}
+
+        # ---- TM52 Criterion 2: daily weighted exceedance (We) ---------------
+        if aggregation == "max_daily_we_vs_limit":
+            if daily_mean_outdoor is None:
+                raise MissingEvaluationInput(
+                    "criterion We needs daily_mean_outdoor (365 daily means)")
+            try:
+                mask, basis_info = self._window_mask(criterion, room_type)
+            except MissingEvaluationInput as e:
+                return CriterionResult(
+                    metric_value=None, passed=None, margin=None,
+                    status=NotEvaluatedStatus.NOT_EVALUATED.value,
+                    notes=[f"Not evaluated: {e}"], **base)
+            if not mask.any():
+                return CriterionResult(
+                    metric_value=None, passed=None, margin=None,
+                    status=NotEvaluatedStatus.NOT_EVALUATED.value,
+                    notes=["No occupied hours supplied for the assessment window."],
+                    **base)
+            th = self._adaptive_thresholds(criterion, category, daily_mean_outdoor)
+            day_index = self._doy - 120
+            ok = (day_index >= 0) & (day_index < 153)
+            th_hourly = np.full(t.shape, np.nan)
+            th_hourly[ok] = th[day_index[ok]]
+            delta = t - th_hourly
+            # wf = 0 if DT <= 0 else DT rounded to the nearest whole degree
+            rounded = np.floor(np.where(np.isnan(delta), 0.0, delta) + 0.5)
+            wf = np.where(np.isnan(delta), 0.0, np.where(delta > 0, rounded, 0.0))
+            wf = wf * mask  # only occupied hours within the window contribute
+            day_of_hour = day_index  # May-Sep day index per hour (negative outside)
+            we_by_day = {}
+            for di in np.unique(day_of_hour[mask]):
+                di = int(di)
+                if di < 0:
+                    continue
+                we_by_day[di] = float(wf[day_of_hour == di].sum())
+            worst_day = max(we_by_day, key=lambda d: we_by_day[d]) if we_by_day else None
+            worst_we = we_by_day[worst_day] if worst_day is not None else 0.0
+            limit = float(criterion["threshold"])
+            fail = worst_we > limit
+            m, d = (self._doy_to_month_day(120 + worst_day)
+                    if worst_day is not None else (0, 0))
+            return CriterionResult(
+                metric_value=round(worst_we, 3), passed=(not fail),
+                margin=round(worst_we - limit, 4),
+                status="FAIL" if fail else "PASS",
+                basis={"worst_day_we": round(worst_we, 3),
+                       "worst_day": f"{m:02d}-{d:02d}" if worst_day is not None else None,
+                       "limit_we": limit,
+                       "n_days_assessed": len(we_by_day)},
+                notes=["We = sum over the day of hours x wf (wf = rounded DT when "
+                       "DT > 0, else 0); fail if > 6 on any one day (TM52 Eq 10)."],
+                **base)
+
         # ---- nights aggregation (TM59:2026 criterion b) --------------------
         if aggregation == "nights_count_vs_limit":
             sleep = criterion.get("sleep_window", "")
@@ -426,11 +531,16 @@ class StandardsEngine:
                 **base,
             )
 
+        # ---- advisory criteria (e.g. TM59:2017 §4.5 corridors) --------------
+        # Evaluated for reporting but never contribute pass/fail to the dwelling.
+        advisory = bool(criterion.get("advisory", False))
+
         # ---- hour-count aggregations ---------------------------------------
         if aggregation in ("exceedance_hours_vs_limit", "percent_of_annual_hours",
-                           "total_hours"):
-            mask, basis_info = self._window_mask(criterion, room_type)
+                           "total_hours", "percent_of_occupied_hours",
+                           "percent_of_model_occupied_hours"):
             try:
+                mask, basis_info = self._window_mask(criterion, room_type)
                 count, extra = self._condition_count(
                     criterion, t, mask, category, daily_mean_outdoor, fan_uplift)
             except MissingEvaluationInput as e:
@@ -450,6 +560,31 @@ class StandardsEngine:
                     margin=round(count - limit, 4),
                     status="FAIL" if fail else "PASS",
                     basis={"exceedance_hours": count, "limit_hours": limit,
+                           "occupancy_basis": basis_info["occupancy_basis"],
+                           "months": basis_info["months"], **extra},
+                    notes=[], **base)
+
+            if aggregation in ("percent_of_occupied_hours",
+                               "percent_of_model_occupied_hours"):
+                denom = float(basis_info["occupancy_hours_basis"])
+                if aggregation == "percent_of_model_occupied_hours":
+                    if denom <= 0:  # model_supplied: count the supplied mask
+                        denom = float(mask.sum())
+                    if denom <= 0:
+                        return CriterionResult(
+                            metric_value=None, passed=None, margin=None,
+                            status=NotEvaluatedStatus.NOT_EVALUATED.value,
+                            notes=["Occupied-hours denominator is zero (empty "
+                                   "occupancy); explicit non-result."],
+                            **base)
+                metric = 100.0 * count / denom
+                threshold = float(criterion["threshold"])
+                fail = metric > threshold
+                return CriterionResult(
+                    metric_value=round(metric, 4), passed=(not fail),
+                    margin=round(metric - threshold, 4),
+                    status="FAIL" if fail else "PASS",
+                    basis={"exceedance_hours": count, "occupied_hours_basis": denom,
                            "occupancy_basis": basis_info["occupancy_basis"],
                            "months": basis_info["months"], **extra},
                     notes=[], **base)
@@ -538,7 +673,9 @@ class StandardsEngine:
         top: np.ndarray,
         hour: Sequence[int] | None = None,
         *,
+        occupancy: Sequence[bool] | np.ndarray | None = None,
         category: str = "II",
+        ventilation_route: str = "natural",
         daily_mean_outdoor: np.ndarray | None = None,
         fan_uplift: np.ndarray | None = None,
         mode: EvaluationMode | str = EvaluationMode.RESEARCH,
@@ -553,6 +690,8 @@ class StandardsEngine:
 
         t = np.asarray(top, dtype=np.float64)
         self._bind_calendar(hour, t.size)
+        self._occupancy = (
+            None if occupancy is None else np.asarray(occupancy, dtype=bool))
 
         room_type = classify_room(room_name, self.pack)
         st = self._space_types.get(room_type, {})
@@ -571,7 +710,26 @@ class StandardsEngine:
                     notes=["Criterion referenced by space type but absent from pack."],
                 ))
                 continue
-            results.append(self._evaluate_criterion(
+            # Route-specific criteria (TM59:2017 §4.1-4.3: natural -> a+b;
+            # mechanical -> mv). Criteria for the other route are NOT_APPLICABLE.
+            crit_route = criterion.get("ventilation_route")
+            if crit_route and crit_route != ventilation_route:
+                results.append(CriterionResult(
+                    criterion_id=cid,
+                    rule_ref=criterion.get("clause", f"{self.pack_id}:{cid}"),
+                    metric_value=None, threshold=float(criterion.get("threshold", 0)),
+                    operator=criterion.get("operator", ">"),
+                    units=criterion.get("units", "none"),
+                    passed=None, margin=None,
+                    status=NotEvaluatedStatus.NOT_APPLICABLE.value,
+                    verification_status=criterion.get("verification", {}).get(
+                        "status", self.source_status),
+                    notes=[f"Not applicable: this criterion belongs to the "
+                           f"{crit_route}-ventilation route; the assessment selected "
+                           f"{ventilation_route}."],
+                ))
+                continue
+            results.append(self._evaluate_criterion_checked(
                 criterion, t, room_type, category=category,
                 daily_mean_outdoor=daily_mean_outdoor, fan_uplift=fan_uplift))
 
@@ -587,26 +745,34 @@ class StandardsEngine:
         rooms: Iterable[tuple[str, str, np.ndarray]],
         hour: Sequence[int] | None = None,
         *,
+        occupancy: Sequence[bool] | np.ndarray | None = None,
         category: str = "II",
+        ventilation_route: str = "natural",
         daily_mean_outdoor: np.ndarray | None = None,
         fan_uplift: np.ndarray | None = None,
         mode: EvaluationMode | str = EvaluationMode.RESEARCH,
     ) -> dict[str, Any]:
         """Assess a dwelling: fails if any room fails any applicable criterion. Rooms with
-        NOT_EVALUATED criteria make the dwelling result INCOMPLETE, never PASS."""
+        NOT_EVALUATED criteria make the dwelling result INCOMPLETE, never PASS. Advisory
+        criteria are reported as flags and never block a pass."""
         if isinstance(mode, str):
             mode = EvaluationMode(mode)
         self._gate(mode)
 
         room_results = [
-            self.evaluate_room(rid, name, t, hour, category=category,
+            self.evaluate_room(rid, name, t, hour, occupancy=occupancy,
+                               category=category,
+                               ventilation_route=ventilation_route,
                                daily_mean_outdoor=daily_mean_outdoor,
                                fan_uplift=fan_uplift, mode=mode)
             for rid, name, t in rooms
         ]
-        all_criteria = [cr for r in room_results for cr in r.results]
-        any_fail = any(cr.passed is False for cr in all_criteria)
-        any_ne = any(cr.passed is None for cr in all_criteria)
+        # Advisory (FLAG/NO_FLAG) and NOT_APPLICABLE criteria never block a pass.
+        decisive = [cr for r in room_results for cr in r.results
+                    if cr.status not in ("FLAG", "NO_FLAG",
+                                         NotEvaluatedStatus.NOT_APPLICABLE.value)]
+        any_fail = any(cr.passed is False for cr in decisive)
+        any_ne = any(cr.passed is None for cr in decisive)
         overall = "FAIL" if any_fail else ("INCOMPLETE" if any_ne else "PASS")
         return {
             "pack_id": self.pack_id, "pack_version": self.pack_version,

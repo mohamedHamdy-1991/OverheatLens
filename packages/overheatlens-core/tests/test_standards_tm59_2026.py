@@ -87,15 +87,15 @@ def test_trm_recursion_matches_hand_computation():
     assert trm[31 + 7] == pytest.approx(expected)
 
 
-def test_trm_init_uses_weighted_seven_days():
+def test_trm_init_uses_published_eq23_weights():
+    """TM52 Eq 2.3 uses the published weights (1, .8, .6, .5, .4, .3, .2)/3.8,
+    verified against the TM52 PDF (S-04) — not normalised powers of 0.8."""
     dm = np.full(365, 10.0)
-    dm[118] = 90.0  # 29 April: huge outlier on the most recent day of the init window
+    dm[118] = 90.0  # 29 April: outlier on the most recent day of the init window
     trm = running_mean_trm(dm)
-    w = 0.8 ** np.arange(7)
-    base = 10.0
-    expected_30apr = (w[0] * 90.0 + w[1:].sum() * base) / w.sum()
+    expected_30apr = (1.0 * 90.0 + (0.8 + 0.6 + 0.5 + 0.4 + 0.3 + 0.2) * 10.0) / 3.8
     # Trm(1 May) = 0.8 * Trm(30 Apr) + 0.2 * Tdm(30 Apr)(=10)
-    assert trm[0] == pytest.approx(0.8 * expected_30apr + 0.2 * base)
+    assert trm[0] == pytest.approx(0.8 * expected_30apr + 0.2 * 10.0)
 
 
 # ---- adaptive threshold clamps and categories --------------------------------

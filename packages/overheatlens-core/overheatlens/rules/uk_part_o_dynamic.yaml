@@ -1,86 +1,44 @@
 rule_pack: uk_part_o_dynamic
-version: 0.1.0-dev
+version: 1.0.0
 title: "Approved Document O (England, 2021) — dynamic thermal modelling method"
 publisher: "MHCLG / HMSO"
 edition: "2021 (republished 2022-02-25 with corrections per Circular 01/2022)"
 inherits: uk_tm59_2017
-source_status: secondary_pending
+source_status: source_verified
 source_refs: [S-01, S-02]
 verification_note: >-
   Part-O-specific content (window-control limits, strategy exclusions, report content)
   is MACHINE-VERIFIED against the official ADO 2021 PDF (S-01, see
-  docs/standards/ADO_VERIFICATION.md). The overheating criteria themselves are inherited
-  from uk_tm59_2017, whose values remain SECONDARY-PENDING (S-02); the pack therefore
-  stays evaluation-gated until TM59:2017 is source-verified.
+  docs/standards/ADO_VERIFICATION.md). The overheating criteria are inherited from
+  uk_tm59_2017 v1.0.0, itself machine-verified against the official TM59:2017 PDF
+  (S-02) — consistent with ADO's own reference list citing TM59 [2017]. Compliance
+  mode is therefore permitted for this pack; note ADO's binding §2.6 overrides below.
 
 weather_note: >-
   ADO 2021 does NOT name a weather file, epoch or percentile anywhere in its text
   (machine-verified negative finding). The weather requirement is inherited from the
-  referenced TM59:2017 methodology. OverheatLens states this inheritance explicitly and
-  never cites ADO directly for weather-file requirements.
+  referenced TM59:2017 methodology (DSY1, 2020s, high emissions, 50th percentile).
+  OverheatLens states this inheritance explicitly and never cites ADO directly for
+  weather-file requirements.
 
 assessment:
-  period: full_year
+  period: may_to_september
   hour_basis: 8760
-  note: "Dynamic route per ADO §2.1-2.6: TM59 assessment with ADO-specific limits."
+  months: [5, 9]
+  note: "Dynamic route per ADO §2.1-2.6: TM59:2017 assessment with ADO-specific limits."
 
 space_types:
   living:
     aliases: [living room, lounge, kitchen, kitchen diner, open plan living kitchen]
-    criteria: [A]
+    criteria: [a, mv]
   bedroom:
     aliases: [bedroom, master bedroom, single bedroom, double bedroom, twin bedroom]
-    criteria: [B, C]
+    criteria: [a, b, mv]
   other:
     aliases: [circulation, hall, study, home office]
-    criteria: [D]
+    criteria: [corridor]
 
-criteria:
-  - id: A
-    applies_to: [living]
-    clause: "ADO §2.3(a) via TM59:2017 Criterion A"
-    metric: inherited
-    method_ref: uk_tm59_2017
-    window: all_hours
-    aggregation: percent_of_annual_hours
-    threshold: 3.0
-    units: percent
-    operator: ">"
-    verification: {source: S-02, status: secondary_pending}
-  - id: B
-    applies_to: [bedroom]
-    clause: "ADO §2.3(a) via TM59:2017 Criterion B"
-    metric: inherited
-    method_ref: uk_tm59_2017
-    window: sleep_hours
-    aggregation: percent_of_annual_hours
-    threshold: 1.0
-    units: percent
-    operator: ">"
-    verification: {source: S-02, status: secondary_pending}
-  - id: C
-    applies_to: [bedroom]
-    clause: "ADO §2.3(a) via TM59:2017 Criterion C"
-    metric: inherited
-    method_ref: uk_tm59_2017
-    window: sleep_hours
-    aggregation: total_hours
-    threshold: 32
-    units: hours
-    operator: ">"
-    verification: {source: S-02, status: secondary_pending}
-  - id: D
-    applies_to: [other]
-    clause: "ADO §2.3(a) via TM59:2017 Criterion D"
-    metric: delegated_method
-    method_ref: uk_tm52
-    not_implemented: true
-    window: all_hours
-    aggregation: none
-    threshold: 0
-    units: none
-    operator: ">="
-    verification: {source: S-02, status: secondary_pending}
+criteria: []   # criteria inherited in full from uk_tm59_2017 (see engine inheritance)
 
 model_limits:
   - id: PO-WIN-01
@@ -108,6 +66,12 @@ model_limits:
     clause: "ADO §2.6(d)"
     requirement: "An entrance door must be included in the model and modelled shut at all times."
     verification: {source: S-01, status: source_verified}
+  - id: PO-OVR-01
+    clause: "ADO §2.5-2.6 (relationship to TM59 §3.3)"
+    requirement: >-
+      ADO §2.6 limits OVERRIDE the more permissive TM59:2017 §3.3 window-opening
+      choices. Where the two differ, the ADO rule governs a Part O submission.
+    verification: {source: S-01, status: source_verified}
 
 strategy_exclusions:
   - id: PO-EXC-01
@@ -126,4 +90,5 @@ report_requirements:
   - "ADO Appendix B Part 2b.3: free areas, infiltration and mechanical flow rates, window g-value, shading strategy, mechanical cooling"
 
 changelog:
-  - "0.1.0-dev (2026-08-28): created from machine-verified ADO 2021 text (S-01); criteria inherited from gated uk_tm59_2017."
+  - "1.0.0 (2026-08-28): criteria inherited from source-verified uk_tm59_2017 v1.0.0 (adaptive a, 32-h b, mv fixed method, advisory corridor); source_status flipped to source_verified on the strength of machine-verified S-01 (ADO) + S-02 (TM59:2017). Added PO-OVR-01 override-relationship note."
+  - "0.1.0-dev (2026-08-28): created from machine-verified ADO 2021 text (S-01) with then-unverified inherited criteria."

@@ -3,6 +3,40 @@
 All notable changes to OverheatLens are documented here.
 Format based on Keep a Changelog; versioning is SemVer.
 
+## [0.3.0.dev0] — 2026-08-28 (session 3: TM59:2017 + TM52 verified; all packs source-verified)
+
+### Added
+- **TM59:2017 fully implemented from the official source** (author-supplied CIBSE PDF,
+  SHA-256 `9f223d2d…`): rule pack `uk_tm59_2017` v1.0.0 with the adaptive criterion (a)
+  (TM52 Tmax basis, May–September, 3 % of occupied hours with the document-verified
+  1989/3672 h bases), the 32-hour bedroom criterion (b), the §4.3 fixed-temperature
+  mechanical-ventilation route (model-supplied occupied hours), and the §4.5 advisory
+  28 °C corridor flag (`VAL-TM17-01..07`).
+- **TM52 fully implemented** (PDF SHA-256 `526e822d…`): `uk_tm52` v1.0.0 with Criterion 1
+  (He), Criterion 2 (daily weighted exceedance We, Eq 10) and Criterion 3 (raw ΔT > 4 K)
+  (`VAL-TM52-01..03`).
+- Weather compatibility guard for the TM59:2017 requirement (DSY1 2020s high-50) with
+  legacy CIBSE filename detection (`Leeds_DSY1_2020High50_` → compatible) — validated on
+  the real 57-file Leeds DSY family (local only; `VAL-REAL-04..05`).
+- `docs/standards/TM59_2017_TM52_VERIFICATION.md`: verbatim evidence and the full list of
+  transcription corrections.
+
+### Changed
+- **CORRECTIONS from source verification (RULE 7):** the earlier secondary-pending
+  TM59:2017 transcription was wrong on four load-bearing points — criterion (a) is
+  adaptive (not fixed 26 °C), criterion (b)'s limit is the document-fixed 32 h (not 1 %
+  of 8760), the duplicated "criterion C" was removed, and the §4.3 mechanical route +
+  §4.5 advisory corridor were missing. Old boundary tests were rewritten to the verified
+  values (never weakened).
+- TM52 Eq 2.3 initialiser: published weights (1, .8, .6, .5, .4, .3, .2)/3.8 replace the
+  normalised 0.8^k form; IEEE-754 epsilon guard at the exact 0.5 K ΔT rounding boundary.
+- `uk_part_o_dynamic` v1.0.0: source_verified (ADO machine-verified + TM59:2017 verified);
+  criteria inherited from the corrected parent; PO-OVR-01 documents that ADO §2.6
+  overrides TM59 §3.3.
+- All four bundled rule packs are now `source_verified` and compliance-allowed; the
+  engine gained ventilation-route selection, model-supplied occupancy, advisory-criterion
+  statuses (FLAG/NO_FLAG/NOT_APPLICABLE) and percent-of-occupied-hours aggregations.
+
 ## [0.2.0.dev0] — 2026-08-28 (session 2: TM59:2026 unblocked)
 
 ### Added

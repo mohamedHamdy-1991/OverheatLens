@@ -1,76 +1,104 @@
 rule_pack: uk_tm52
-version: 0.1.0-dev
-title: "CIBSE TM52: The limits of overheating risk (operational analysis, 2013)"
+version: 1.0.0
+title: "CIBSE TM52: The limits of thermal comfort — avoiding overheating in European buildings (2013)"
 publisher: CIBSE
 edition: "2013"
-source_status: secondary_pending
+source_status: source_verified
 source_refs: [S-04]
 verification_note: >-
-  Scaffold only. TM52's three criteria and adaptive comfort basis are widely published
-  in secondary literature, but this project has not yet transcribed them at full numeric
-  fidelity, and the original document is not yet acquired. Evaluation is NOT implemented;
-  criterion D of TM59:2017 reports NOT_EVALUATED rather than silently passing.
+  Machine-verified against the official CIBSE TM52 PDF (held locally,
+  SHA-256 526e822d…; evidence in docs/standards/TM59_2017_TM52_VERIFICATION.md).
+  Tmax = 0.33 Trm + 21.8 (Category II, Eq 8; Category I is 1 K less); DT = Top - Tmax
+  (Eq 9) rounded to the nearest whole degree; Criterion 1 He <= 3% of occupied hours
+  (May-September); Criterion 2 We = sum(he_y * y) <= 6 in any one day; Criterion 3
+  DT shall not exceed 4 K. A room is classed as overheating if ANY TWO of the three
+  criteria fail.
 
 weather_requirements:
-  family: "CIBSE DSY (as applicable per TM52 practice)"
+  family: "CIBSE DSY / TMY as applicable per TM52 practice (TM52 §3)"
   verified: false
+  note: >-
+    TM52 predates the TM59 weather-file prescriptions; file choice is per project.
+    Not verified further here because TM59-specific rules supersede it for dwellings.
 
 assessment:
-  period: full_year
+  period: may_to_september
   hour_basis: 8760
-  note: "Operational (adaptive) analysis; occupied-hours based."
+  months: [5, 9]
+  window: "1 May to 30 September, occupied hours"
+  note: >-
+    Free-running (naturally ventilated) buildings. Occupied hours come from the
+    modelled occupancy; TM52 assesses a typical non-heating season (May-September).
 
 space_types:
-  occupied_non_domestic:
-    aliases: [circulation, hall, study, home office, classroom, office]
-    criteria: [TM52-1, TM52-2, TM52-3]
+  occupied_free_running:
+    aliases: [office, classroom, living, bedroom, kitchen, hall, circulation, study]
+    criteria: [c1, c2, c3]
 
 criteria:
-  - id: TM52-1
-    applies_to: [occupied_non_domestic]
-    clause: "TM52 Criterion 1 (hours of exceedance) — pending transcription"
-    metric: not_transcribed
+  - id: c1
+    applies_to: [occupied_free_running]
+    clause: "TM52 §6.1.2(a) Criterion 1: Hours of exceedance (He)"
+    metric: exceedance_hours
+    condition: "adaptive: rounded delta T >= 1 K"
+    delta_t_rounding: "nearest_whole_degree_tm52"
+    adaptive_threshold:
+      category_I:  {linear_slope_k_per_c: 0.33, clamp_trm_min_c: 10, clamp_trm_max_c: 30, clamp_min_c: 24.1, clamp_max_c: 30.7}
+      category_II: {linear_slope_k_per_c: 0.33, clamp_trm_min_c: 10, clamp_trm_max_c: 30, clamp_min_c: 25.1, clamp_max_c: 31.7}
+    months: [5, 9]
+    occupancy_basis: model_supplied
     window: occupied_hours
-    aggregation: percent_of_annual_hours
-    threshold: 0
+    aggregation: percent_of_model_occupied_hours
+    threshold: 3.0
     units: percent
     operator: ">"
-    not_implemented: true
     interpretation_note: >-
-      Widely reported as: hours with operative temperature >= comfort + 1 K exceeding
-      3% of annual occupied hours. Threshold left at 0 (inert) until source-verified;
-      implementation deliberately absent.
-    verification: {source: S-04, status: secondary_pending}
+      He = hours with DT >= 1 K (raw DT >= 0.5 after TM52 rounding) during May-Sept
+      occupied hours; fail if > 3% of occupied hours. Tmax per Eq 8 (Cat II default).
+    verification: {source: S-04, status: source_verified}
 
-  - id: TM52-2
-    applies_to: [occupied_non_domestic]
-    clause: "TM52 Criterion 2 (weighted exceedance) — pending transcription"
-    metric: not_transcribed
+  - id: c2
+    applies_to: [occupied_free_running]
+    clause: "TM52 §6.1.2(b) Criterion 2: Daily weighted exceedance (We)"
+    metric: daily_weighted_exceedance
+    adaptive_threshold_ref: c1
+    months: [5, 9]
+    occupancy_basis: model_supplied
     window: occupied_hours
-    aggregation: weighted_exceedance
-    threshold: 0
-    units: none
+    aggregation: max_daily_we_vs_limit
+    threshold: 6
+    units: Kh
     operator: ">"
-    not_implemented: true
     interpretation_note: >-
-      Widely reported as We = sum(hf) + 2*sum(hw) <= 6. Left inert until
-      source-verified; implementation deliberately absent.
-    verification: {source: S-04, status: secondary_pending}
+      We = sum over the day of (hours at each wf level x wf), wf = 0 if DT <= 0 else
+      wf = DT (rounded). Fail if We > 6 on any one day (Eq 10).
+    verification: {source: S-04, status: source_verified}
 
-  - id: TM52-3
-    applies_to: [occupied_non_domestic]
-    clause: "TM52 Criterion 3 (absolute limit) — pending transcription"
-    metric: not_transcribed
-    window: occupied_hours
-    aggregation: max_delta
+  - id: c3
+    applies_to: [occupied_free_running]
+    clause: "TM52 §6.1.2(c) Criterion 3: Upper limit temperature (Tupp)"
+    metric: exceedance_hours
+    condition: "adaptive: raw delta T > 4 K"
+    delta_t_rounding: "none_for_criterion_3"
+    adaptive_threshold_ref: c1
+    months: [5, 9]
+    occupancy_basis: all_hours
+    window: all_hours
+    aggregation: exceedance_hours_vs_limit
     threshold: 0
-    units: kelvin
+    max_exceedance_hours: 0
+    units: hours
     operator: ">"
-    not_implemented: true
     interpretation_note: >-
-      Widely reported as: operative temperature must not exceed comfort temperature
-      + 4 K at any time. Left inert until source-verified.
-    verification: {source: S-04, status: secondary_pending}
+      'To set an absolute maximum value for the indoor operative temperature the value
+      of DT shall not exceed 4 K' — any hour with Top - Tmax > 4 K (raw, unrounded)
+      counts; a single such hour fails Criterion 3.
+    verification: {source: S-04, status: source_verified}
+
+report_requirements:
+  - "TM52 §6.1.2: a room is classed as overheating if ANY TWO of the three criteria fail"
+  - "TM52: report the comfort category used (CIBSE recommends Category II)"
 
 changelog:
-  - "0.1.0-dev (2026-08-28): honest scaffold; no implementation, no transcribed thresholds."
+  - "1.0.0 (2026-08-28): full transcription from the official TM52 PDF (S-04, SHA-256 526e822d…): Eq 2.2/2.3 Trm, Eq 8 Tmax, Eq 9-10 criteria. Criteria 1 and 3 implemented in the engine; Criterion 2 (We) implemented 2026-08-28."
+  - "0.1.0-dev (2026-08-28): honest scaffold; no implementation."

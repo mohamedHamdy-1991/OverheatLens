@@ -73,6 +73,29 @@ Status: `PASS` / `FAIL` / `PENDING` (fixture exists, run pending) / `BLOCKED` (s
 | VAL-REAL-02 | `~/Downloads/leeds_2050.epw` | `382fee23…` | PASS_WITH_WARNINGS (stuck-run 12 h warning — plausible for morphed future years); compat unknown | PASS_WITH_WARNINGS | 2026-08-28 | warnings are informative, not failures |
 | VAL-REAL-03 | `~/Downloads/my_site_2023.epw`, `savetest_2001.epw` | `5a63b5e7…` / — | parse OK after empty-cell tolerance; 99.9 temperature sentinel convention caught by range checks (FAIL, correctly) | FAIL (correct) | 2026-08-28 | template files with all-missing met fields; honest verdicts, no crashes |
 
+
+## B5. TM59:2017 + TM52 (source-verified packs, S-02/S-04) — added 2026-08-28
+
+| ID | Method | Rule | Fixture | Source | Expected | Actual | Tolerance | Status | Date | Notes |
+|---|---|---|---|---|---|---|---|---|---|---|
+| VAL-TM17-01 | Criterion a | adaptive: raw DT >= 0.5 K counts (Tmax 0.33Trm+21.8 Cat II) | constant series at boundary | S-02 §4.2(a) + S-04 Eq 8/9 | exact flip at 0.5 K | verified (with IEEE-754 epsilon guard) | exact | PASS | 2026-08-28 | boundary test exposed float-noise flip; guard added, documented |
+| VAL-TM17-02 | Criterion a | May-Sept window; living denominator 1989 h; 3% flip at 59/60 h | synthetic July occupied series | S-02 §4.2(a)+§6 | exact flips; April excluded | verified | exact integer | PASS | 2026-08-28 | |
+| VAL-TM17-03 | Criterion a | bedroom variant 3672 h basis (24/7 May-Sept) | synthetic series | S-02 §6 | basis reported 3672 | verified | exact | PASS | 2026-08-28 | |
+| VAL-TM17-04 | Criterion b | limit 32 h (fail at 33), window 22:00-07:00, full year, strict > 26 | synthetic sleep-window series | S-02 §4.2(b) note | exact flips; label-22 excluded, label-7 included; Dec counted | verified | exact | PASS | 2026-08-28 | supersedes the wrong 1%-of-8760 transcription (VAL-STD-02) |
+| VAL-TM17-05 | Criterion mv | mechanical route: >26 C > 3% of model occupied hours; NOT_EVALUATED without occupancy; NOT_APPLICABLE on natural route | synthetic + occupancy array | S-02 §4.3/§4.1 | route filtering + denominator behaviour | verified | behavioural | PASS | 2026-08-28 | |
+| VAL-TM17-06 | Corridor | 28 C > 3% of 8760 -> ADVISORY FLAG only; never fails dwelling | 300 h at 29 C | S-02 §4.5 | FLAG + dwelling PASS | verified | behavioural | PASS | 2026-08-28 | |
+| VAL-TM17-07 | Trm | TM52 Eq 2.3 published weights (1/.8/.6/.5/.4/.3/.2)/3.8 + Eq 2.2 chain | step-response series | S-04 Box 2 (verbatim) | hand-computed chain | verified | tight float | PASS | 2026-08-28 | corrected from normalised 0.8^k after PDF verification |
+| VAL-TM52-01 | Criterion 1 | He > 3% of May-Sept model occupied hours | office occupancy array | S-04 §6.1.2(a) | exact flips; denominator 9h x 153d | verified | exact | PASS | 2026-08-28 | |
+| VAL-TM52-02 | Criterion 2 | We = sum(h x wf) per day, limit 6 | constructed worst day (3h@1,2h@2,1h@3 -> We 10) | S-04 Eq 10 | We 10 FAIL; We 6 PASS | verified | exact | PASS | 2026-08-28 | document worked example cross-checked |
+| VAL-TM52-03 | Criterion 3 | raw DT > 4 K any hour -> fail; exactly 4.0 does not | boundary series | S-04 §6.1.2(c) | exact | verified | exact | PASS | 2026-08-28 | |
+
+## B6. Real-file local validation — Leeds DSY family (copyrighted, never committed)
+
+| ID | File (local) | SHA-256 | Result | Status | Date | Notes |
+|---|---|---|---|---|---|---|
+| VAL-REAL-04 | `…/LEEDS Weather Files/Weather File MET Office/Leeds_DSY1_2020High50_.epw` (TM59:2017 minimum) | — | parses PASS; compat 2017 = compatible; compat 2026 = research_only (legacy naming) | PASS | 2026-08-28 | annual mean 11.487 C; hottest 31.3 C; 102 h > 26 C |
+| VAL-REAL-05 | 57-file Leeds DSY family sweep (compatibility guard, 2017 rule) | — | exactly 1 compatible (the DSY1_2020High50 minimum), 56 research_only with reasons | PASS | 2026-08-28 | guard distinguishes epochs/scenarios/percentiles and flags legacy naming |
+
 ## C. Provenance / reproducibility
 
 | ID | Method | Property | Fixture | Expected | Actual | Status | Date | Notes |

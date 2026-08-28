@@ -119,3 +119,22 @@ fixtures are committed freely.
 **Decision.** Rule 3 from day one: no formula may be implemented in a React component. Web-side
 fast previews (e.g. EPW parsing in a Web Worker, plan §10) must be labelled "preview" and tested
 for parity against core outputs before any release.
+
+
+## ADR-0011 — Source verification corrected the TM59:2017 transcription; all packs now source-verified (2026-08-28)
+
+**Context.** The author supplied the official CIBSE TM59:2017 and TM52 PDFs. Machine
+verification against the documents showed the earlier secondary-pending transcription was
+wrong on four load-bearing points: criterion (a) is adaptive (TM52 Tmax), not fixed 26 °C;
+criterion (b)'s limit is the document-fixed 32 hours, not 1 % of 8760 h; there is no
+separate criterion C; the mechanical-ventilation route (§4.3) and advisory corridor rule
+(§4.5) were missing. TM52's Eq 2.3 uses published weights (1/.8/.6/.5/.4/.3/.2)/3.8.
+
+**Decision.** Rule packs rewritten from the verified text (both v1.0.0, source_verified);
+all `uk_*` packs now compliance-allowed; old boundary tests replaced, never weakened;
+every correction documented in docs/standards/TM59_2017_TM52_VERIFICATION.md and
+SOURCE_REGISTER S-02/S-04. Ventilation-route selection (natural/mechanical) added to the
+engine because TM59:2017 criteria are route-specific.
+
+**Consequences.** Anyone who evaluated results with the 0.1.0-dev 2017 pack must discard
+them (research-mode only, never compliance). The standards diff viewer is unblocked.

@@ -1,33 +1,42 @@
 rule_pack: uk_tm59_2017
-version: 0.1.0-dev
+version: 1.0.0
 title: "CIBSE TM59: Design methodology for the assessment of overheating risk in homes (2017)"
 publisher: CIBSE
 edition: "2017"
-source_status: secondary_pending
-source_refs: [S-02, S-06]
+source_status: source_verified
+source_refs: [S-02, S-04, S-06]
 verification_note: >-
-  Criterion values transcribed from widely published secondary literature (multiple
-  journal papers reproduce them consistently). The original CIBSE document has NOT yet
-  been acquired or checked; the pack is therefore evaluation-gated: compliance mode
-  refuses it, and any research-mode result carries a 'source not verified' label.
-  Window/occupancy interpretation points are flagged per criterion.
+  Machine-verified against the official CIBSE TM59:2017 PDF (held locally,
+  SHA-256 9f223d2d…; evidence in docs/standards/TM59_2017_TM52_VERIFICATION.md).
+  IMPORTANT CORRECTIONS vs the previous secondary transcription: criterion (a) is
+  ADAPTIVE (TM52 Tmax-based, May-September, 3% of occupied hours — NOT a fixed 26 degC
+  threshold over 8760 h); criterion (b)'s exceedance limit is the document's explicit
+  32 HOURS (1% of the 3285 annual sleep-window hours, "33 or more hours above 26 degC
+  will be recorded as a fail") — NOT 1% of 8760; there is NO separate 32-hour
+  criterion (c) (the earlier transcription duplicated criterion b); TM59:2017 §4.3
+  adds a distinct FIXED-TEMPERATURE criterion for predominantly mechanically
+  ventilated homes; corridors are an ADVISORY 28 degC flag (§4.5), not pass/fail.
 
 weather_requirements:
-  family: CIBSE DSY
-  recommended_minimum: "DSY1 2020s 50th percentile (per TM59:2017 §3.2 as widely reported)"
-  verified: false
+  family: "CIBSE DSY (2016 release, UKCP09-based)"
+  recommended_minimum: "DSY1 for the 2020s, high emissions, 50th percentile (file label pattern: <Site>_DSY1_2020High50)"
+  verified: true
   note: >-
-    Weather requirement itself is SECONDARY-PENDING: verify against TM59:2017 §3.2 before
-    any compliance use. Note that Approved Document O does NOT name a weather file; the
-    requirement is inherited from this methodology (see uk_part_o_dynamic, ADO-verified).
+    Verified from TM59:2017 §3.2 and §2.3(11): "the weather file used for the
+    methodology should be the DSY1 file most appropriate to the site location, for
+    the 2020s, high emissions, 50% percentile scenario". More extreme DSY2/DSY3 and
+    future-epoch files are for further testing of designs of particular concern.
 
 assessment:
-  period: full_year
+  period: may_to_september   # for criterion (a); criterion (b) spans the full year
   hour_basis: 8760
+  months: [5, 9]
+  window: "Criterion (a): 1 May to 30 September inclusive, occupied hours. Criterion (b): full year, sleep window only."
+  dwelling_category_default: II
   note: >-
-    TM59:2017 assesses a full simulation year with CIBSE DSY weather. Leap years (8784 h)
-    are normalised to the 8760 basis by proportional scaling of the percent thresholds;
-    hour counts keep the raw totals.
+    §4.4: care homes / vulnerable occupants use the same criteria with TM52 Type I
+    (Category I) comfort thresholds. Category III (existing buildings) is NOT
+    permitted (reporting requirements, §2.3).
 
 space_types:
   living:
@@ -39,89 +48,147 @@ space_types:
       - open plan living kitchen
       - living kitchen
       - living dining
-    criteria: [A]
-  bedroom:
-    aliases:
-      - bedroom
-      - master bedroom
-      - single bedroom
-      - double bedroom
-      - twin bedroom
-    criteria: [B, C]
-  other:
-    aliases: [circulation, hall, study, home office]
-    criteria: [D]
+    criteria: [a, mv]
     note: >-
-      Criterion D delegates to CIBSE TM52. TM52 evaluation is not implemented in this
-      release; criterion D is reported as NOT_EVALUATED, never as PASS.
+      Occupied hours for criterion (a): 1989 h per year (13 h/day for the 153 days
+      May-September), verified from TM59:2017 §6. Bathrooms and halls do not have to
+      pass the criteria but should be included in the assessment (§5.1 note 3).
+  bedroom:
+    aliases: [bedroom, master bedroom, single bedroom, double bedroom, twin bedroom]
+    criteria: [a, b, mv]
+    note: >-
+      Bedrooms use a 24-hour occupancy profile (TM59:2017 §6): 3672 occupied hours
+      for the May-September basis. Criterion (b) applies to the sleep window only.
+  communal:
+    aliases: [corridor, hall, stair, stairwell, circulation]
+    criteria: [corridor]
+    note: >-
+      §4.5: advisory flag only — no mandatory pass/fail target. Communal heating
+      pipework corridors should be included in the model.
 
 criteria:
-  - id: A
-    applies_to: [living]
-    clause: "TM59:2017 §6.1 Criterion A (clause number pending verification)"
+  - id: a
+    applies_to: [living, bedroom]
+    clause: "TM59:2017 §4.2(a) (naturally ventilated homes; TM52 Criterion 1 basis)"
+    ventilation_route: natural
     metric: exceedance_hours
-    condition: "top_c - 26.0 >= 1.0"
+    condition: "adaptive: rounded delta T >= 1 K"
+    delta_t_rounding: "nearest_whole_degree_tm52"   # raw delta T >= 0.5 K counts
+    adaptive_threshold:
+      category_I:  {linear_slope_k_per_c: 0.33, clamp_trm_min_c: 10, clamp_trm_max_c: 30, clamp_min_c: 24.1, clamp_max_c: 30.7}
+      category_II: {linear_slope_k_per_c: 0.33, clamp_trm_min_c: 10, clamp_trm_max_c: 30, clamp_min_c: 25.1, clamp_max_c: 31.7}
+    interpretation_note: >-
+      Delta T = Top - Tmax with Tmax per TM52 Eq 8 (Category II default;
+      Category I for vulnerable occupants per TM59:2017 §4.4): Tmax = 0.33 Trm + 21.8
+      (Cat II) / + 20.8 (Cat I), clamped outside Trm 10-30. Trm per TM52 Eq 2.2/2.3.
+    months: [5, 9]
+    occupancy_basis: living_hours        # 13 h/day May-Sept = 1989 h; bedroom variant 24 h/day = 3672 h
+    occupancy_hours_basis: 1989
+    variants:
+      bedroom:
+        occupancy_basis: all_hours
+        occupancy_hours_basis: 3672
+        note: "TM59:2017 §6: bedrooms 24/7 occupancy for May-September (3672 h)."
+    window: occupied_hours
+    aggregation: percent_of_occupied_hours
+    threshold: 3.0
+    units: percent
+    operator: ">"
+    verification: {source: S-02, status: source_verified}
+
+  - id: b
+    applies_to: [bedroom]
+    clause: "TM59:2017 §4.2(b)"
+    ventilation_route: natural
+    metric: exceedance_hours
+    condition: "top_c > 26.0"
+    window: sleep_hours                  # 22:00-07:00, hour-ending labels 23,24,1..7
+    months: [1, 12]                      # full year: '1% of annual hours'
+    aggregation: exceedance_hours_vs_limit
+    threshold: 32                        # fail if MORE than 32 h (document: '33 or more ... a fail')
+    max_exceedance_hours: 32
+    units: hours
+    operator: ">"
+    interpretation_note: >-
+      Verified limit basis (TM59:2017 §4.2(b) note): 1% of the annual hours between
+      22:00 and 07:00 for bedrooms is 32 hours (9 h/day x 365 = 3285 h; 1% = 32.85,
+      fixed by the document at 32), so 33 or more hours above 26 degC fail.
+      Sleep window implemented with hour-ending labels 23,24,1..7 (label H covers
+      (H-1:00, H], so label 23 is 22:00-23:00 and label 7 is 06:00-07:00).
+    verification: {source: S-02, status: source_verified}
+
+  - id: mv
+    applies_to: [living, bedroom]
+    clause: "TM59:2017 §4.3 (predominantly mechanically ventilated homes; CIBSE Guide A fixed-temperature method)"
+    ventilation_route: mechanical
+    metric: exceedance_hours
+    condition: "top_c > 26.0"
+    months: [1, 12]                      # 'annual occupied hours'
+    occupancy_basis: model_supplied      # occupied hours come from the modelled occupancy profiles
+    window: occupied_hours
+    aggregation: percent_of_model_occupied_hours
+    threshold: 3.0
+    units: percent
+    operator: ">"
+    stage_applicability: []
+    interpretation_note: >-
+      Applies ONLY to homes that are predominantly mechanically ventilated because
+      window openings are restricted (noise/air quality) — TM59:2017 §4.1/4.3.
+      Denominator is the annual occupied hours from the modelled occupancy schedule
+      (Table 2 profiles); absent occupancy data the criterion is NOT_EVALUATED.
+      Naturally ventilated homes use criterion (a) instead.
+    verification: {source: S-02, status: source_verified}
+
+  - id: corridor
+    applies_to: [communal]
+    clause: "TM59:2017 §4.5 (corridors)"
+    metric: exceedance_hours
+    condition: "top_c > 28.0"
+    months: [1, 12]
+    occupancy_basis: all_hours
     window: all_hours
     aggregation: percent_of_annual_hours
     threshold: 3.0
     units: percent
     operator: ">"
-    rounding: "count integer hours; percent = 100 * count / hour_basis"
+    advisory: true
     interpretation_note: >-
-      'Annual hours' basis (8760) as reported by secondary sources; whether the
-      denominator is occupied-hours-weighted is an interpretation point to verify
-      against the original document before compliance use.
-    verification: {source: S-02, status: secondary_pending}
+      ADVISORY: 'Whilst there is no mandatory target, if an operative temperature of
+      28 degC is exceeded for more than 3% of the total annual hours, this should be
+      flagged as a significant risk within the report' (TM59:2017 §4.5). Never
+      contributes a fail to the dwelling result; reported as a risk flag.
+    verification: {source: S-02, status: source_verified}
 
-  - id: B
-    applies_to: [bedroom]
-    clause: "TM59:2017 §6.1 Criterion B (clause number pending verification)"
-    metric: exceedance_hours
-    condition: "top_c - 26.0 >= 1.0"
-    window: sleep_hours        # 22:00-07:00, hour-ending convention
-    aggregation: percent_of_annual_hours
-    threshold: 1.0
-    units: percent
-    operator: ">"
-    rounding: "count integer hours; percent = 100 * count / hour_basis"
-    interpretation_note: >-
-      Sleep window 22:00-07:00 local implemented with hour-ending labels 23,24,1..7
-      (label H covers (H-1:00, H], so label 23 is 22:00-23:00 and label 7 is
-      06:00-07:00). Verify the window definition against the source document.
-    verification: {source: S-02, status: secondary_pending}
+model_limits:
+  - id: TM17-WIN-01
+    clause: "TM59:2017 §3.3"
+    requirement: >-
+      Windows in each room controlled separately; modelled as open when BOTH the
+      internal dry bulb temperature exceeds 22 degC AND the room is occupied.
+      Night opening may be extended only with security and rain protection details;
+      patio doors only if lockable securely open, using the locked percentage of
+      free area.
+    parameters: {open_above_c: 22.0, requires_occupied: true}
+    verification: {source: S-02, status: source_verified}
+  - id: TM17-ACC-01
+    clause: "TM59:2017 §4.1"
+    requirement: >-
+      Adaptive criteria assume each habitable room has operable windows with minimum
+      free area satisfying Part F purge ventilation (opening >= 1/20th of room floor
+      area); otherwise the fixed-temperature method (criterion mv) applies.
+    verification: {source: S-02, status: source_verified}
+  - id: TM17-CAT-01
+    clause: "TM59:2017 §2.3 / §4.4"
+    requirement: >-
+      Thermal comfort category: Cat II by default; Cat I for vulnerable residents;
+      Cat III (existing buildings) NOT permitted for this methodology.
+    verification: {source: S-02, status: source_verified}
 
-  - id: C
-    applies_to: [bedroom]
-    clause: "TM59:2017 §6.1 Criterion C (clause number pending verification)"
-    metric: exceedance_hours
-    condition: "top_c > 26.0"
-    window: sleep_hours
-    aggregation: total_hours
-    threshold: 32
-    units: hours
-    operator: ">"
-    rounding: "count integer hours"
-    interpretation_note: >-
-      Secondary sources differ on whether Criterion C counts all hours or sleep-window
-      hours only; implemented over the sleep window (matching its sleep-quality purpose)
-      pending verification against the original text.
-    verification: {source: S-02, status: secondary_pending}
-
-  - id: D
-    applies_to: [other]
-    clause: "TM59:2017 §6.1 Criterion D (clause number pending verification)"
-    metric: delegated_method
-    method_ref: uk_tm52
-    not_implemented: true
-    window: all_hours
-    aggregation: none
-    threshold: 0
-    units: none
-    operator: ">="
-    interpretation_note: >-
-      Reported as NOT_EVALUATED until uk_tm52 is implemented and verified.
-      Never silently passes.
-    verification: {source: S-02, status: secondary_pending}
+report_requirements:
+  - "TM59:2017 §2.3: report criteria (a) and (b) results per room; a unit complies only if all relevant rooms pass"
+  - "TM59:2017 §2.3: report weather file(s), comfort category assumed (Cat II default / Cat I vulnerable), window opening assumptions, free areas, infiltration, mechanical flow rates, thermal mass"
+  - "TM59:2017 §4.5: corridor 28 degC exceedance flagged as significant risk if > 3% of total annual hours"
 
 changelog:
-  - "0.1.0-dev (2026-08-28): initial transcription from secondary literature; evaluation-gated."
+  - "1.0.0 (2026-08-28): full transcription from the official CIBSE TM59:2017 PDF (S-02, SHA-256 9f223d2d…); source_status flipped secondary_pending -> source_verified. Corrections: adaptive criterion (a), 32-hour criterion (b) limit, removal of the duplicated 'criterion C', addition of §4.3 fixed-temperature criterion (mv) and §4.5 advisory corridor flag."
+  - "0.1.0-dev (2026-08-28): initial transcription from secondary literature (superseded — see verification note)."
