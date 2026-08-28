@@ -21,10 +21,22 @@ class RulePackError(ValueError):
     """Raised when a rule pack is malformed or fails schema validation."""
 
 
-def _validate(obj: Any, schema: dict, path: str = "") -> None:
+def _validate(obj: Any, schema: dict, path: str = "", root: dict | None = None) -> None:
     """Validate a JSON-Schema subset: type, required, properties, additionalProperties,
-    items, enum, pattern, min/max constraints. Deliberately minimal and explicit."""
+    items, enum, pattern, $ref (local #/$defs only), min/max constraints.
+    Deliberately minimal and explicit."""
     where = path or "<root>"
+    root = root if root is not None else schema
+
+    if "$ref" in schema:
+        ref = schema["$ref"]
+        if not ref.startswith("#/"):
+            raise RulePackError(f"{where}: only local $ref supported, got {ref!r}")
+        target: Any = root
+        for part in ref[2:].split("/"):
+            target = target[part]
+        _validate(obj, target, where, root)
+        return
 
     if "enum" in schema and obj not in schema["enum"]:
         raise RulePackError(f"{where}: value {obj!r} not in {schema['enum']}")
@@ -40,11 +52,11 @@ def _validate(obj: Any, schema: dict, path: str = "") -> None:
         ap = schema.get("additionalProperties", True)
         for key, val in obj.items():
             if key in props:
-                _validate(val, props[key], f"{where}.{key}")
+                _validate(val, props[key], f"{where}.{key}", root)
             elif ap is False:
                 raise RulePackError(f"{where}: unexpected property {key!r}")
             elif isinstance(ap, dict):
-                _validate(val, ap, f"{where}.{key}")
+                _validate(val, ap, f"{where}.{key}", root)
         if "minProperties" in schema and len(obj) < schema["minProperties"]:
             raise RulePackError(f"{where}: needs >= {schema['minProperties']} properties")
     elif t == "array":
@@ -54,7 +66,7 @@ def _validate(obj: Any, schema: dict, path: str = "") -> None:
             raise RulePackError(f"{where}: needs >= {schema['minItems']} items")
         for i, item in enumerate(obj):
             if "items" in schema:
-                _validate(item, schema["items"], f"{where}[{i}]")
+                _validate(item, schema["items"], f"{where}[{i}]", root)
     elif t == "string":
         if not isinstance(obj, str):
             raise RulePackError(f"{where}: expected string, got {type(obj).__name__}")

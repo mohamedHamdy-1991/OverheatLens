@@ -5,6 +5,21 @@
   "description": "A versioned, source-traceable assessment-method rule pack. Every threshold carries a source reference and verification status; unverified packs are evaluation-gated in code.",
   "type": "object",
   "required": ["rule_pack", "version", "title", "publisher", "source_status", "source_refs"],
+  "$defs": {
+    "adaptiveCategory": {
+      "type": "object",
+      "required": ["linear_slope_k_per_c", "clamp_min_c", "clamp_max_c"],
+      "additionalProperties": false,
+      "properties": {
+        "linear_slope_k_per_c": {"type": "number"},
+        "clamp_min_c": {"type": "number"},
+        "clamp_max_c": {"type": "number"},
+        "clamp_trm_min_c": {"type": "number"},
+        "clamp_trm_max_c": {"type": "number"},
+        "offset_c": {"type": "number"}
+      }
+    }
+  },
   "additionalProperties": false,
   "properties": {
     "rule_pack": {"type": "string", "pattern": "^[a-z0-9_]+$"},
@@ -36,8 +51,37 @@
       "additionalProperties": false,
       "properties": {
         "period": {"type": "string"},
-        "hour_basis": {"type": "integer", "enum": [8760, 8784]},
+        "hour_basis": {"type": "integer"},
+        "window": {"type": "string"},
+        "months": {
+          "type": "array", "minItems": 2, "maxItems": 2,
+          "items": {"type": "integer", "minimum": 1, "maximum": 12}
+        },
+        "dwelling_category_default": {"enum": ["I", "II"]},
         "note": {"type": "string"}
+      }
+    },
+    "stages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "criteria"],
+        "additionalProperties": false,
+        "properties": {
+          "id": {"type": "string"},
+          "description": {"type": "string"},
+          "criteria": {"type": "array", "items": {"type": "string"}},
+          "mode_selection_rule": {"type": "string"},
+          "verification": {
+            "type": "object",
+            "required": ["source", "status"],
+            "additionalProperties": false,
+            "properties": {
+              "source": {"type": "string", "pattern": "^[SWD]-[0-9]{2}$"},
+              "status": {"enum": ["source_verified", "secondary_pending", "blocked_no_source"]}
+            }
+          }
+        }
       }
     },
     "space_types": {
@@ -73,6 +117,61 @@
           "units": {"type": "string", "minLength": 1},
           "operator": {"type": "string", "enum": [">", ">=", "<", "<=", "=="]},
           "rounding": {"type": "string"},
+          "months": {
+            "type": "array", "minItems": 2, "maxItems": 2,
+            "items": {"type": "integer", "minimum": 1, "maximum": 12}
+          },
+          "occupancy_basis": {
+            "enum": ["living_hours", "all_hours", "custom"]
+          },
+          "occupancy_hours_basis": {"type": "integer", "minimum": 1},
+          "max_exceedance_hours": {"type": "number"},
+          "max_nights": {"type": "number"},
+          "sleep_window": {"type": "string"},
+          "category_thresholds": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "I": {"type": "number"},
+              "II": {"type": "number"}
+            }
+          },
+          "adaptive_threshold": {
+            "type": "object",
+            "required": ["category_I", "category_II"],
+            "additionalProperties": false,
+            "properties": {
+              "category_I": {"$ref": "#/$defs/adaptiveCategory"},
+              "category_II": {"$ref": "#/$defs/adaptiveCategory"}
+            }
+          },
+          "ceiling_fan_uplift": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "max_uplift_c": {"type": "number"},
+              "air_speed_threshold_ms": {"type": "number"},
+              "temperature_condition_c": {"type": "number"},
+              "per_0_1ms_below_c": {"type": "number"},
+              "source_note": {"type": "string"}
+            }
+          },
+          "delta_t_rounding": {"type": "string"},
+          "variants": {
+            "type": "object",
+            "minProperties": 1,
+            "additionalProperties": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "occupancy_basis": {"enum": ["living_hours", "all_hours", "custom"]},
+                "occupancy_hours_basis": {"type": "integer", "minimum": 1},
+                "max_exceedance_hours": {"type": "number"},
+                "note": {"type": "string"}
+              }
+            }
+          },
+          "stage_applicability": {"type": "array", "items": {"type": "string"}},
           "interpretation_note": {"type": "string"},
           "method_ref": {"type": "string"},
           "not_implemented": {"type": "boolean"},

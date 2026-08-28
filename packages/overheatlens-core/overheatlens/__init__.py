@@ -4,6 +4,6 @@ Rule 3 of the governing plan: all authoritative calculations live here, never in
 frontend. Every metric carries provenance; every standards threshold is versioned data.
 """
 
-__version__ = "0.1.0.dev0"
+__version__ = "0.2.0.dev0"
 
 CORE_VERSION = __version__

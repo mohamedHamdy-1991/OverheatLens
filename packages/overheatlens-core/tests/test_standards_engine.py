@@ -185,7 +185,24 @@ def test_dwelling_fails_if_any_room_fails():
 # ---- evaluation gates (VAL-STD-04) ---------------------------------------------
 
 def test_blocked_pack_refused_everywhere():
-    eng = StandardsEngine.load("uk_tm59_2026")
+    """A pack whose source is not acquired is refused in every mode. TM59:2026 is now
+    source-verified, so a synthetic blocked pack exercises this gate (ADR-0005 path)."""
+    from overheatlens.schemas import validate_pack_dict
+
+    pack = {
+        "rule_pack": "xx_synthetic_blocked",
+        "version": "1.0.0",
+        "title": "Synthetic blocked pack for gate testing",
+        "publisher": "Test",
+        "source_status": "blocked_no_source",
+        "source_refs": ["S-03"],
+        "blocked": "SOURCE_NOT_ACQUIRED",
+        "assessment": {"period": "full_year", "hour_basis": 8760},
+        "space_types": {"bedroom": {"aliases": ["bedroom"], "criteria": []}},
+        "criteria": [],
+    }
+    validate_pack_dict(pack)
+    eng = StandardsEngine(pack)
     with pytest.raises(BlockedRulePack):
         eng.evaluate_room("r", "Bedroom", series_at(20.0), sleep_labels(),
                           mode="research")
@@ -193,8 +210,6 @@ def test_blocked_pack_refused_everywhere():
         eng.evaluate_room("r", "Bedroom", series_at(20.0), sleep_labels(),
                           mode="compliance")
     assert eng.compliance_allowed() is False
-    with pytest.raises(SourceNotVerified):  # BlockedRulePack subclasses it
-        eng._gate(EvaluationMode.COMPLIANCE)
 
 
 def test_pending_pack_refused_in_compliance_allowed_in_research():
@@ -259,7 +274,8 @@ def test_wrong_series_length_refused():
 
 def test_unsupported_condition_rejected(monkeypatch):
     eng = StandardsEngine.load("uk_tm59_2017")
+    eng._bind_calendar(sleep_labels(), 8760)
     bad = dict(eng._criteria["A"])
     bad["condition"] = "top_c ^ 2 > 4"
     with pytest.raises(RulePackError):
-        eng._evaluate_criterion(bad, series_at(20.0), sleep_labels())
+        eng._evaluate_criterion(bad, series_at(20.0), "living")

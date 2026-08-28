@@ -1,37 +1,208 @@
 rule_pack: uk_tm59_2026
-version: 0.1.0-dev
-title: "CIBSE TM59 (2026 edition) — BLOCKED PENDING SOURCE ACQUISITION"
+version: 1.0.0
+title: "CIBSE TM59: Overheating risk in dwellings: a design stage methodology (2026)"
 publisher: CIBSE
 edition: "2026"
-source_status: blocked_no_source
-source_refs: [S-03]
-blocked: SOURCE_NOT_ACQUIRED
+source_status: source_verified
+source_refs: [S-03, S-08]
 verification_note: >-
-  The 2026 edition (published July 2026 per the project plan) has NOT been acquired.
-  No criterion value from this edition exists anywhere in this repository — none has
-  been guessed, inferred from the 2017 edition, or copied from secondary reports.
-  The standards engine refuses to evaluate this pack (ADR-0005). Acquire the document,
-  transcribe criteria with clause references, flip source_status, and add boundary
-  tests before any evaluation becomes possible.
+  Machine-verified against the official CIBSE TM59:2026 methodology PDF (© July 2026,
+  held locally, SHA-256 7f97c2cc…) and the official companion weather-file requirements
+  PDF (SHA-256 c31d471d…). All criterion values below were transcribed directly from the
+  source text in this project; see docs/standards/TM59_2026_VERIFICATION.md for the
+  verbatim evidence. The Trm running-mean EQUATION constants (TM52 Eq 2.2/2.3) are
+  cross-referenced from TM52 (S-04), whose PDF is not yet held; those two constants carry
+  secondary_pending verification inside criterion a.
 
 weather_requirements:
-  family: "CIBSE weather files (2025 set / DSY v1.1 per project plan §1.1 — unverified)"
-  verified: false
+  family: "CIBSE 2025 Weather Data (28-zone UK climate system, TRY/DSY, UKCP18, CAMS solar)"
+  recommended_minimum: "DSY1 2050s RCP8.5 50th percentile, file label: {Zone Reference}_DSY1_2050s_HIGH50_CIBSE_v1.1"
+  verified: true
   note: >-
-    Plan records that TM59:2026 requires the newer 2025 weather-file set and v1.1
-    replacements. This must be verified from the acquired source before implementation.
+    Official requirement (S-08 §3): assessment should use the latest version of the DSY1
+    file for the 2050s, RCP8.5, 50th percentile — the minimum requirement. Alternatives
+    (DSY2/DSY3, 10th/90th percentiles, other epochs/scenarios) are for more thorough
+    assessments. DSY1 = moderate year, ~7-year return period heat events; DSY2 = most
+    intense events; DSY3 = longest events.
 
 assessment:
-  period: pending_source
+  period: may_to_september
   hour_basis: 8760
+  months: [5, 9]
+  window: "1 May to 30 September inclusive, occupied hours"
+  dwelling_category_default: II
+  note: >-
+    Category II applies to all other dwellings; Category I for thermally sensitive and
+    fragile people (care homes, sheltered accommodation, health-care institutions).
+
+stages:
+  - id: stage_1
+    description: >-
+      No local constraints on ventilation openings; passive heat mitigation only
+      (ceiling fans permitted). Results reported with AND without internal blinds
+      and ceiling fans.
+    criteria: [a, b]
+    verification: {source: S-03, status: source_verified}
+  - id: stage_2
+    description: >-
+      Site-specific noise/security/air-quality opening constraints applied; Stage-1
+      passive measures retained; enhanced mechanical ventilation allowed (no cooling).
+    criteria: [a, b, c]
+    mode_selection_rule: >-
+      Use criteria a+b if ventilation devices can open (fully or partly) for >= 50% of
+      occupied hours May-Sept; otherwise use criteria b+c.
+    verification: {source: S-03, status: source_verified}
+  - id: stage_3
+    description: >-
+      Mechanical ventilation with active cooling introduced where necessary;
+      natural/mechanical ventilation still used whenever conditions permit.
+    criteria: [b, c]
+    verification: {source: S-03, status: source_verified}
 
 space_types:
-  unverified:
-    aliases: []
-    criteria: []
-    note: "Space-type logic of the 2026 edition is unknown to this project until the source is acquired."
+  living:
+    aliases:
+      - living room
+      - lounge
+      - kitchen
+      - kitchen diner
+      - open plan living kitchen
+      - living kitchen
+      - living dining
+      - home office
+      - study
+    criteria: [a, c]
+    note: >-
+      Occupied 9 am to 10 pm (13 h/day; 1989 occupied hours May-Sept).
+      Criterion a for predominantly naturally ventilated; criterion c for predominantly
+      mechanically ventilated/cooled spaces.
+  bedroom:
+    aliases: [bedroom, master bedroom, single bedroom, double bedroom, twin bedroom]
+    criteria: [a, b, c]
+    note: >-
+      May be occupied at any time (3672 hours May-Sept). Must pass criterion b plus
+      either a (naturally ventilated) or c (mechanically ventilated).
+  communal_circulation:
+    aliases:
+      - stair
+      - staircase
+      - stairwell
+      - corridor
+      - lift lobby
+      - entrance lobby
+      - communal circulation
+    criteria: [d]
+    note: >-
+      Communal circulation areas in multi-dwelling buildings; may be occupied at any
+      time (3672 hours); must pass at ALL stages.
 
-criteria: []
+criteria:
+  - id: a
+    applies_to: [living, bedroom]
+    clause: "TM59:2026 §2.4.1 Criterion a (predominantly naturally ventilated spaces)"
+    metric: exceedance_hours
+    condition: "adaptive: rounded delta T >= 1 K"
+    delta_t_rounding: "nearest_whole_degree_tm52"   # raw delta T >= 0.5 K counts
+    adaptive_threshold:
+      category_I:  {linear_slope_k_per_c: 0.33, clamp_trm_min_c: 10, clamp_trm_max_c: 30, clamp_min_c: 24.1, clamp_max_c: 30.7}
+      category_II: {linear_slope_k_per_c: 0.33, clamp_trm_min_c: 10, clamp_trm_max_c: 30, clamp_min_c: 25.1, clamp_max_c: 31.7}
+    ceiling_fan_uplift:
+      max_uplift_c: 1.2
+      air_speed_threshold_ms: 0.6
+      temperature_condition_c: 25.0
+      per_0_1ms_below_c: 0.20
+      source_note: "Uplift from BS EN 16798-1 below 0.6 m/s; TM59:2026 §2.4.1."
+    months: [5, 9]
+    occupancy_basis: living_hours        # 9 am-10 pm -> 1989 h; bedrooms override to all_hours
+    occupancy_hours_basis: 1989
+    max_exceedance_hours: 59             # 3% of 1989 = 59.67 -> 59 h maximum permitted
+    variants:
+      bedroom:
+        occupancy_basis: all_hours       # bedrooms may be occupied at any time
+        occupancy_hours_basis: 3672
+        max_exceedance_hours: 110        # 3% of 3672 = 110.16 -> 110 h maximum permitted
+        note: "Table 2, TM59:2026 §2.4.1 (bedroom row)."
+    window: occupied_hours
+    aggregation: exceedance_hours_vs_limit
+    threshold: 59
+    units: hours
+    operator: ">"
+    stage_applicability: [stage_1, stage_2]
+    verification: {source: S-03, status: source_verified}
+
+  - id: b
+    applies_to: [bedroom]
+    clause: "TM59:2026 §2.4.2 Criterion b (bedrooms, hours of sleep)"
+    metric: nights_mean_above
+    sleep_window: "23:00-08:00"          # hours of sleep 11 pm-8 am, hour-ending labels 24,1..8
+    threshold: 26                        # Cat I; Cat II = 27 (see category_thresholds_c)
+    category_thresholds: {I: 26, II: 27}
+    months: [5, 9]
+    max_nights: 4                        # more than 4 nights -> fail
+    window: nights_may_september
+    aggregation: nights_count_vs_limit
+    units: nights
+    operator: ">"
+    ceiling_fan_uplift: {}               # no uplift permitted for criterion b
+    stage_applicability: [stage_1, stage_2, stage_3]
+    interpretation_note: >-
+      Mean night temperature for the night of day N = 11 pm day N to 8 am day N+1;
+      the 30 September night runs to 8 am on 1 October (needs 1 Oct data).
+    verification: {source: S-03, status: source_verified}
+
+  - id: c
+    applies_to: [living, bedroom]
+    clause: "TM59:2026 §2.4.3 Criterion c (predominantly mechanically ventilated/cooled)"
+    metric: exceedance_hours
+    condition: "top_c > 26.0"            # fixed threshold, both categories
+    ceiling_fan_uplift:
+      max_uplift_c: 2.1
+      air_speed_threshold_ms: 0.6
+      temperature_condition_c: 25.0
+      per_0_1ms_below_c: 0.35
+      source_note: "Uplift from CIBSE Guide A / AM10 below 0.6 m/s; TM59:2026 §2.4.3."
+    months: [5, 9]
+    occupancy_basis: living_hours
+    occupancy_hours_basis: 1989
+    max_exceedance_hours: 59
+    variants:
+      bedroom:
+        occupancy_basis: all_hours
+        occupancy_hours_basis: 3672
+        max_exceedance_hours: 110
+        note: "Table 2, TM59:2026 §2.4.3 (bedroom row)."
+    window: occupied_hours
+    aggregation: exceedance_hours_vs_limit
+    threshold: 59
+    units: hours
+    operator: ">"
+    stage_applicability: [stage_2, stage_3]
+    verification: {source: S-03, status: source_verified}
+
+  - id: d
+    applies_to: [communal_circulation]
+    clause: "TM59:2026 §2.4.4 Criterion d (communal circulation areas)"
+    metric: exceedance_hours
+    condition: "top_c > 28.0"            # fixed, all categories, all ventilation modes
+    months: [5, 9]
+    occupancy_basis: all_hours
+    occupancy_hours_basis: 3672
+    max_exceedance_hours: 110            # 3% of 3672 = 110.16 -> 110 h maximum permitted
+    window: occupied_hours
+    aggregation: exceedance_hours_vs_limit
+    threshold: 110
+    units: hours
+    operator: ">"
+    stage_applicability: [stage_1, stage_2, stage_3]
+    verification: {source: S-03, status: source_verified}
+
+report_requirements:
+  - "TM59:2026 §2.5: report criteria adopted, dwelling Category (I/II) and results for every space, dwelling and communal area"
+  - "TM59:2026 §2.5: Stage 1 results reported both WITH and WITHOUT internal blinds and ceiling fans"
+  - "TM59:2026 §2.5: Stage 2 (constraints) and, if necessary, Stage 3 results also reported"
+  - "TM59:2026 §2.5: heat mitigation application across the whole site, not only the sampled dwellings"
+  - "TM59:2026 Appendix C checklist (reporting requirements)"
 
 changelog:
-  - "0.1.0-dev (2026-08-28): blocked scaffold created. No transcribed content. Evaluation forbidden."
+  - "1.0.0 (2026-08-28): full transcription from the official CIBSE TM59:2026 methodology PDF (S-03) and official weather-file requirements PDF (S-08); source_status flipped blocked_no_source -> source_verified; criteria a-d, stages 1-3, adaptive thresholds, ceiling-fan uplifts, night criterion b."
+  - "0.1.0-dev (2026-08-28): blocked scaffold created pending source acquisition."

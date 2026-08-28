@@ -43,11 +43,24 @@ def test_source_register_ids_referenced_exist():
             assert ref in valid_ids, f"{pid} references unknown register id {ref}"
 
 
-def test_tm59_2026_is_blocked_and_empty():
+def test_tm59_2026_source_verified_with_full_criteria():
     pack = load_bundled_pack("uk_tm59_2026")
-    assert pack["source_status"] == "blocked_no_source"
-    assert pack.get("blocked") == "SOURCE_NOT_ACQUIRED"
-    assert pack["criteria"] == []  # no invented thresholds — ADR-0005
+    assert pack["source_status"] == "source_verified"
+    assert [c["id"] for c in pack["criteria"]] == ["a", "b", "c", "d"]
+    assert all(c["verification"]["status"] == "source_verified" for c in pack["criteria"])
+    assert pack["weather_requirements"]["verified"] is True
+    assert "DSY1_2050s_HIGH50_CIBSE_v1.1" in pack["weather_requirements"]["recommended_minimum"]
+    # machine-verified criterion values (S-03)
+    by_id = {c["id"]: c for c in pack["criteria"]}
+    assert by_id["a"]["max_exceedance_hours"] == 59
+    assert by_id["a"]["variants"]["bedroom"]["max_exceedance_hours"] == 110
+    assert by_id["b"]["category_thresholds"] == {"I": 26, "II": 27}
+    assert by_id["b"]["max_nights"] == 4
+    assert by_id["c"]["condition"] == "top_c > 26.0"
+    assert by_id["d"]["condition"] == "top_c > 28.0"
+    assert by_id["d"]["max_exceedance_hours"] == 110
+    # stages
+    assert [s["id"] for s in pack["stages"]] == ["stage_1", "stage_2", "stage_3"]
 
 
 def test_part_o_references_verified_ado_and_inherits_tm59_2017():
