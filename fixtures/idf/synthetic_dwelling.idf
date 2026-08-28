@@ -1,0 +1,373 @@
+!-Fixture: Synthetic two-zone dwelling for OverheatLens tests (overheatlens project).
+!-Deliberately simple: two lightweight zones, TM59-style occupancy, operable window
+!-openings (ZoneVentilation:WindAndStackOpenArea), TM59 internal gains, hourly
+!-Zone Mean Air / Mean Radiant Temperature outputs. Physics is illustrative; the
+!-fixture exists to exercise the readiness checks, the EnergyPlus runner and the
+!-harvest/evaluation chain end to end.
+
+Version, 25.1;
+
+Timestep, 6;
+
+SimulationControl,
+  No,                      !- Do Zone Sizing Calculation
+  No,                      !- Do System Sizing Calculation
+  No,                      !- Do Plant Sizing Calculation
+  No,                      !- Run Simulation for Sizing Periods
+  Yes;                     !- Run Simulation for Weather File Run Periods
+
+RunPeriod,
+  1,                       !- Begin Month
+  1,                       !- Begin Day of Month
+  12,                      !- End Month
+  31,                      !- End Day of Month
+  Monday,                  !- Day of Week for Start Day
+  Yes,                     !- Use Weather File Holidays and Special Days
+  Yes,                     !- Use Weather File Daylight Saving Period
+  Yes,                     !- Apply Weekend Holiday Rule
+  Yes;                     !- Use Weather File Rain Indicators
+
+Building,
+  Synthetic Dwelling,      !- Name
+  0,                       !- North Axis
+  Suburbs,                 !- Terrain
+  0.04,                    !- Loads Convergence Tolerance Value
+  0.4,                     !- Temperature Convergence Tolerance Value
+  FullExterior,            !- Solar Distribution
+  30,                      !- Maximum Number of Warmup Days
+  6;                       !- Minimum Number of Warmup Days
+
+Zone,
+  Living room,             !- Name
+  0,                       !- Direction of Relative North
+  0, 0, 0,                 !- XYZ Origin
+  1,                       !- Type
+  1,                       !- Multiplier
+  autocalculate, autocalculate, autocalculate,
+  autocalculate,           !- Ceiling/Wall/Floor Height
+  yes;                     !- Part of Total Floor Area
+
+Zone,
+  Bedroom 1,               !- Name
+  0,
+  0, 0, 3,
+  1,
+  1,
+  autocalculate, autocalculate, autocalculate,
+  autocalculate,
+  yes;
+
+GlobalGeometryRules,
+  UpperLeftCorner, CounterClockwise, WorldCoordinateSystem;
+
+!- Lightweight constructions (illustrative values)
+Construction,
+  Light Wall,
+  G01a 19mm gypsum board,
+  F04 Wall air gap resistance,
+  G01a 19mm gypsum board;
+
+Construction,
+  Light Roof,
+  M11 100mm lightweight roof,
+  F04 Ceiling air gap resistance,
+  G01a 19mm gypsum board;
+
+Construction,
+  Light Floor,
+  G01a 19mm gypsum board,
+  F05 Floor air gap resistance,
+  G01a 19mm gypsum board;
+
+Material:AirGap,
+  F04 Wall air gap resistance, 0.15;
+Material:AirGap,
+  F05 Floor air gap resistance, 0.17;
+Material:AirGap,
+  F04 Ceiling air gap resistance, 0.17;
+
+Material,
+  G01a 19mm gypsum board,  !- Name
+  MediumSmooth,            !- Roughness
+  0.019,                   !- Thickness
+  0.16,                    !- Conductivity
+  800,                     !- Density
+  1090,                    !- Specific Heat
+  0.9, 0.4, 0.0, 0.0;      !- Thermal absorptance etc.
+
+Material,
+  M11 100mm lightweight roof,
+  Rough,
+  0.1,
+  0.14,
+  300,
+  1400,
+  0.9, 0.6, 0.0, 0.0;
+
+BuildingSurface:Detailed,
+  Living room Wall N,      !- Name
+  Wall,                    !- Surface Type
+  Light Wall,              !- Construction Name
+  Living room,             !- Zone Name
+  Outdoors,                !- Outside Boundary Condition
+  ,                        !- Outside Boundary Condition Object
+  SunExposed, WindExposed,
+  4,                       !- Number of Vertices
+  0, 0, 2.7,  8, 0, 2.7,  8, 0, 0,  0, 0, 0;
+
+BuildingSurface:Detailed,
+  Living room Floor,
+  Floor,
+  Light Floor,
+  Living room,
+  Ground,
+  ,
+  NoSun, NoWind,
+  4,
+  0, 0, 0,  8, 0, 0,  8, -6, 0,  0, -6, 0;
+
+BuildingSurface:Detailed,
+  Living room Roof,
+  Roof,
+  Light Roof,
+  Living room,
+  Outdoors,
+  ,
+  SunExposed, WindExposed,
+  4,
+  0, -6, 2.7,  8, -6, 2.7,  8, 0, 2.7,  0, 0, 2.7;
+
+BuildingSurface:Detailed,
+  Bedroom Wall N,
+  Wall,
+  Light Wall,
+  Bedroom 1,
+  Outdoors,
+  ,
+  SunExposed, WindExposed,
+  4,
+  0, 0, 2.7,  6, 0, 2.7,  6, 0, 0,  0, 0, 0;
+
+BuildingSurface:Detailed,
+  Bedroom Floor,
+  Floor,
+  Light Floor,
+  Bedroom 1,
+  Ground,
+  ,
+  NoSun, NoWind,
+  4,
+  0, 0, 3,  6, 0, 3,  6, -5, 3,  0, -5, 3;
+
+BuildingSurface:Detailed,
+  Bedroom Roof,
+  Roof,
+  Light Roof,
+  Bedroom 1,
+  Outdoors,
+  ,
+  SunExposed, WindExposed,
+  4,
+  0, -5, 5.7,  6, -5, 5.7,  6, 0, 5.7,  0, 0, 5.7;
+
+FenestrationSurface:Detailed,
+  Living window,           !- Name
+  Window,                  !- Surface Type
+  3.0,                     !- Area (m2) — ~1/20 floor area for Part F purge readiness
+  Living room Wall N,      !- Base Surface
+  0,                       !- Frame divider
+  0.5,                     !- U-value
+  0.6,                     !- SHGC
+  0.7,                     !- Visible transmittance
+  2,                       !- Number of vertices
+  2, 0, 2.2,  6, 0, 2.2;
+
+FenestrationSurface:Detailed,
+  Bedroom window,
+  Window,
+  2.0,
+  Bedroom Wall N,
+  0,
+  0.5,
+  0.6,
+  0.7,
+  2,
+  1.5, 0, 2.2,  4.5, 0, 2.2;
+
+!- Internal gains: TM59-style profiles
+Schedule:Compact,
+  Living occupancy,
+  Fraction,
+  Through: 12/31,
+  Until: 09:00, 0.0,
+  Until: 22:00, 1.0,
+  Until: 24:00, 0.0;
+
+Schedule:Compact,
+  Bedroom occupancy,
+  Fraction,
+  Through: 12/31,
+  Until: 08:00, 1.0,
+  Until: 23:00, 0.0,
+  Until: 24:00, 1.0;
+
+Schedule:Compact,
+  Living equipment,
+  Fraction,
+  Through: 12/31,
+  Until: 09:00, 0.1,
+  Until: 22:00, 1.0,
+  Until: 24:00, 0.2;
+
+Schedule:Compact,
+  Bedroom equipment,
+  Fraction,
+  Through: 12/31,
+  Until: 08:00, 0.3,
+  Until: 23:00, 0.05,
+  Until: 24:00, 0.3;
+
+People,
+  Living room People,
+  Living room,
+  Living occupancy,
+  2,                       !- Number of people
+  0,                       !- People per zone floor area
+  0,                       !- Zone floor area per person
+  0.3,                     !- Fraction radiant
+  SensibleHeatGain,        !- Sensible heat fraction
+  75,                      !- Sensible heat controller
+  activity;
+Schedule:Compact,
+  activity,
+  Any Number,
+  Through: 12/31,
+  Until: 24:00, 120;
+
+People,
+  Bedroom People,
+  Bedroom 1,
+  Bedroom occupancy,
+  2,
+  0,
+  0,
+  0.3,
+  SensibleHeatGain,
+  75,
+  activity;
+
+Lights,
+  Living room Lights,
+  Living room,
+  Living equipment,
+  100,
+  ,
+  0,
+  0.3,
+  0.4;
+
+Lights,
+  Bedroom Lights,
+  Bedroom 1,
+  Bedroom equipment,
+  60,
+  ,
+  0,
+  0.3,
+  0.4;
+
+ElectricEquipment,
+  Living room Equip,
+  Living room,
+  Living equipment,
+  150,
+  0,
+  0.3,
+  0.4;
+
+ElectricEquipment,
+  Bedroom Equip,
+  Bedroom 1,
+  Bedroom equipment,
+  60,
+  0,
+  0.3,
+  0.4;
+
+ZoneInfiltration:DesignFlowRate,
+  Living room Infiltration,
+  Living room,
+  designflowrate,
+  0.3,                     !- flow per exterior wall area (illustrative)
+  ,
+  ,
+  0,
+  ,
+  Constant, 1.0,
+  Constant, 0.0,
+  Constant, 0.0;
+
+ZoneInfiltration:DesignFlowRate,
+  Bedroom Infiltration,
+  Bedroom 1,
+  designflowrate,
+  0.3,
+  ,
+  ,
+  0,
+  ,
+  Constant, 1.0,
+  Constant, 0.0,
+  Constant, 0.0;
+
+!- Operable openings (natural ventilation readiness)
+Schedule:Compact,
+  Vent availability,
+  Fraction,
+  Through: 12/31,
+  Until: 24:00, 1.0;
+
+ZoneVentilation:WindAndStackOpenArea,
+  Living window Vent,
+  Living room,
+  Vent availability,
+  3.0,                     !- open area m2
+  0.0,
+  0.5,
+  0.45,
+  1.0,
+  0.0,
+  1.0,
+  0.9,
+  0.0,
+  2.2;
+
+ZoneVentilation:WindAndStackOpenArea,
+  Bedroom window Vent,
+  Bedroom 1,
+  Vent availability,
+  2.0,
+  0.0,
+  0.5,
+  0.45,
+  1.0,
+  0.0,
+  1.0,
+  0.9,
+  0.0,
+  2.2;
+
+!- Outputs required by the OverheatLens harvest
+Output:Variable,
+  *,
+  Zone Mean Air Temperature,
+  hourly;
+Output:Variable,
+  *,
+  Zone Mean Radiant Temperature,
+  hourly;
+
+Output:Variable,
+  *,
+  Zone Air Relative Humidity,
+  hourly;
