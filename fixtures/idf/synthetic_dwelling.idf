@@ -1,66 +1,64 @@
 !-Fixture: Synthetic two-zone dwelling for OverheatLens tests (overheatlens project).
-!-Deliberately simple: two lightweight zones, TM59-style occupancy, operable window
-!-openings (ZoneVentilation:WindAndStackOpenArea), TM59 internal gains, hourly
-!-Zone Mean Air / Mean Radiant Temperature outputs. Physics is illustrative; the
-!-fixture exists to exercise the readiness checks, the EnergyPlus runner and the
-!-harvest/evaluation chain end to end.
+!-Field layouts verified against the EnergyPlus 25.1 IDD (Energy+.idd). Deliberately
+!-simple: two lightweight ground-level zones, TM59-style occupancy/gains, operable
+!-openings (ZoneVentilation:WindandStackOpenArea), TM59 infiltration, hourly Zone
+!-Mean Air / Mean Radiant Temperature outputs. Physics is illustrative; the fixture
+!-exists to exercise readiness checks, the EnergyPlus runner and the harvest ->
+!-standards-evaluation chain end to end.
 
 Version, 25.1;
 
 Timestep, 6;
 
 SimulationControl,
-  No,                      !- Do Zone Sizing Calculation
-  No,                      !- Do System Sizing Calculation
-  No,                      !- Do Plant Sizing Calculation
-  No,                      !- Run Simulation for Sizing Periods
-  Yes;                     !- Run Simulation for Weather File Run Periods
+  No, No, No, No, Yes;
 
 RunPeriod,
-  1,                       !- Begin Month
-  1,                       !- Begin Day of Month
-  12,                      !- End Month
-  31,                      !- End Day of Month
+  Annual run,              !- Name (A1 is a NAME field in IDD 25.1)
+  1, 1,                    !- Begin Month / Day
+  ,                        !- Begin Year
+  12, 31,                  !- End Month / Day
+  ,                        !- End Year
   Monday,                  !- Day of Week for Start Day
-  Yes,                     !- Use Weather File Holidays and Special Days
-  Yes,                     !- Use Weather File Daylight Saving Period
-  Yes,                     !- Apply Weekend Holiday Rule
-  Yes;                     !- Use Weather File Rain Indicators
+  Yes, Yes, Yes, Yes;
 
 Building,
-  Synthetic Dwelling,      !- Name
-  0,                       !- North Axis
-  Suburbs,                 !- Terrain
-  0.04,                    !- Loads Convergence Tolerance Value
-  0.4,                     !- Temperature Convergence Tolerance Value
-  FullExterior,            !- Solar Distribution
-  30,                      !- Maximum Number of Warmup Days
-  6;                       !- Minimum Number of Warmup Days
-
-Zone,
-  Living room,             !- Name
-  0,                       !- Direction of Relative North
-  0, 0, 0,                 !- XYZ Origin
-  1,                       !- Type
-  1,                       !- Multiplier
-  autocalculate, autocalculate, autocalculate,
-  autocalculate,           !- Ceiling/Wall/Floor Height
-  yes;                     !- Part of Total Floor Area
-
-Zone,
-  Bedroom 1,               !- Name
-  0,
-  0, 0, 3,
-  1,
-  1,
-  autocalculate, autocalculate, autocalculate,
-  autocalculate,
-  yes;
+  Synthetic Dwelling,
+  0, Suburbs,
+  0.04, 0.4,
+  FullExterior,
+  30, 6;
 
 GlobalGeometryRules,
-  UpperLeftCorner, CounterClockwise, WorldCoordinateSystem;
+  UpperLeftCorner, CounterClockwise, World, World, World;
 
-!- Lightweight constructions (illustrative values)
+!- ------------------ constructions (illustrative lightweight) ------------------
+
+Material,
+  G01a 19mm gypsum board,
+  MediumSmooth,
+  0.019,
+  0.16,
+  800,
+  1090,
+  0.9, 0.4, 0.0;
+
+Material,
+  M11 100mm lightweight roof,
+  Rough,
+  0.1,
+  0.14,
+  300,
+  1400,
+  0.9, 0.6, 0.0;
+
+Material:AirGap,
+  F04 Wall air gap resistance, 0.15;
+Material:AirGap,
+  F05 Floor air gap resistance, 0.17;
+Material:AirGap,
+  F04 Ceiling air gap resistance, 0.17;
+
 Construction,
   Light Wall,
   G01a 19mm gypsum board,
@@ -79,40 +77,61 @@ Construction,
   F05 Floor air gap resistance,
   G01a 19mm gypsum board;
 
-Material:AirGap,
-  F04 Wall air gap resistance, 0.15;
-Material:AirGap,
-  F05 Floor air gap resistance, 0.17;
-Material:AirGap,
-  F04 Ceiling air gap resistance, 0.17;
+WindowMaterial:SimpleGlazingSystem,
+  Simple glazing,
+  1.4,
+  0.6,
+  0.7;
 
-Material,
-  G01a 19mm gypsum board,  !- Name
-  MediumSmooth,            !- Roughness
-  0.019,                   !- Thickness
-  0.16,                    !- Conductivity
-  800,                     !- Density
-  1090,                    !- Specific Heat
-  0.9, 0.4, 0.0, 0.0;      !- Thermal absorptance etc.
+Construction,
+  Window construction,
+  Simple glazing;
 
-Material,
-  M11 100mm lightweight roof,
-  Rough,
-  0.1,
-  0.14,
-  300,
-  1400,
-  0.9, 0.6, 0.0, 0.0;
+!- -------------------------------- zones ---------------------------------------
+
+Zone,
+  Living room,             !- Name (A1)
+  0,                       !- Direction of Relative North (N1)
+  0, 0, 0,                 !- XYZ Origin (N2-N4)
+  1,                       !- Type (N5)
+  1,                       !- Multiplier (N6)
+  autocalculate,           !- Ceiling Height (N7)
+  autocalculate,           !- Volume (N8)
+  autocalculate,           !- Floor Area (N9)
+  ,                        !- Inside Convection Algorithm (A2)
+  ,                        !- Outside Convection Algorithm (A3)
+  yes;                     !- Part of Total Floor Area (A4)
+
+Zone,
+  Bedroom 1,
+  0,
+  0, 0, 0,
+  1,
+  1,
+  autocalculate,
+  autocalculate,
+  autocalculate,
+  ,
+  ,
+  yes;
+
+!- ------------------------------ surfaces --------------------------------------
+!- IDD 25.1 layout: A1 Name, A2 Type, A3 Construction, A4 Zone, A5 Space Name,
+!- A6 Outside BC, A7 Outside BC Object, A8 Sun, A9 Wind, N1 View Factor,
+!- N2 Number of Vertices, then coordinates.
 
 BuildingSurface:Detailed,
-  Living room Wall N,      !- Name
-  Wall,                    !- Surface Type
-  Light Wall,              !- Construction Name
-  Living room,             !- Zone Name
-  Outdoors,                !- Outside Boundary Condition
-  ,                        !- Outside Boundary Condition Object
-  SunExposed, WindExposed,
-  4,                       !- Number of Vertices
+  Living room Wall N,
+  Wall,
+  Light Wall,
+  Living room,
+  ,
+  Outdoors,
+  ,
+  SunExposed,
+  WindExposed,
+  autocalculate,
+  4,
   0, 0, 2.7,  8, 0, 2.7,  8, 0, 0,  0, 0, 0;
 
 BuildingSurface:Detailed,
@@ -120,9 +139,12 @@ BuildingSurface:Detailed,
   Floor,
   Light Floor,
   Living room,
+  ,
   Ground,
   ,
-  NoSun, NoWind,
+  NoSun,
+  NoWind,
+  autocalculate,
   4,
   0, 0, 0,  8, 0, 0,  8, -6, 0,  0, -6, 0;
 
@@ -131,9 +153,12 @@ BuildingSurface:Detailed,
   Roof,
   Light Roof,
   Living room,
+  ,
   Outdoors,
   ,
-  SunExposed, WindExposed,
+  SunExposed,
+  WindExposed,
+  autocalculate,
   4,
   0, -6, 2.7,  8, -6, 2.7,  8, 0, 2.7,  0, 0, 2.7;
 
@@ -142,9 +167,12 @@ BuildingSurface:Detailed,
   Wall,
   Light Wall,
   Bedroom 1,
+  ,
   Outdoors,
   ,
-  SunExposed, WindExposed,
+  SunExposed,
+  WindExposed,
+  autocalculate,
   4,
   0, 0, 2.7,  6, 0, 2.7,  6, 0, 0,  0, 0, 0;
 
@@ -153,52 +181,69 @@ BuildingSurface:Detailed,
   Floor,
   Light Floor,
   Bedroom 1,
+  ,
   Ground,
   ,
-  NoSun, NoWind,
+  NoSun,
+  NoWind,
+  autocalculate,
   4,
-  0, 0, 3,  6, 0, 3,  6, -5, 3,  0, -5, 3;
+  0, 0, 0,  6, 0, 0,  6, -5, 0,  0, -5, 0;
 
 BuildingSurface:Detailed,
   Bedroom Roof,
   Roof,
   Light Roof,
   Bedroom 1,
+  ,
   Outdoors,
   ,
-  SunExposed, WindExposed,
+  SunExposed,
+  WindExposed,
+  autocalculate,
   4,
-  0, -5, 5.7,  6, -5, 5.7,  6, 0, 5.7,  0, 0, 5.7;
+  0, -5, 2.7,  6, -5, 2.7,  6, 0, 2.7,  0, 0, 2.7;
 
+!- Windows: A1 Name, A2 Type, A3 Construction, A4 Base Surface, A5 OBC Object,
+!- N1 View Factor, A6 Frame/Divider, N2 Multiplier, N3 Number of Vertices, coords.
 FenestrationSurface:Detailed,
-  Living window,           !- Name
-  Window,                  !- Surface Type
-  3.0,                     !- Area (m2) — ~1/20 floor area for Part F purge readiness
-  Living room Wall N,      !- Base Surface
-  0,                       !- Frame divider
-  0.5,                     !- U-value
-  0.6,                     !- SHGC
-  0.7,                     !- Visible transmittance
-  2,                       !- Number of vertices
-  2, 0, 2.2,  6, 0, 2.2;
+  Living window,
+  Window,
+  Window construction,
+  Living room Wall N,
+  ,
+  autocalculate,
+  ,
+  1.0,
+  4,
+  2, 0, 2.2,  6, 0, 2.2,  6, 0, 1.0,  2, 0, 1.0;
 
 FenestrationSurface:Detailed,
   Bedroom window,
   Window,
-  2.0,
+  Window construction,
   Bedroom Wall N,
-  0,
-  0.5,
-  0.6,
-  0.7,
-  2,
-  1.5, 0, 2.2,  4.5, 0, 2.2;
+  ,
+  autocalculate,
+  ,
+  1.0,
+  4,
+  1.5, 0, 2.2,  4.5, 0, 2.2,  4.5, 0, 1.0,  1.5, 0, 1.0;
 
-!- Internal gains: TM59-style profiles
+!- --------------------- schedules (TM59-style profiles) ------------------------
+
+ScheduleTypeLimits,
+  Fraction,
+  0.0, 1.0, CONTINUOUS;
+
+ScheduleTypeLimits,
+  AnyNumber;
+
 Schedule:Compact,
   Living occupancy,
   Fraction,
   Through: 12/31,
+  For: AllDays,
   Until: 09:00, 0.0,
   Until: 22:00, 1.0,
   Until: 24:00, 0.0;
@@ -207,6 +252,7 @@ Schedule:Compact,
   Bedroom occupancy,
   Fraction,
   Through: 12/31,
+  For: AllDays,
   Until: 08:00, 1.0,
   Until: 23:00, 0.0,
   Until: 24:00, 1.0;
@@ -215,6 +261,7 @@ Schedule:Compact,
   Living equipment,
   Fraction,
   Through: 12/31,
+  For: AllDays,
   Until: 09:00, 0.1,
   Until: 22:00, 1.0,
   Until: 24:00, 0.2;
@@ -223,45 +270,60 @@ Schedule:Compact,
   Bedroom equipment,
   Fraction,
   Through: 12/31,
+  For: AllDays,
   Until: 08:00, 0.3,
   Until: 23:00, 0.05,
   Until: 24:00, 0.3;
+
+Schedule:Compact,
+  Vent availability,
+  Fraction,
+  Through: 12/31,
+  For: AllDays,
+  Until: 24:00, 1.0;
+
+Schedule:Compact,
+  Activity level,
+  AnyNumber,
+  Through: 12/31,
+  For: AllDays,
+  Until: 24:00, 120;
+
+!- ------------------------------ internal gains --------------------------------
+!- People: A1 Name, A2 Zone, A3 Schedule, A4 Method, N1 Count, N2 per-area,
+!- N3 area-per-person, N4 Fraction Radiant, N5 Sensible Heat Fraction, A5 Activity.
 
 People,
   Living room People,
   Living room,
   Living occupancy,
-  2,                       !- Number of people
-  0,                       !- People per zone floor area
-  0,                       !- Zone floor area per person
-  0.3,                     !- Fraction radiant
-  SensibleHeatGain,        !- Sensible heat fraction
-  75,                      !- Sensible heat controller
-  activity;
-Schedule:Compact,
-  activity,
-  Any Number,
-  Through: 12/31,
-  Until: 24:00, 120;
+  People,
+  2,
+  0,
+  0,
+  0.3,
+  0.3,
+  Activity level;
 
 People,
   Bedroom People,
   Bedroom 1,
   Bedroom occupancy,
+  People,
   2,
   0,
   0,
   0.3,
-  SensibleHeatGain,
-  75,
-  activity;
+  0.3,
+  Activity level;
 
 Lights,
   Living room Lights,
   Living room,
   Living equipment,
+  LightingLevel,
   100,
-  ,
+  0,
   0,
   0.3,
   0.4;
@@ -270,8 +332,9 @@ Lights,
   Bedroom Lights,
   Bedroom 1,
   Bedroom equipment,
+  LightingLevel,
   60,
-  ,
+  0,
   0,
   0.3,
   0.4;
@@ -280,6 +343,7 @@ ElectricEquipment,
   Living room Equip,
   Living room,
   Living equipment,
+  EquipmentLevel,
   150,
   0,
   0.3,
@@ -289,79 +353,59 @@ ElectricEquipment,
   Bedroom Equip,
   Bedroom 1,
   Bedroom equipment,
+  EquipmentLevel,
   60,
   0,
   0.3,
   0.4;
 
+!- --------------------------- infiltration + openings ---------------------------
+
 ZoneInfiltration:DesignFlowRate,
   Living room Infiltration,
   Living room,
-  designflowrate,
-  0.3,                     !- flow per exterior wall area (illustrative)
-  ,
-  ,
-  0,
-  ,
-  Constant, 1.0,
-  Constant, 0.0,
-  Constant, 0.0;
+  Vent availability,
+  AirChanges/Hour,
+  0.3;
 
 ZoneInfiltration:DesignFlowRate,
   Bedroom Infiltration,
   Bedroom 1,
-  designflowrate,
-  0.3,
-  ,
-  ,
-  0,
-  ,
-  Constant, 1.0,
-  Constant, 0.0,
-  Constant, 0.0;
-
-!- Operable openings (natural ventilation readiness)
-Schedule:Compact,
   Vent availability,
-  Fraction,
-  Through: 12/31,
-  Until: 24:00, 1.0;
+  AirChanges/Hour,
+  0.3;
 
-ZoneVentilation:WindAndStackOpenArea,
+!- ZoneVentilation:WindandStackOpenArea (IDD 25.1): A1 Name, A2 Zone,
+!- N1 Opening Area, A3 Schedule, N2 Effectiveness, N3 Angle, N4 Height Diff,
+!- N5 Discharge Coefficient.
+
+ZoneVentilation:WindandStackOpenArea,
   Living window Vent,
   Living room,
+  3.0,
   Vent availability,
-  3.0,                     !- open area m2
-  0.0,
   0.5,
-  0.45,
-  1.0,
   0.0,
-  1.0,
-  0.9,
-  0.0,
-  2.2;
+  1.1,
+  0.45;
 
-ZoneVentilation:WindAndStackOpenArea,
+ZoneVentilation:WindandStackOpenArea,
   Bedroom window Vent,
   Bedroom 1,
-  Vent availability,
   2.0,
-  0.0,
+  Vent availability,
   0.5,
-  0.45,
-  1.0,
   0.0,
-  1.0,
-  0.9,
-  0.0,
-  2.2;
+  1.1,
+  0.45;
 
-!- Outputs required by the OverheatLens harvest
+!- -------------------------------- outputs --------------------------------------
+
 Output:Variable,
   *,
   Zone Mean Air Temperature,
   hourly;
+
 Output:Variable,
   *,
   Zone Mean Radiant Temperature,

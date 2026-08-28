@@ -329,11 +329,22 @@ def check_idf(model: IdfModel, pack_id: str = "uk_tm59_2017") -> ReadinessReport
     return report
 
 
+def _run_period_display(rp: list[IdfObject]) -> str | None:
+    """Best-effort run-period summary for the passport: the first four integers in
+    the fields are begin month/day and end month/day (year fields, where present,
+    come after each day field and are skipped)."""
+    if not rp:
+        return None
+    ints = [f.strip() for f in rp[0].fields if f.strip().isdigit()]
+    if len(ints) >= 4:
+        return f"{ints[0]}/{ints[1]}–{ints[2]}/{ints[3]}"
+    return None
+
+
 def build_passport(model: IdfModel, pack_id: str = "uk_tm59_2017") -> IdfPassport:
     pack = load_bundled_pack(pack_id)
     zones = model.zone_names()
     ts = model.of_type("Timestep")
-    rp = model.of_type("RunPeriod")
     vers = model.of_type("Version")
     return IdfPassport(
         n_zones=len(zones),
@@ -347,8 +358,5 @@ def build_passport(model: IdfModel, pack_id: str = "uk_tm59_2017") -> IdfPasspor
         has_openings=any(o.object_type.upper() in _OPENING_TYPES for o in model.objects),
         version=vers[0].f(0) if vers else "",
         timestep_per_hour=int(ts[0].f(0)) if ts and ts[0].f(0).isdigit() else None,
-        run_period=(f"{rp[0].f(0)}/{rp[0].f(1)}–{rp[0].f(2)}/{rp[0].f(3)}"
-                    if rp and rp[0].f(0).replace("-", "").isdigit() else
-                    (f"{rp[0].f(1)}/{rp[0].f(2)}–{rp[0].f(3)}/{rp[0].f(4)}"
-                     if rp else None)),
+        run_period=_run_period_display(model.of_type("RunPeriod")),
     )
