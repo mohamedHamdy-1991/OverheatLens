@@ -3,6 +3,34 @@
 All notable changes to OverheatLens are documented here.
 Format based on Keep a Changelog; versioning is SemVer.
 
+## [0.6.0.dev0] — 2026-08-29 (session 6: complete the surfaces — palette, exports, labs, cross-platform)
+
+### Added
+- **Working ⌘K command palette** (RULE 13): keyboard search across all pages and
+  actions — arrow keys, Enter, Escape, ARIA combobox semantics.
+- **Publication exports on every figure** (RULE 10 / §22): SVG (true vector via the
+  SVG renderer), 3× PNG, plotted-data CSV and copy-caption on the thermal ribbon,
+  month×hour matrix, duration curve and hottest-week chart — generated from the same
+  arrays that fed each chart.
+- **Comfort Lab** (Phase 4 exposed): Fanger PMV/PPD, EN 16798-1 adaptive and UTCI
+  computed by the wrapped pythermalcomfort library through /api/comfort/* —
+  applicability verdicts shown as first-class results.
+- **Compare** (Phase 9 first slice): pick 2–8 weather files → aligned thermal-year
+  ribbons (daily-resolution ribbons labelled as such), headline metrics and deltas
+  against the first file via /api/compare.
+- **Real Docs / Methods / About pages** replacing placeholders; remaining unbuilt
+  surfaces (Atlas, Mitigation) stay honest "scheduled" pages.
+- **Assessment report export** (§22/§23): self-contained printable HTML report of any
+  run (cover header, executive result, readiness, criteria, provenance, limitations,
+  disclaimer) via GET /api/report; Analyze page gains "Save report (HTML)" and
+  "Export results (JSON)".
+- **Cross-platform launchers**: Linux .sh start/close/reset; Windows .bat brought to
+  full parity (build + serve + open browser, PowerShell-based close); Reset scripts
+  for all three platforms; README quick-start updated.
+- **Test suites at every layer**: 14 API tests (pytest/TestClient, incl. a real
+  EnergyPlus pipeline run + cache check, CI-safe skips) and 7 web component tests
+  (vitest + testing-library) alongside the 142 core tests.
+
 ## [0.5.0.dev0] — 2026-08-28 (session 5: Phase 7 API slice + Phase 8 web interface)
 
 ### Added

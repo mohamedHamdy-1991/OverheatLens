@@ -15,15 +15,21 @@ thermal-comfort analytics, mitigation testing and reproducible evidence export.
 
 ## Quick start (no installation steps — double-click)
 
-| What you want | macOS | Windows |
-|---|---|---|
-| Start OverheatLens | `Start OverheatLens.command` | `Start OverheatLens.bat` |
-| Run the full local test suite | `Run Tests.command` | `Run Tests.bat` |
-| Stop everything | `Close OverheatLens.command` | `Close OverheatLens.bat` |
+| What you want | macOS | Windows | Linux |
+|---|---|---|---|
+| Start OverheatLens | `Start OverheatLens.command` | `Start OverheatLens.bat` | `Start OverheatLens.sh` |
+| Run the full local test suite | `Run Tests.command` | `Run Tests.bat` | — |
+| Stop everything | `Close OverheatLens.command` | `Close OverheatLens.bat` | `Close OverheatLens.sh` |
+| Reset to first run | `Reset OverheatLens.command` | `Reset OverheatLens.bat` | `Reset OverheatLens.sh` |
 
 The first run creates a private Python environment inside the project folder
 (`.venv`) and installs its own dependencies. Later runs start instantly.
 You never need to install anything by hand.
+On Linux, run the `.sh` scripts from a terminal (for example
+`bash "Start OverheatLens.sh"`).
+The reset script stops the server and removes the built interface — your files
+and weather data are not touched; the next Start rebuilds everything
+(first run again).
 
 ## For developers and researchers
 

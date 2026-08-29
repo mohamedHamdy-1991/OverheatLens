@@ -16,9 +16,10 @@ from pathlib import Path
 
 import numpy as np
 from fastapi import FastAPI, HTTPException, Query
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
+from .report import render_html_report
 from overheatlens import CORE_VERSION
 from overheatlens.epw import check_epw, parse_epw, weather_summary, monthly_mean_dry_bulb
 from overheatlens.idf import check_idf, parse_idf
@@ -165,10 +166,11 @@ def weather_series(path: str = Query(...)):
     }
 
 
-@app.post("/api/analyze")
-def analyze(weather_path: str = Query(...), pack_id: str = Query("uk_tm59_2017")):
-    """Run the full pipeline on the demo dwelling with the chosen weather file."""
-    p = _safe_epw(weather_path)
+def _run_analysis(p: Path, pack_id: str) -> dict:
+    """Full pipeline for the demo dwelling: readiness → EnergyPlus → standards.
+
+    Shared by POST /api/analyze and GET /api/report; results are cached per
+    (resolved weather path, pack id) so a report never re-runs a simulation."""
     if not DEMO_IDF.is_file():
         raise HTTPException(500, "demo model missing from the installation")
     key = (str(p), pack_id)
@@ -219,6 +221,21 @@ def analyze(weather_path: str = Query(...), pack_id: str = Query("uk_tm59_2017")
     return payload
 
 
+@app.post("/api/analyze")
+def analyze(weather_path: str = Query(...), pack_id: str = Query("uk_tm59_2017")):
+    """Run the full pipeline on the demo dwelling with the chosen weather file."""
+    p = _safe_epw(weather_path)
+    return _run_analysis(p, pack_id)
+
+
+@app.get("/api/report", response_class=HTMLResponse)
+def report(weather_path: str = Query(...), pack_id: str = Query("uk_tm59_2017")):
+    """Self-contained printable HTML assessment report for the chosen run."""
+    p = _safe_epw(weather_path)
+    payload = _run_analysis(p, pack_id)
+    return HTMLResponse(render_html_report(payload))
+
+
 @app.get("/api/validation")
 def validation_matrix():
     md_path = REPO_ROOT / "VALIDATION_MATRIX.md"
@@ -232,6 +249,56 @@ def validation_matrix():
             if cells and cells[0] not in ("ID", "Method", ""):
                 rows.append({"section": section, "cells": cells})
     return {"source": "VALIDATION_MATRIX.md", "rows": rows}
+
+
+# --- comfort lab (Phase 4 wrappers exposed) ------------------------------------
+
+@app.get("/api/comfort/pmv")
+def comfort_pmv(tdb: float, tr: float, vr: float, rh: float, met: float, clo: float):
+    from overheatlens.comfort import pmv_ppd
+
+    return pmv_ppd(tdb=tdb, tr=tr, vr=vr, rh=rh, met=met, clo=clo).to_dict()
+
+
+@app.get("/api/comfort/adaptive")
+def comfort_adaptive(tdb: float, tr: float, trm: float, v: float):
+    from overheatlens.comfort import adaptive_comfort_en
+
+    return adaptive_comfort_en(tdb=tdb, tr=tr, t_running_mean=trm, v=v).to_dict()
+
+
+@app.get("/api/comfort/utci")
+def comfort_utci(tdb: float, tr: float, v: float, rh: float):
+    from overheatlens.comfort import utci_comfort
+
+    return utci_comfort(tdb=tdb, tr=tr, v=v, rh=rh).to_dict()
+
+
+# --- compare (multi-EPW, Phase 9 first slice) -----------------------------------
+
+@app.get("/api/compare")
+def compare(paths: str):
+    """Headline metrics + ribbon data for 2-8 weather files (comma-separated)."""
+    req = [p.strip() for p in paths.split(",") if p.strip()]
+    if not (2 <= len(req) <= 8):
+        raise HTTPException(400, "Compare needs between 2 and 8 weather files.")
+    out = []
+    for raw in req:
+        p = _safe_epw(raw)
+        epw = parse_epw(p)
+        db = _dry_bulb_clean(epw)
+        summary = weather_summary(epw)
+        out.append({
+            "name": p.name,
+            "path": str(p),
+            "annual_mean": summary.annual_mean_dry_bulb,
+            "hottest": summary.hottest_hour,
+            "hours_over_26": summary.exceedance_hours_26c,
+            "degree_hours_26": summary.degree_hours_26c,
+            "daily_mean": [round(float(x), 3) for x in
+                           np.nanmean(db.reshape(-1, 24), axis=1)],
+        })
+    return {"files": out}
 
 
 # --- static web (built by the launcher; absent in dev) -------------------------

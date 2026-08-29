@@ -1,6 +1,6 @@
 # IMPLEMENTATION STATUS
 
-Last updated: **2026-08-28** (session 5 — Phase 7 API slice + Phase 8 web interface live at http://127.0.0.1:8620)
+Last updated: **2026-08-29** (session 6 — surfaces completed: palette, exports, Comfort Lab, Compare, report export, cross-platform launchers; tested at every layer)
 
 Overall stage: **Phases 0–3 complete for all rule packs.** Every bundled standards pack
 (uk_tm59_2026, uk_tm59_2017, uk_part_o_dynamic, uk_tm52) is now machine-verified against

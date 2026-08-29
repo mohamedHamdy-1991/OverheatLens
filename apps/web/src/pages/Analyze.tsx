@@ -17,6 +17,7 @@ export function Analyze() {
   const [pack, setPack] = useState("uk_tm59_2017");
   const [result, setResult] = useState<AnalyzeResult | null>(null);
   const [running, setRunning] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [packsInfo, setPacksInfo] = useState<StandardsPassport[]>([]);
 
@@ -36,6 +37,39 @@ export function Analyze() {
       .then(setResult)
       .catch((e) => setError(String(e.message ?? e)))
       .finally(() => setRunning(false));
+  };
+
+  const download = (name: string, data: BlobPart, mime: string) => {
+    const url = URL.createObjectURL(new Blob([data], { type: mime }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = name;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const saveReport = () => {
+    setSaving(true);
+    setError(null);
+    fetch(`/api/report?weather_path=${encodeURIComponent(weather)}&pack_id=${pack}`)
+      .then(async (r) => {
+        if (!r.ok) throw new Error(`report request failed (${r.status})`);
+        return r.text();
+      })
+      .then((html) => {
+        download(`overheatlens_report_${result?.run.run_id}.html`, html, "text/html");
+      })
+      .catch((e) => setError(String(e.message ?? e)))
+      .finally(() => setSaving(false));
+  };
+
+  const exportJson = () => {
+    if (!result) return;
+    download(
+      `overheatlens_results_${result.run.run_id}.json`,
+      JSON.stringify(result, null, 2),
+      "application/json",
+    );
   };
 
   const selectedPack = packsInfo.find((p) => p.rule_pack === pack);
@@ -79,16 +113,31 @@ export function Analyze() {
         </div>
       </section>
 
-      <div style={{ marginTop: 20, display: "flex", gap: 12, alignItems: "center" }}>
+      <div style={{ marginTop: 20, display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
         <button className="btn" onClick={run} disabled={running || !weather}>
           {running ? "Simulating…" : result ? "Re-run assessment" : "Run assessment"}
         </button>
+        {result && !running && (
+          <>
+            <button className="btn secondary" onClick={saveReport} disabled={saving}>
+              {saving ? "Preparing…" : "Save report (HTML)"}
+            </button>
+            <button className="btn secondary" onClick={exportJson}>
+              Export results (JSON)
+            </button>
+          </>
+        )}
         {running && (
           <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--muted-ink)" }}>
             readiness → EnergyPlus {""}→ standards evaluation — usually a few seconds
           </span>
         )}
       </div>
+      {result && !running && (
+        <p style={{ marginTop: 8, fontFamily: "var(--font-mono)", fontSize: 11.5, color: "var(--muted-ink)" }}>
+          Report is self-contained HTML — print to PDF from your browser.
+        </p>
+      )}
 
       {error && (
         <div className="note warn" style={{ marginTop: 18 }}>

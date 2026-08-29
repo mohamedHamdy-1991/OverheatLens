@@ -18,12 +18,13 @@ export function useChart(
   ref: React.RefObject<HTMLDivElement | null>,
   option: echarts.EChartsOption | null,
   deps: unknown[],
-) {
+): React.MutableRefObject<echarts.ECharts | null> {
   const chartRef = useRef<echarts.ECharts | null>(null);
 
   useEffect(() => {
     if (!ref.current) return;
-    const chart = echarts.init(ref.current);
+    // SVG renderer: crisp in-page figures and true SVG export (RULE 10 / §22.1).
+    const chart = echarts.init(ref.current, undefined, { renderer: "svg" });
     chartRef.current = chart;
     const onResize = () => chart.resize();
     window.addEventListener("resize", onResize);
@@ -43,6 +44,8 @@ export function useChart(
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);
+
+  return chartRef;
 }
 
 /* Accessible text summary for a chart (plan: charts need text alternatives). */

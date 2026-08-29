@@ -113,6 +113,25 @@ export interface ValidationRow {
   cells: string[];
 }
 
+export interface ComfortPayload {
+  model: string;
+  standard_edition: string;
+  values: Record<string, number | boolean>;
+  status: string;
+  reason: string | null;
+  provenance: Record<string, unknown>;
+}
+
+export interface CompareFile {
+  name: string;
+  path: string;
+  annual_mean: number;
+  hottest: number;
+  hours_over_26: number;
+  degree_hours_26: number;
+  daily_mean: number[];
+}
+
 async function get<T>(url: string): Promise<T> {
   const r = await fetch(url);
   if (!r.ok) {
@@ -152,4 +171,13 @@ export const api = {
       return body as AnalyzeResult;
     }),
   validation: () => get<{ rows: ValidationRow[] }>("/api/validation").then((d) => d.rows),
+  comfortPmv: (q: { tdb: number; tr: number; vr: number; rh: number; met: number; clo: number }) =>
+    get<ComfortPayload>(`/api/comfort/pmv?${new URLSearchParams(Object.entries(q).map(([k, v]) => [k, String(v)]))}`),
+  comfortAdaptive: (q: { tdb: number; tr: number; trm: number; v: number }) =>
+    get<ComfortPayload>(`/api/comfort/adaptive?${new URLSearchParams(Object.entries(q).map(([k, v]) => [k, String(v)]))}`),
+  comfortUtci: (q: { tdb: number; tr: number; v: number; rh: number }) =>
+    get<ComfortPayload>(`/api/comfort/utci?${new URLSearchParams(Object.entries(q).map(([k, v]) => [k, String(v)]))}`),
+  compare: (paths: string[]) =>
+    get<{ files: CompareFile[] }>(`/api/compare?paths=${paths.map(encodeURIComponent).join(",")}`)
+      .then((d) => d.files),
 };

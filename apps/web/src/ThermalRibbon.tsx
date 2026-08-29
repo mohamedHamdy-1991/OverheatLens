@@ -1,5 +1,6 @@
 import { useRef } from "react";
 import { useChart, TEMP_SCALE, MONTHS } from "./charts";
+import { ExportBar } from "./ExportBar";
 
 /* The signature element: the thermal year ribbon — 365 days x 24 hours of the
  * real weather file, drawn as an instrument readout inside a hairline frame. */
@@ -8,13 +9,18 @@ export function ThermalRibbon({
   figNo,
   place,
   height = 190,
+  compact = false,
+  hoursPerDay = 24,
 }: {
   dryBulb: (number | null)[];
   figNo: string;
   place: string;
   height?: number;
+  compact?: boolean;
+  hoursPerDay?: 1 | 24;
 }) {
   const ref = useRef<HTMLDivElement>(null);
+  const chartRef = useChart(ref, null, []);
 
   const valid = dryBulb.filter((v): v is number => v !== null);
   const min = valid.length ? Math.min(...valid) : 0;
@@ -26,7 +32,7 @@ export function ThermalRibbon({
       grid: { left: 34, right: 8, top: 8, bottom: 20 },
       xAxis: {
         type: "category",
-        data: Array.from({ length: Math.ceil(dryBulb.length / 24) }, (_, i) => i + 1),
+        data: Array.from({ length: Math.ceil(dryBulb.length / hoursPerDay) }, (_, i) => i + 1),
         axisLine: { lineStyle: { color: "#b7b8b3" } },
         axisTick: { show: false },
         axisLabel: {
@@ -37,7 +43,7 @@ export function ThermalRibbon({
       },
       yAxis: {
         type: "category",
-        data: ["24", "18", "12", "6", "0"],
+        data: hoursPerDay === 24 ? ["24", "18", "12", "6", "0"] : ["day"],
         axisLine: { show: false },
         axisTick: { show: false },
         axisLabel: { color: "#5e686e", fontFamily: "IBM Plex Mono", fontSize: 10 },
@@ -51,7 +57,9 @@ export function ThermalRibbon({
       },
       series: [{
         type: "heatmap",
-        data: dryBulb.map((v, i) => [Math.floor(i / 24), 23 - (i % 24), v]),
+        data: hoursPerDay === 24
+          ? dryBulb.map((v, i) => [Math.floor(i / 24), 23 - (i % 24), v])
+          : dryBulb.map((v, i) => [i, 0, v]),
         progressive: 4000,
       }],
       tooltip: {
@@ -59,13 +67,16 @@ export function ThermalRibbon({
         formatter: (p: unknown) => {
           const params = p as { value: [number, number, number] };
           const day = params.value[0] + 1;
-          const hour = 23 - params.value[1] + 1;
-          return `${dayOfYearToDate(day)}, hour ${String(hour).padStart(2, "0")}:00 — ${params.value[2]?.toFixed(1) ?? "–"} °C`;
+          const hour = 24 - params.value[1];
+          const hTxt = hoursPerDay === 24 ? `, hour ${String(hour).padStart(2, "0")}:00` : " (daily mean)";
+          return `${dayOfYearToDate(day)}${hTxt} — ${params.value[2]?.toFixed(1) ?? "–"} °C`;
         },
       },
     },
     [dryBulb],
   );
+
+  const caption = `${hoursPerDay === 24 ? "Hourly" : "Daily-mean"} dry-bulb temperature, ${place} (thermal year ribbon, ${valid.length} records, ${min.toFixed(1)} to ${max.toFixed(1)} °C). Source: OverheatLens core EPW engine.`;
 
   return (
     <div className="figure">
@@ -73,10 +84,23 @@ export function ThermalRibbon({
         aria-label={`Thermal year ribbon for ${place}: hourly dry-bulb temperature, ${min.toFixed(1)} to ${max.toFixed(1)} degrees Celsius.`} />
       <div className="figure-caption">
         <span className="fig-no">{figNo}</span>
-        <span>hourly dry-bulb temperature, {place}</span>
+        <span>{hoursPerDay === 24 ? "hourly" : "daily-mean"} dry-bulb temperature, {place}</span>
         <span style={{ marginLeft: "auto" }}>
           min {min.toFixed(1)} · max {max.toFixed(1)} °C
         </span>
+        {!compact && (
+          <ExportBar
+            chartRef={chartRef}
+            figureName={`fig_thermal_ribbon_${place.replace(/\W+/g, "_").toLowerCase()}`}
+            caption={caption}
+            csv={{
+              header: hoursPerDay === 24 ? ["day_of_year", "hour_ending", "dry_bulb_c"] : ["day_of_year", "dry_bulb_c"],
+              rows: hoursPerDay === 24
+                ? dryBulb.map((v, i) => [Math.floor(i / 24) + 1, (i % 24) + 1, v])
+                : dryBulb.map((v, i) => [i + 1, v]),
+            }}
+          />
+        )}
       </div>
     </div>
   );

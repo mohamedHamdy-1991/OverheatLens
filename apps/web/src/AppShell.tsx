@@ -1,5 +1,6 @@
 import { NavLink, Link, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { CommandPalette } from "./CommandPalette";
 import type { ReactNode } from "react";
 import "./shell.css";
 
@@ -210,9 +211,12 @@ export function AppShell({ children }: { children: ReactNode }) {
             )}
           </span>
           <span className="topbar-spacer" />
-          <span className="kbd">⌘K</span>
+          <button className="kbd" style={{ cursor: "pointer" }}
+            onClick={() => window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }))}
+            aria-label="Open command search">⌘K</button>
         </header>
         <main className="content">{children}</main>
+        <CommandPalette />
       </div>
     </div>
   );
