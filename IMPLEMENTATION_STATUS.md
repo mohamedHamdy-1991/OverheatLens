@@ -1,6 +1,6 @@
 # IMPLEMENTATION STATUS
 
-Last updated: **2026-08-28** (session 4 — Phases 4–6 complete: comfort wrappers, IDF readiness, EnergyPlus worker, first end-to-end chain)
+Last updated: **2026-08-28** (session 5 — Phase 7 API slice + Phase 8 web interface live at http://127.0.0.1:8620)
 
 Overall stage: **Phases 0–3 complete for all rule packs.** Every bundled standards pack
 (uk_tm59_2026, uk_tm59_2017, uk_part_o_dynamic, uk_tm52) is now machine-verified against
@@ -19,8 +19,8 @@ Governing specs: `docs/specs/` · Sources: `SOURCE_REGISTER.md` · Decisions: `A
 | 4 — Comfort engine | wrappers, applicability, PMV/PPD, adaptive, UTCI | **COMPLETE** | pythermalcomfort 4.4.2 wrapped unmodified (ISO 7730:2025 default), explicit applicability gates, provenance in every result (VAL-CMF-01..05) |
 | 5 — IDF readiness | generic + standards-specific checks, passport | **COMPLETE** | object-level parser; every check row explains itself (RULE 16); bedroom/living classification; ADO §2.6 / TM59 §3.3 conformance notes; runnable synthetic dwelling fixture |
 | 6 — EnergyPlus worker | run, isolation, harvest, manifest | **COMPLETE** | official-binary probe (25.1.0), isolated jobs, err interpreter, --readvars harvest, DERIVED Top = 0.5(MAT+MRT); first end-to-end chain demonstrated (VAL-XSIM-01..04) |
-| 7 — API | FastAPI service | PENDING | |
-| 8 — Design system & frontend | tokens, nav, chart primitives | PENDING | Node 24 + npm 11 available |
+| 7 — API | FastAPI service | **FIRST SLICE LIVE** — rule packs, weather check/series, analyze (real E+ run), validation matrix; serves the built web app | |
+| 8 — Design system & frontend | tokens, nav, chart primitives | **FIRST SLICE LIVE** — pinned plan-§6 world, 4 real pages (Home/Weather Lab/Analyze/Validation), honest placeholders elsewhere; ⌘K palette + remaining charts next | |
 | 9–17 | Weather Lab … publication release | PENDING | |
 
 ## What exists now (sessions 1–2)

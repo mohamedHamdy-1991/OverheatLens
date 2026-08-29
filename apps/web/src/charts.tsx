@@ -1,0 +1,54 @@
+import { useEffect, useRef } from "react";
+import * as echarts from "echarts";
+
+/* Sequential temperature scale: cool -> warm through the OverheatLens ramp. */
+export const TEMP_SCALE = [
+  [0.0, "#dcecef"],
+  [0.28, "#86a9b3"],
+  [0.5, "#f4c95d"],
+  [0.72, "#e58a3a"],
+  [0.88, "#d4553d"],
+  [1.0, "#8f2d3a"],
+] as const;
+
+export const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+export function useChart(
+  ref: React.RefObject<HTMLDivElement | null>,
+  option: echarts.EChartsOption | null,
+  deps: unknown[],
+) {
+  const chartRef = useRef<echarts.ECharts | null>(null);
+
+  useEffect(() => {
+    if (!ref.current) return;
+    const chart = echarts.init(ref.current);
+    chartRef.current = chart;
+    const onResize = () => chart.resize();
+    window.addEventListener("resize", onResize);
+    return () => {
+      window.removeEventListener("resize", onResize);
+      chart.dispose();
+      chartRef.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (ref.current && option) {
+      chartRef.current?.setOption(option, { notMerge: true });
+      if (!reduce) chartRef.current?.setOption({ animationDurationUpdate: 180 });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, deps);
+}
+
+/* Accessible text summary for a chart (plan: charts need text alternatives). */
+export function ChartSummary({ children }: { children: React.ReactNode }) {
+  return <p className="sr-only-summary" style={{
+    position: "absolute", width: 1, height: 1, overflow: "hidden",
+    clip: "rect(0 0 0 0)", whiteSpace: "nowrap",
+  }}>{children}</p>;
+}

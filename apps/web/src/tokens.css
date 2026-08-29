@@ -1,0 +1,81 @@
+/* OverheatLens design tokens — pinned by the governing plan §6; see DESIGN.md */
+
+:root {
+  --paper: #f7f5f0;
+  --surface: #ffffff;
+  --ink: #172126;
+  --muted-ink: #5e686e;
+  --line: #d9d7d1;
+  --line-strong: #b7b8b3;
+  --brand: #1f5f70;
+  --brand-dark: #173f4a;
+  --brand-soft: #dcecef;
+  --heat-1: #f4c95d;
+  --heat-2: #e58a3a;
+  --heat-3: #d4553d;
+  --heat-4: #8f2d3a;
+  --pass: #2f755b;
+  --warning: #b7791f;
+  --fail: #b43a4a;
+  --info: #356c95;
+
+  --font-ui: "Inter", system-ui, -apple-system, sans-serif;
+  --font-serif: "Source Serif 4", Georgia, serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", monospace;
+
+  --rail-w: 216px;
+  --topbar-h: 56px;
+  --max-w: 1440px;
+  --radius: 8px;
+
+  /* heat ramp for sequential temperature scales (cool -> warm) */
+  --scale-cool: #dcecef;
+  --scale-mid-cool: #86a9b3;
+  --scale-warm-1: #f4c95d;
+  --scale-warm-2: #e58a3a;
+  --scale-warm-3: #d4553d;
+  --scale-warm-4: #8f2d3a;
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root { height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: 15px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* browser surfaces carry the design (craft floor) */
+::selection { background: var(--brand-soft); color: var(--brand-dark); }
+:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+* { scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent; }
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+  border-radius: 5px;
+  border: 2px solid var(--paper);
+}
+*::-webkit-scrollbar-track { background: transparent; }
+
+h1, h2, h3 { margin: 0; font-weight: 600; }
+p { margin: 0; }
+a { color: var(--brand); text-decoration: none; }
+a:hover { text-decoration: underline; text-underline-offset: 3px; }
+button { font: inherit; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

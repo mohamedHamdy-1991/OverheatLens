@@ -3,6 +3,30 @@
 All notable changes to OverheatLens are documented here.
 Format based on Keep a Changelog; versioning is SemVer.
 
+## [0.5.0.dev0] — 2026-08-28 (session 5: Phase 7 API slice + Phase 8 web interface)
+
+### Added
+- **Web interface (Phase 8 first slice):** React + TypeScript + Vite + ECharts app in
+  `apps/web` implementing the pinned plan-§6 design world (paper/teal/heat tokens,
+  Source Serif 4 + Inter + IBM Plex Mono, hairline figure frames) with Davur-derived
+  structural patterns (rail shell, responsive tables, status pills) re-skinned
+  throughout. Pages: Home (RULE 14 hero + signature thermal-year ribbon from the real
+  Leeds weather file), Weather Lab (file picker with per-standard compatibility pills,
+  QC findings table, thermal ribbon, month×hour matrix, duration curve), Analyze
+  (standard + weather selection, real EnergyPlus run via API, criterion results table
+  with rule references, readiness findings, provenance, hottest-week chart), Validation
+  (live VALIDATION_MATRIX.md reader). Unbuilt surfaces are honest "scheduled" pages,
+  never fake UI. Mobile drawer + reduced motion + focus styles + chart text alternatives.
+- **API (Phase 7 slice):** FastAPI app in `apps/api` serving the core package:
+  /api/version, /api/rule-packs (standards passports), /api/weather (+ /check, /series
+  with month×hour aggregation), POST /api/analyze (readiness → EnergyPlus run →
+  standards evaluation, session-cached, path-guarded to the weather library),
+  /api/validation (live matrix). Serves the built web app on one port.
+- **Start launcher** now builds the web app on first run and serves everything at
+  http://127.0.0.1:8620; Close scripts stop the server.
+- PRODUCT.md + DESIGN.md capturing product truth and the committed visual world.
+
+## [0.4.0.dev0] — 2026-08-28 (session 4: Phases 4–6 — comfort, IDF readiness, EnergyPlus worker)
 ## [0.4.0.dev0] — 2026-08-28 (session 4: Phases 4–6 — comfort, IDF readiness, EnergyPlus worker)
 
 ### Added
