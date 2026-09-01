@@ -27,6 +27,35 @@ export interface WeatherFileEntry {
   compat_2026: string;
 }
 
+export interface ModelInfo {
+  id: string;
+  name: string;
+  path: string;
+  city: string | null;
+  description: string;
+  n_zones: number | null;
+  zone_names: string[];
+  floor_area_m2: number | null;
+  source: "template" | "upload";
+}
+
+export interface ModelUploadResult {
+  model: ModelInfo;
+  readiness: {
+    status: string;
+    rows: {
+      check_id: string;
+      title: string;
+      severity: string;
+      detected: string;
+      required: string;
+      why_it_matters: string;
+      how_to_fix: string;
+      source: string;
+    }[];
+  };
+}
+
 export interface WeatherIssue {
   code: string;
   severity: "error" | "warning" | "info";
@@ -41,8 +70,19 @@ export interface WeatherCheck {
   issues: WeatherIssue[];
   city?: string;
   country?: string;
+  latitude?: number;
+  longitude?: number;
+  elevation?: number;
   weather_summary?: Record<string, number | null> | null;
   summary_note?: string;
+}
+
+export interface RunEntry {
+  run_id: string | null;
+  weather: string;
+  model: string | null;
+  pack_id: string;
+  overall: string | null;
 }
 
 export interface WeatherSeries {
@@ -51,6 +91,12 @@ export interface WeatherSeries {
   daily_mean: number[];
   month_hour_matrix: (number | null)[][];
   monthly: { month: number; mean: number | null; max: number | null; min: number | null }[];
+  monthly_db: (number | null)[];
+  monthly_rh: (number | null)[];
+  monthly_ghi: (number | null)[];
+  monthly_wind: (number | null)[];
+  hdd15_5: (number | null)[];
+  cdd18: (number | null)[];
 }
 
 export interface CriterionResult {
@@ -104,6 +150,7 @@ export interface AnalyzeResult {
     rooms: RoomResult[];
   };
   series: Record<string, number[]>;
+  rh: Record<string, number[] | null>;
   daily_mean_outdoor: number[];
   cached: boolean;
 }
@@ -120,6 +167,28 @@ export interface ComfortPayload {
   status: string;
   reason: string | null;
   provenance: Record<string, unknown>;
+}
+
+export interface ComfortRunZone {
+  zone: string;
+  adaptive_acceptable_pct: number | null;
+  adaptive_hours_evaluated: number;
+  adaptive_hours_excluded: number;
+  mean_ppd: number | null;
+  ppd_hours_evaluated: number;
+  ppd_hours_excluded: number;
+  max_top: number | null;
+  reason: string | null;
+}
+
+export interface ComfortRunResult {
+  assumptions: Record<string, string | number>;
+  zones: ComfortRunZone[];
+  note?: string;
+  model: { name: string; path: string };
+  weather: { name: string; path: string };
+  run_id: string;
+  computed_from: string;
 }
 
 export interface CompareFile {
@@ -143,6 +212,24 @@ async function get<T>(url: string): Promise<T> {
   return r.json();
 }
 
+async function post<T>(url: string, init?: RequestInit): Promise<T> {
+  const r = await fetch(url, { method: "POST", ...init });
+  const body = await r.json().catch(() => ({}));
+  if (!r.ok) {
+    throw new Error(
+      typeof body.detail === "string" ? body.detail : JSON.stringify(body.detail ?? r.status),
+    );
+  }
+  return body as T;
+}
+
+function upload(file: File): RequestInit {
+  return {
+    headers: { "Content-Type": "application/octet-stream" },
+    body: file,
+  };
+}
+
 export const api = {
   version: () => get<VersionInfo>("/api/version"),
   rulePacks: () =>
@@ -155,22 +242,37 @@ export const api = {
     get<WeatherCheck>(`/api/weather/check?path=${encodeURIComponent(path)}`),
   weatherSeries: (path: string) =>
     get<WeatherSeries>(`/api/weather/series?path=${encodeURIComponent(path)}`),
-  analyze: (path: string, packId: string) =>
+  uploadWeather: (file: File) =>
+    post<WeatherCheck & { path: string }>(
+      `/api/weather/upload?name=${encodeURIComponent(file.name)}`,
+      upload(file),
+    ),
+  models: () => get<{ models: ModelInfo[] }>("/api/models").then((d) => d.models),
+  uploadModel: (file: File) =>
+    post<ModelUploadResult>(
+      `/api/models/upload?name=${encodeURIComponent(file.name)}`,
+      upload(file),
+    ),
+  analyze: (path: string, packId: string, modelPath?: string) =>
+    post<AnalyzeResult>(
+      `/api/analyze?weather_path=${encodeURIComponent(path)}&pack_id=${packId}` +
+      (modelPath ? `&model_path=${encodeURIComponent(modelPath)}` : ""),
+    ),
+  comfortRun: (path: string, packId: string, modelPath?: string) =>
+    post<ComfortRunResult>(
+      `/api/comfort/run?weather_path=${encodeURIComponent(path)}&pack_id=${packId}` +
+      (modelPath ? `&model_path=${encodeURIComponent(modelPath)}` : ""),
+    ),
+  report: (path: string, packId: string, modelPath?: string) =>
     fetch(
-      `/api/analyze?weather_path=${encodeURIComponent(path)}&pack_id=${packId}`,
-      { method: "POST" },
+      `/api/report?weather_path=${encodeURIComponent(path)}&pack_id=${packId}` +
+      (modelPath ? `&model_path=${encodeURIComponent(modelPath)}` : ""),
     ).then(async (r) => {
-      const body = await r.json().catch(() => ({}));
-      if (!r.ok) {
-        throw new Error(
-          typeof body.detail === "string"
-            ? body.detail
-            : JSON.stringify(body.detail ?? r.status),
-        );
-      }
-      return body as AnalyzeResult;
+      if (!r.ok) throw new Error(`report request failed (${r.status})`);
+      return r.text();
     }),
   validation: () => get<{ rows: ValidationRow[] }>("/api/validation").then((d) => d.rows),
+  runs: () => get<{ runs: RunEntry[] }>("/api/runs").then((d) => d.runs),
   comfortPmv: (q: { tdb: number; tr: number; vr: number; rh: number; met: number; clo: number }) =>
     get<ComfortPayload>(`/api/comfort/pmv?${new URLSearchParams(Object.entries(q).map(([k, v]) => [k, String(v)]))}`),
   comfortAdaptive: (q: { tdb: number; tr: number; trm: number; v: number }) =>

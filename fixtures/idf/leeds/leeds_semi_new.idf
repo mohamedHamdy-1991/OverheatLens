@@ -1,10 +1,9 @@
-!-Fixture: Synthetic two-zone dwelling for OverheatLens tests (overheatlens project).
-!-Field layouts verified against the EnergyPlus 25.1 IDD (Energy+.idd). Deliberately
-!-simple: two lightweight ground-level zones, TM59-style occupancy/gains, operable
-!-openings (ZoneVentilation:WindandStackOpenArea), TM59 infiltration, hourly Zone
-!-Mean Air / Mean Radiant Temperature outputs. Physics is illustrative; the fixture
-!-exists to exercise readiness checks, the EnergyPlus runner and the harvest ->
-!-standards-evaluation chain end to end.
+!-Fixture: Leeds archetype template — new-build semi-detached house, 2020s (overheatlens project).
+!-Derived from fixtures/idf/synthetic_dwelling.idf (field layouts verified against the
+!-EnergyPlus 25.1 IDD). Illustrative template: representative form and fabric of a 2020s
+!-semi-detached new build — highly insulated cavity walls, large glazing, 0.25 ach
+!-infiltration — NOT a surveyed dwelling. Same RunPeriod, gains patterns and outputs as
+!-the synthetic fixture.
 
 Version, 25.1;
 
@@ -23,7 +22,7 @@ RunPeriod,
   Yes, Yes, Yes, Yes;
 
 Building,
-  Synthetic Dwelling,
+  Leeds Semi New Build,
   0, Suburbs,
   0.04, 0.4,
   FullExterior,
@@ -32,7 +31,7 @@ Building,
 GlobalGeometryRules,
   UpperLeftCorner, CounterClockwise, World, World, World;
 
-!- ------------------ constructions (illustrative lightweight) ------------------
+!- ------------------ constructions (2020s insulated cavity) --------------------
 
 Material,
   G01a 19mm gypsum board,
@@ -42,6 +41,24 @@ Material,
   800,
   1090,
   0.9, 0.4, 0.0;
+
+Material,
+  B02 102mm brick outer leaf,
+  MediumRough,
+  0.102,
+  0.77,
+  1700,
+  840,
+  0.9, 0.7, 0.7;
+
+Material,
+  IW18 180mm mineral wool,
+  Rough,
+  0.180,
+  0.030,
+  43,
+  840,
+  0.9, 0.5, 0.5;
 
 Material,
   M11 100mm lightweight roof,
@@ -60,9 +77,10 @@ Material:AirGap,
   F04 Ceiling air gap resistance, 0.17;
 
 Construction,
-  Light Wall,
-  G01a 19mm gypsum board,
+  Cavity Wall 2020s,
+  B02 102mm brick outer leaf,
   F04 Wall air gap resistance,
+  IW18 180mm mineral wool,
   G01a 19mm gypsum board;
 
 Construction,
@@ -88,6 +106,7 @@ Construction,
   Simple glazing;
 
 !- -------------------------------- zones ---------------------------------------
+!- Living room 6.0 x 4.5 m; Bedroom 1 5.0 x 4.0 m; height 2.7 m.
 
 Zone,
   Living room,             !- Name (A1)
@@ -123,7 +142,7 @@ Zone,
 BuildingSurface:Detailed,
   Living room Wall N,
   Wall,
-  Light Wall,
+  Cavity Wall 2020s,
   Living room,
   ,
   Outdoors,
@@ -132,7 +151,7 @@ BuildingSurface:Detailed,
   WindExposed,
   autocalculate,
   4,
-  0, 0, 2.7,  8, 0, 2.7,  8, 0, 0,  0, 0, 0;
+  0, 0, 2.7,  6, 0, 2.7,  6, 0, 0,  0, 0, 0;
 
 BuildingSurface:Detailed,
   Living room Floor,
@@ -146,7 +165,7 @@ BuildingSurface:Detailed,
   NoWind,
   autocalculate,
   4,
-  0, 0, 0,  8, 0, 0,  8, -6, 0,  0, -6, 0;
+  0, 0, 0,  6, 0, 0,  6, -4.5, 0,  0, -4.5, 0;
 
 BuildingSurface:Detailed,
   Living room Roof,
@@ -160,12 +179,12 @@ BuildingSurface:Detailed,
   WindExposed,
   autocalculate,
   4,
-  0, -6, 2.7,  8, -6, 2.7,  8, 0, 2.7,  0, 0, 2.7;
+  0, -4.5, 2.7,  6, -4.5, 2.7,  6, 0, 2.7,  0, 0, 2.7;
 
 BuildingSurface:Detailed,
   Bedroom Wall N,
   Wall,
-  Light Wall,
+  Cavity Wall 2020s,
   Bedroom 1,
   ,
   Outdoors,
@@ -174,7 +193,23 @@ BuildingSurface:Detailed,
   WindExposed,
   autocalculate,
   4,
-  0, 0, 2.7,  6, 0, 2.7,  6, 0, 0,  0, 0, 0;
+  0, 0, 2.7,  5, 0, 2.7,  5, 0, 0,  0, 0, 0;
+
+!- Second exposed facet for the bedroom (east gable of the semi).
+
+BuildingSurface:Detailed,
+  Bedroom Wall E,
+  Wall,
+  Cavity Wall 2020s,
+  Bedroom 1,
+  ,
+  Outdoors,
+  ,
+  SunExposed,
+  WindExposed,
+  autocalculate,
+  4,
+  5, 0, 2.7,  5, -4, 2.7,  5, -4, 0,  5, 0, 0;
 
 BuildingSurface:Detailed,
   Bedroom Floor,
@@ -188,7 +223,7 @@ BuildingSurface:Detailed,
   NoWind,
   autocalculate,
   4,
-  0, 0, 0,  6, 0, 0,  6, -5, 0,  0, -5, 0;
+  0, 0, 0,  5, 0, 0,  5, -4, 0,  0, -4, 0;
 
 BuildingSurface:Detailed,
   Bedroom Roof,
@@ -202,10 +237,13 @@ BuildingSurface:Detailed,
   WindExposed,
   autocalculate,
   4,
-  0, -5, 2.7,  6, -5, 2.7,  6, 0, 2.7,  0, 0, 2.7;
+  0, -4, 2.7,  5, -4, 2.7,  5, 0, 2.7,  0, 0, 2.7;
 
 !- Windows: A1 Name, A2 Type, A3 Construction, A4 Base Surface, A5 OBC Object,
 !- N1 View Factor, A6 Frame/Divider, N2 Multiplier, N3 Number of Vertices, coords.
+!- Large glazing: living 3.0 x 1.5 m; bedroom 2.5 x 1.2 m plus a 1.2 x 1.2 m
+!- window on the new east bedroom facet.
+
 FenestrationSurface:Detailed,
   Living window,
   Window,
@@ -216,7 +254,7 @@ FenestrationSurface:Detailed,
   ,
   1.0,
   4,
-  2, 0, 2.2,  6, 0, 2.2,  6, 0, 1.0,  2, 0, 1.0;
+  1.5, 0, 2.4,  4.5, 0, 2.4,  4.5, 0, 0.9,  1.5, 0, 0.9;
 
 FenestrationSurface:Detailed,
   Bedroom window,
@@ -228,7 +266,19 @@ FenestrationSurface:Detailed,
   ,
   1.0,
   4,
-  1.5, 0, 2.2,  4.5, 0, 2.2,  4.5, 0, 1.0,  1.5, 0, 1.0;
+  1, 0, 2.2,  3.5, 0, 2.2,  3.5, 0, 1.0,  1, 0, 1.0;
+
+FenestrationSurface:Detailed,
+  Bedroom window E,
+  Window,
+  Window construction,
+  Bedroom Wall E,
+  ,
+  autocalculate,
+  ,
+  1.0,
+  4,
+  5, -1, 2.2,  5, -2.2, 2.2,  5, -2.2, 1.0,  5, -1, 1.0;
 
 !- --------------------- schedules (TM59-style profiles) ------------------------
 
@@ -360,26 +410,27 @@ ElectricEquipment,
   0.4;
 
 !- --------------------------- infiltration + openings ---------------------------
+!- Airtight 2020s fabric: 0.25 ach design infiltration.
 
 ZoneInfiltration:DesignFlowRate,
   Living room Infiltration,
   Living room,
   Vent availability,
   AirChanges/Hour,
-  ,                       !- Design Flow Rate (N1, blank for ACH method)
-  ,                       !- Flow per Zone Floor Area (N2)
-  ,                       !- Flow per Exterior Surface Area (N3)
-  0.3;                    !- Air Changes per Hour (N4)
+  ,                      !- Design Flow Rate (N1)
+  ,                      !- Flow Rate per Floor Area (N2)
+  ,                      !- Flow Rate per Exterior Surface Area (N3)
+  0.25;                  !- Air Changes per Hour (N4)
 
 ZoneInfiltration:DesignFlowRate,
   Bedroom Infiltration,
   Bedroom 1,
   Vent availability,
   AirChanges/Hour,
-  ,                       !- Design Flow Rate (N1, blank for ACH method)
-  ,                       !- Flow per Zone Floor Area (N2)
-  ,                       !- Flow per Exterior Surface Area (N3)
-  0.3;                    !- Air Changes per Hour (N4)
+  ,                      !- Design Flow Rate (N1)
+  ,                      !- Flow Rate per Floor Area (N2)
+  ,                      !- Flow Rate per Exterior Surface Area (N3)
+  0.25;                  !- Air Changes per Hour (N4)
 
 !- ZoneVentilation:WindandStackOpenArea (IDD 25.1): A1 Name, A2 Zone,
 !- N1 Opening Area, A3 Schedule, N2 Effectiveness, N3 Angle, N4 Height Diff,

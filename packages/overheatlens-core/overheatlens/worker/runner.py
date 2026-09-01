@@ -221,11 +221,13 @@ def _write_manifest(out_dir: Path, manifest: dict) -> None:
     (out_dir / "run_manifest.json").write_text(json.dumps(manifest, indent=2))
 
 
-def harvest_hourly(csv_path: str | Path) -> dict[str, dict[str, list[float]]]:
+def harvest_hourly(csv_path: str | Path) -> dict[str, dict[str, list[float] | None]]:
     """Parse eplusout.csv (ReadVarsESO output) into per-zone hourly series.
 
-    Returns ``{zone_key: {"mat": [...], "mrt": [...], "top": [...]}}`` where
-    ``top`` is the DERIVED operative temperature 0.5*(MAT+MRT) (low air speed).
+    Returns ``{zone_key: {"mat": [...], "mrt": [...], "top": [...], "rh": [...] | None}}``
+    where ``top`` is the DERIVED operative temperature 0.5*(MAT+MRT) (low air speed)
+    and ``rh`` is the harvested Zone Air Relative Humidity in % — ``None`` when the
+    model does not output it (never interpolated or invented).
     Column naming follows ReadVarsESO: 'Environment:...,ZONE NAME:Zone Mean Air
     Temperature [C](TimeStep)'.
     """
@@ -241,35 +243,41 @@ def harvest_hourly(csv_path: str | Path) -> dict[str, dict[str, list[float]]]:
     if not data:
         raise ValueError("eplusout.csv has no data rows")
 
+    markers = ("Zone Mean Air Temperature", "Zone Mean Radiant Temperature",
+               "Zone Air Relative Humidity")
     zones: dict[str, dict[str, list[float]]] = {}
     for col, name in enumerate(header):
         if col == 0:
             continue
         name = name.strip()
-        mat = ("Zone Mean Air Temperature" in name)
-        mrt = ("Zone Mean Radiant Temperature" in name)
-        if not (mat or mrt):
+        wanted = [m for m in markers if m in name]
+        if not wanted:
             continue
-        zone = name.split(":Zone Mean")[0].strip().lower()
-        key = "mat" if mat else "mrt"
-        zones.setdefault(zone, {"mat": [], "mrt": []})
-        vals = zones[zone][key]
+        zone = name.split(":")[0].strip().lower()
+        key = {"Zone Mean Air Temperature": "mat",
+               "Zone Mean Radiant Temperature": "mrt",
+               "Zone Air Relative Humidity": "rh"}[wanted[0]]
+        zones.setdefault(zone, {})
+        vals = zones[zone].setdefault(key, [])
         for row in data:
             try:
                 vals.append(float(row[col]))
             except (IndexError, ValueError):
                 vals.append(float("nan"))
 
-    out: dict[str, dict[str, list[float]]] = {}
+    out: dict[str, dict[str, list[float] | None]] = {}
     for zone, series in zones.items():
-        if not series["mat"]:
+        if not series.get("mat"):
             continue
         mat = np.asarray(series["mat"], dtype=float)
-        mrt = (np.asarray(series["mrt"], dtype=float) if series["mrt"] else mat)
+        mrt = (np.asarray(series["mrt"], dtype=float) if series.get("mrt") else mat)
+        rh = (np.asarray(series["rh"], dtype=float).tolist()
+              if series.get("rh") else None)
         out[zone] = {
             "mat": mat.tolist(),
             "mrt": mrt.tolist(),
             "top": (0.5 * (mat + mrt)).tolist(),
+            "rh": rh,
         }
     if not out:
         raise ValueError(

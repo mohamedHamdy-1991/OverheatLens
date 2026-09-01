@@ -36,3 +36,6 @@ docs/standards/official_sources/*.pdf
 runs/
 *.epwout*
 eplusout.*/
+
+# --- User uploads (stay local, like real weather) ---
+data/uploads/

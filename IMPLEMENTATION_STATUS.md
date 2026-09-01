@@ -1,6 +1,6 @@
 # IMPLEMENTATION STATUS
 
-Last updated: **2026-08-29** (session 6 — surfaces completed: palette, exports, Comfort Lab, Compare, report export, cross-platform launchers; tested at every layer)
+Last updated: **2026-08-29** (session 7 — EPW/IDF uploads, Leeds archetype templates, populated Archetype Atlas, comfort-from-run, overview dashboard redesign)
 
 Overall stage: **Phases 0–3 complete for all rule packs.** Every bundled standards pack
 (uk_tm59_2026, uk_tm59_2017, uk_part_o_dynamic, uk_tm52) is now machine-verified against

@@ -1,40 +1,48 @@
-/* OverheatLens design tokens — pinned by the governing plan §6; see DESIGN.md */
+/* OverheatLens design tokens — adapted to the overview-dashboard world
+   (floating white shell, navy frame, orange/cyan/lime accents). Variable
+   names are kept stable so every page inherits the redesign. */
 
 :root {
-  --paper: #f7f5f0;
-  --surface: #ffffff;
-  --ink: #172126;
-  --muted-ink: #5e686e;
-  --line: #d9d7d1;
-  --line-strong: #b7b8b3;
-  --brand: #1f5f70;
-  --brand-dark: #173f4a;
-  --brand-soft: #dcecef;
-  --heat-1: #f4c95d;
-  --heat-2: #e58a3a;
-  --heat-3: #d4553d;
-  --heat-4: #8f2d3a;
-  --pass: #2f755b;
-  --warning: #b7791f;
-  --fail: #b43a4a;
-  --info: #356c95;
+  --paper: #eef2ef;        /* page behind the shell */
+  --surface: #ffffff;      /* shell + cards */
+  --ink: #15263a;
+  --muted-ink: #7c8998;
+  --line: #e8ece9;
+  --line-strong: #d5dcd6;
+  --brand: #182b42;        /* navy — primary actions */
+  --brand-dark: #0f1d2f;
+  --brand-soft: #fff1e5;   /* warm active state */
+  --accent: #f39a3c;       /* orange — the signature accent */
+  --cyan: #47b9cf;
+  --cyan-deep: #2b91aa;
+  --lime: #d7ef78;
+  --heat-1: #d7ef78;
+  --heat-2: #f39a3c;
+  --heat-3: #e56f2f;
+  --heat-4: #c94436;
+  --pass: #4da86f;
+  --warning: #d79c31;
+  --fail: #d95c52;
+  --info: #2b91aa;
 
   --font-ui: "Inter", system-ui, -apple-system, sans-serif;
-  --font-serif: "Source Serif 4", Georgia, serif;
+  --font-serif: "Inter", system-ui, sans-serif;   /* headings follow the dashboard world */
   --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", monospace;
 
-  --rail-w: 216px;
-  --topbar-h: 56px;
-  --max-w: 1440px;
-  --radius: 8px;
+  --rail-w: 232px;
+  --topbar-h: 60px;
+  --max-w: 1540px;
+  --radius: 18px;
+  --radius-lg: 24px;
+  --shadow: 0 16px 42px rgba(24, 43, 66, 0.10);
 
-  /* heat ramp for sequential temperature scales (cool -> warm) */
-  --scale-cool: #dcecef;
-  --scale-mid-cool: #86a9b3;
-  --scale-warm-1: #f4c95d;
-  --scale-warm-2: #e58a3a;
-  --scale-warm-3: #d4553d;
-  --scale-warm-4: #8f2d3a;
+  /* sequential temperature scale: cool -> lime -> warm (perceptually ordered) */
+  --scale-cool: #47b9cf;
+  --scale-mid-cool: #a7dde1;
+  --scale-warm-1: #d7ef78;
+  --scale-warm-2: #f39a3c;
+  --scale-warm-3: #e56f2f;
+  --scale-warm-4: #c94436;
 }
 
 * { box-sizing: border-box; }
@@ -43,35 +51,29 @@ html, body, #root { height: 100%; }
 
 body {
   margin: 0;
-  background: var(--paper);
   color: var(--ink);
   font-family: var(--font-ui);
-  font-size: 15px;
+  font-size: 14.5px;
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
+  background:
+    radial-gradient(circle at 10% 0%, rgba(71, 185, 207, 0.12), transparent 28%),
+    radial-gradient(circle at 90% 8%, rgba(243, 154, 60, 0.12), transparent 26%),
+    var(--paper);
 }
 
-/* browser surfaces carry the design (craft floor) */
-::selection { background: var(--brand-soft); color: var(--brand-dark); }
-:focus-visible {
-  outline: 2px solid var(--brand);
-  outline-offset: 2px;
-  border-radius: 2px;
-}
-* { scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent; }
+::selection { background: rgba(243, 154, 60, 0.25); color: var(--ink); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+* { scrollbar-width: thin; scrollbar-color: #c3ccc5 transparent; }
 *::-webkit-scrollbar { width: 10px; height: 10px; }
-*::-webkit-scrollbar-thumb {
-  background: var(--line-strong);
-  border-radius: 5px;
-  border: 2px solid var(--paper);
-}
+*::-webkit-scrollbar-thumb { background: #c3ccc5; border-radius: 5px; border: 2px solid var(--paper); }
 *::-webkit-scrollbar-track { background: transparent; }
 
-h1, h2, h3 { margin: 0; font-weight: 600; }
+h1, h2, h3 { margin: 0; font-weight: 700; letter-spacing: -0.02em; }
 p { margin: 0; }
-a { color: var(--brand); text-decoration: none; }
+a { color: var(--cyan-deep); text-decoration: none; }
 a:hover { text-decoration: underline; text-underline-offset: 3px; }
-button { font: inherit; }
+button, input, select { font: inherit; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

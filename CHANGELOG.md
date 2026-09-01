@@ -3,6 +3,41 @@
 All notable changes to OverheatLens are documented here.
 Format based on Keep a Changelog; versioning is SemVer.
 
+## [0.7.0.dev0] — 2026-08-29 (session 7: uploads, Leeds archetypes, Atlas, dashboard redesign)
+
+### Added
+- **EPW upload** (Weather Lab + Overview): POST /api/weather/upload with validation on
+  arrival (format sniff, parse, QC) — uploaded files join the library as [upload] entries.
+- **IDF upload + model chooser** (Analyze): POST /api/models/upload; GET /api/models lists
+  Leeds templates + uploads; Analyze gains a Model select and Upload-IDF control.
+- **Leeds archetype templates** (fixtures/idf/leeds/, EnergyPlus-25.1-verified 0-severe):
+  1950s brick apartment flat (34 m2, 0.5 ach), 2005 terrace house (46.25 m2, 3 zones),
+  new-build semi-detached 2020s (47 m2, 0.25 ach, second bedroom window) + leeds.json.
+- **Archetype Atlas page** populated: template cards with zones/floor area/"Analyze this
+  archetype" links that preselect the model on Analyze.
+- **Comfort from the simulation run** (POST /api/comfort/run): per-zone EN 16798-1
+  adaptive acceptability (May-Sep occupied hours) and Fanger mean PPD computed by
+  pythermalcomfort from the real hourly output (Top as tdb=tr, harvested RH, stated
+  assumptions); hour-level exclusion counts; explicit non-results when unevaluable.
+- **Overview dashboard redesign** adapting the EPW Doctor overview world: floating
+  shell with navy frame, orange logo chip, hero cards (location / annual snapshot /
+  file health), metrics strip, monthly climate fingerprint (real RH/GHI/wind fields),
+  screening indicators with stated thresholds, degree-day chart (HDD 15.5 / CDD 18
+  computed from daily means), lime EPW calendar, session runs list.
+- Core harvest now captures Zone Air Relative Humidity per zone (None when absent).
+
+### Fixed
+- **Infiltration bug (RULE 7)**: the demo fixture's ZoneInfiltration:DesignFlowRate put
+  the ACH value in the Design-Flow-Rate slot of IDD 25.1, so EnergyPlus silently
+  simulated ZERO infiltration despite the 0.3 ACH header claim. Corrected field layout;
+  run re-verified (0 severe, warning gone).
+
+### Notes
+- Test suites: 143 core + 25 API + 7 web — all green. UI flows verified in-browser.
+- OneDrive Files-On-Demand on the author's machine can defeat vitest's fork-start
+  timeout and slow server imports; tests/builds run from a local-disk mirror when this
+  occurs (environmental, not a code issue).
+
 ## [0.6.0.dev0] — 2026-08-29 (session 6: complete the surfaces — palette, exports, labs, cross-platform)
 
 ### Added

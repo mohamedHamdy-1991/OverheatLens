@@ -1,0 +1,29 @@
+[
+  {
+    "id": "leeds_flat_1950",
+    "name": "1950s brick apartment flat",
+    "path": "fixtures/idf/leeds/leeds_flat_1950.idf",
+    "city": "Leeds",
+    "description": "Two-room single-storey template of a 1950s brick-built apartment flat: solid 225 mm brick walls, small windows (1.6 and 1.2 m2) and 0.5 ach design infiltration.",
+    "floor_area_m2": 34.0,
+    "notes": "Illustrative template derived from the synthetic dwelling fixture (identical RunPeriod, schedules and outputs); one exposed facade per room, box geometry, TM59-style occupancy and gains, operable openings via ZoneVentilation:WindandStackOpenArea."
+  },
+  {
+    "id": "leeds_terrace_2005",
+    "name": "2005 terrace house",
+    "path": "fixtures/idf/leeds/leeds_terrace_2005.idf",
+    "city": "Leeds",
+    "description": "Three-room single-storey template of a 2005 terraced house: insulated masonry cavity walls, medium glazing (1.8-2.4 m2 per room) and 0.4 ach design infiltration.",
+    "floor_area_m2": 46.25,
+    "notes": "Illustrative template derived from the synthetic dwelling fixture (identical RunPeriod, schedules and outputs); living room, kitchen (with cooking-level equipment gains) and bedroom zones, box geometry, operable openings via ZoneVentilation:WindandStackOpenArea."
+  },
+  {
+    "id": "leeds_semi_new",
+    "name": "New-build semi-detached (2020s)",
+    "path": "fixtures/idf/leeds/leeds_semi_new.idf",
+    "city": "Leeds",
+    "description": "Two-room single-storey template of a 2020s semi-detached new build: heavily insulated cavity walls, large glazing (4.5 m2 living window, second bedroom window on an east facet) and 0.25 ach design infiltration.",
+    "floor_area_m2": 47.0,
+    "notes": "Illustrative template derived from the synthetic dwelling fixture (identical RunPeriod, schedules and outputs); bedroom zone has two exposed facets (north and east), box geometry, operable openings via ZoneVentilation:WindandStackOpenArea."
+  }
+]

@@ -10,13 +10,22 @@ export function WeatherLab() {
   const [check, setCheck] = useState<WeatherCheck | null>(null);
   const [series, setSeries] = useState<WeatherSeries | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileInput = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
+  const loadList = () =>
     api.weatherList().then((fs) => {
       setFiles(fs);
-      const pick = fs.find((f) => f.name === "Leeds_DSY1_2020High50_.epw") ?? fs[0];
-      if (pick) setSelected(pick);
-    }).catch((e) => setError(String(e.message ?? e)));
+      return fs;
+    });
+
+  useEffect(() => {
+    loadList()
+      .then((fs) => {
+        const pick = fs.find((f) => f.name === "Leeds_DSY1_2020High50_.epw") ?? fs[0];
+        if (pick) setSelected(pick);
+      })
+      .catch((e) => setError(String(e.message ?? e)));
   }, []);
 
   useEffect(() => {
@@ -29,12 +38,28 @@ export function WeatherLab() {
       .catch((e) => setError(String(e.message ?? e)));
   }, [selected]);
 
+  const uploadEpw = (file: File) => {
+    setUploading(true);
+    setError(null);
+    api.uploadWeather(file)
+      .then((saved) =>
+        // refresh the list, then select the file just uploaded
+        loadList().then((fs) => {
+          const pick = fs.find((f) => f.path === saved.path) ?? null;
+          setSelected(pick);
+          if (!pick) setError("Upload saved, but the refreshed list does not show it yet.");
+        }))
+      .catch((e) => setError(String(e.message ?? e)))
+      .finally(() => setUploading(false));
+  };
+
   return (
     <>
       <h1 className="page-title">Weather Lab</h1>
       <p className="page-intro">
-        Pick a weather file from the local library. OverheatLens checks its structure and
-        physics, then draws the climate — the same data every assessment starts from.
+        Pick a weather file from the local library, or upload your own EPW. OverheatLens
+        checks its structure and physics, then draws the climate — the same data every
+        assessment starts from.
       </p>
 
       <section style={{ marginTop: 22, maxWidth: 720 }}>
@@ -64,6 +89,30 @@ export function WeatherLab() {
             TM59:2026 <StatusPill status={selected.compat_2026} />
           </p>
         )}
+        <div style={{ marginTop: 12, display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+          <button
+            className="btn secondary"
+            onClick={() => fileInput.current?.click()}
+            disabled={uploading}
+          >
+            {uploading ? "Uploading…" : "Upload EPW"}
+          </button>
+          <input
+            ref={fileInput}
+            type="file"
+            accept=".epw"
+            style={{ display: "none" }}
+            aria-label="Upload an EPW weather file"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) uploadEpw(f);
+              e.target.value = "";
+            }}
+          />
+          <span style={{ fontSize: 12.5, color: "var(--muted-ink)" }}>
+            Files up to 20 MB are saved to the local uploads library and checked on arrival.
+          </span>
+        </div>
       </section>
 
       {error && <div className="note warn" style={{ marginTop: 20 }}><strong>Could not load this file.</strong> {error}</div>}

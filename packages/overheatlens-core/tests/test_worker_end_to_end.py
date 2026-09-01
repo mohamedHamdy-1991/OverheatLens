@@ -76,6 +76,16 @@ def test_harvest_produces_8760_operative_hours(run):
                                        + np.asarray(series["mrt"])))
 
 
+def test_harvest_captures_relative_humidity(run):
+    """The fixture models output Zone Air Relative Humidity; harvest must carry it."""
+    zones = harvest_hourly(run.csv_path)
+    for name, series in zones.items():
+        assert series["rh"] is not None, f"{name}: RH output missing from harvest"
+        rh = np.asarray(series["rh"])
+        assert len(rh) == 8760
+        assert np.isfinite(rh).all() and (rh >= 0).all() and (rh <= 100).all()
+
+
 def test_end_to_end_compliance_evaluation(run):
     """The heart of the pipeline: readiness -> simulate -> harvest -> evaluate."""
     assert check_idf(parse_idf(IDF)).status == "PASS"

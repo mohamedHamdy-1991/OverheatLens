@@ -1,6 +1,14 @@
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
-import { api, type AnalyzeResult, type CriterionResult, type WeatherFileEntry, type StandardsPassport } from "../api";
+import { Link, useSearchParams } from "react-router-dom";
+import {
+  api,
+  type AnalyzeResult,
+  type ComfortRunResult,
+  type CriterionResult,
+  type ModelInfo,
+  type WeatherFileEntry,
+  type StandardsPassport,
+} from "../api";
 import { Figure, StatusPill } from "../components";
 import { useChart } from "../charts";
 
@@ -11,15 +19,24 @@ const PACKS = [
   { id: "uk_tm52", label: "TM52 — adaptive (non-domestic criteria)" },
 ];
 
+const DEMO_OPTION = { path: "", label: "Synthetic two-zone dwelling (bundled demo)" };
+
 export function Analyze() {
   const [files, setFiles] = useState<WeatherFileEntry[] | null>(null);
   const [weather, setWeather] = useState<string>("");
+  const [models, setModels] = useState<ModelInfo[] | null>(null);
+  const [modelPath, setModelPath] = useState<string>(DEMO_OPTION.path);
+  const [params] = useSearchParams();
   const [pack, setPack] = useState("uk_tm59_2017");
   const [result, setResult] = useState<AnalyzeResult | null>(null);
+  const [comfort, setComfort] = useState<ComfortRunResult | null>(null);
+  const [comfortError, setComfortError] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [uploadingModel, setUploadingModel] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [packsInfo, setPacksInfo] = useState<StandardsPassport[]>([]);
+  const idfInput = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     api.weatherList().then((fs) => {
@@ -28,15 +45,41 @@ export function Analyze() {
       if (pick) setWeather(pick.path);
     });
     api.rulePacks().then(setPacksInfo);
+    api.models().then((ms) => {
+      setModels(ms);
+      const wanted = params.get("model");
+      if (wanted && ms.some((m) => m.path === wanted)) setModelPath(wanted);
+    }).catch(() => setModels([]));
   }, []);
 
   const run = () => {
     setRunning(true);
     setError(null);
-    api.analyze(weather, pack)
-      .then(setResult)
+    setComfort(null);
+    setComfortError(null);
+    api.analyze(weather, pack, modelPath || undefined)
+      .then((r) => {
+        setResult(r);
+        return api
+          .comfortRun(weather, pack, modelPath || undefined)
+          .then(setComfort)
+          .catch((e) => setComfortError(String(e.message ?? e)));
+      })
       .catch((e) => setError(String(e.message ?? e)))
       .finally(() => setRunning(false));
+  };
+
+  const uploadIdf = (file: File) => {
+    setUploadingModel(true);
+    setError(null);
+    api.uploadModel(file)
+      .then((saved) =>
+        api.models().then((ms) => {
+          setModels(ms);
+          setModelPath(saved.model.path);
+        }))
+      .catch((e) => setError(String(e.message ?? e)))
+      .finally(() => setUploadingModel(false));
   };
 
   const download = (name: string, data: BlobPart, mime: string) => {
@@ -51,11 +94,7 @@ export function Analyze() {
   const saveReport = () => {
     setSaving(true);
     setError(null);
-    fetch(`/api/report?weather_path=${encodeURIComponent(weather)}&pack_id=${pack}`)
-      .then(async (r) => {
-        if (!r.ok) throw new Error(`report request failed (${r.status})`);
-        return r.text();
-      })
+    api.report(weather, pack, modelPath || undefined)
       .then((html) => {
         download(`overheatlens_report_${result?.run.run_id}.html`, html, "text/html");
       })
@@ -78,9 +117,9 @@ export function Analyze() {
     <>
       <h1 className="page-title">Analyze</h1>
       <p className="page-intro">
-        Run the demo dwelling — a synthetic two-zone model shipped with the tool — through
-        the real pipeline: readiness checks, an official EnergyPlus simulation, and a
-        versioned standards evaluation. Bring your own models in a later phase.
+        Run a dwelling model through the real pipeline: readiness checks, an official
+        EnergyPlus simulation, and a versioned standards evaluation. Start with the
+        bundled synthetic dwelling, pick a Leeds archetype template, or upload your own IDF.
       </p>
 
       <section style={{ marginTop: 24, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 18, maxWidth: 860 }}>
@@ -110,6 +149,53 @@ export function Analyze() {
           <p style={{ marginTop: 8, fontSize: 12.5, color: "var(--muted-ink)" }}>
             Need to vet a file first? <Link to="/weather">Weather Lab →</Link>
           </p>
+        </div>
+        <div>
+          <label htmlFor="mdl" style={{ fontFamily: "var(--font-mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--muted-ink)" }}>
+            Model
+          </label>
+          <select id="mdl" value={modelPath} onChange={(e) => setModelPath(e.target.value)}
+            style={{ display: "block", width: "100%", marginTop: 6, padding: "9px 12px", border: "1px solid var(--line-strong)", borderRadius: 6, background: "var(--surface)", font: "inherit", color: "var(--ink)" }}>
+            <option value={DEMO_OPTION.path}>{DEMO_OPTION.label}</option>
+            {models && models.some((m) => m.source === "template") && (
+              <optgroup label="Leeds archetype templates">
+                {models.filter((m) => m.source === "template").map((m) => (
+                  <option key={m.id} value={m.path}>
+                    {m.name} ({m.n_zones ?? "?"} zones)
+                  </option>
+                ))}
+              </optgroup>
+            )}
+            {models && models.some((m) => m.source === "upload") && (
+              <optgroup label="Uploaded models">
+                {models.filter((m) => m.source === "upload").map((m) => (
+                  <option key={m.id} value={m.path}>
+                    {m.name} ({m.n_zones ?? "?"} zones)
+                  </option>
+                ))}
+              </optgroup>
+            )}
+          </select>
+          <div style={{ marginTop: 8, display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+            <button className="btn secondary" onClick={() => idfInput.current?.click()} disabled={uploadingModel}>
+              {uploadingModel ? "Uploading…" : "Upload IDF"}
+            </button>
+            <input
+              ref={idfInput}
+              type="file"
+              accept=".idf"
+              style={{ display: "none" }}
+              aria-label="Upload an IDF model file"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) uploadIdf(f);
+                e.target.value = "";
+              }}
+            />
+            <span style={{ fontSize: 12.5, color: "var(--muted-ink)" }}>
+              Saved locally (max 20 MB) and checked on arrival.
+            </span>
+          </div>
         </div>
       </section>
 
@@ -145,12 +231,18 @@ export function Analyze() {
         </div>
       )}
 
-      {result && <Results r={result} />}
+      {result && <Results r={result} comfort={comfort} comfortError={comfortError} running={running} />}
     </>
   );
 }
 
-function Results({ r }: { r: AnalyzeResult }) {
+function Results({ r, comfort, comfortError, running }: {
+  r: AnalyzeResult;
+  comfort: ComfortRunResult | null;
+  comfortError: string | null;
+  running: boolean;
+}) {
+  const modelName = r.model.name.length > 26 ? `${r.model.name.slice(0, 26)}…` : r.model.name;
   return (
     <>
       <section style={{ marginTop: 30 }}>
@@ -170,6 +262,10 @@ function Results({ r }: { r: AnalyzeResult }) {
           <div className="metric">
             <span className="m-val" style={{ fontSize: 16 }}>E+ {r.run.energyplus_version}</span>
             <div className="m-label">engine</div>
+          </div>
+          <div className="metric">
+            <span className="m-val" style={{ fontSize: 15 }} title={r.model.name}>{modelName}</span>
+            <div className="m-label">model</div>
           </div>
           <div className="metric">
             <span className="m-val" style={{ fontSize: 16 }}>{r.weather.name.replace(/_/g, " ").slice(0, 18)}…</span>
@@ -226,6 +322,21 @@ function Results({ r }: { r: AnalyzeResult }) {
       </section>
 
       <section className="more-above">
+        <h2 className="section-h">Comfort from this run</h2>
+        {comfortError && (
+          <div className="note warn">
+            <strong>Comfort could not be computed for this run.</strong> {comfortError}
+          </div>
+        )}
+        {!comfort && !comfortError && !running && (
+          <p style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--muted-ink)" }}>
+            computing comfort from this run…
+          </p>
+        )}
+        {comfort && <ComfortTable c={comfort} />}
+      </section>
+
+      <section className="more-above">
         <h2 className="section-h">Simulated temperatures</h2>
         <RoomFigure r={r} />
       </section>
@@ -278,6 +389,76 @@ function Results({ r }: { r: AnalyzeResult }) {
         </div>
       </section>
     </>
+  );
+}
+
+function ComfortTable({ c }: { c: ComfortRunResult }) {
+  const a = c.assumptions;
+  const withReason = c.zones.filter((z) => z.reason);
+  const fmt = (v: number | null, unit: string) =>
+    v === null ? "—" : `${v.toFixed(1)}${unit}`;
+  return (
+    <Figure
+      figNo="TAB 1"
+      caption="comfort indices computed from this run’s simulated hourly temperatures"
+      meta={<span>pythermalcomfort {String(a.library_version ?? "")}</span>}
+    >
+      {c.note && (
+        <p style={{ margin: 0, fontSize: 13, color: "var(--muted-ink)" }}>{c.note}</p>
+      )}
+      {c.zones.length > 0 && (
+        <table className="data">
+          <thead>
+            <tr>
+              <th>Zone</th>
+              <th>Adaptive acceptable · Cat II</th>
+              <th>Mean PPD</th>
+              <th>Max Top</th>
+            </tr>
+          </thead>
+          <tbody>
+            {c.zones.map((z) => (
+              <tr key={z.zone}>
+                <td>{z.zone}</td>
+                <td className="mono">
+                  {fmt(z.adaptive_acceptable_pct, "%")}
+                  {z.adaptive_hours_excluded > 0 && (
+                    <span style={{ color: "var(--muted-ink)", fontSize: 11 }}>
+                      {" "}({z.adaptive_hours_excluded} h excluded)
+                    </span>
+                  )}
+                </td>
+                <td className="mono">
+                  {fmt(z.mean_ppd, "%")}
+                  {z.ppd_hours_excluded > 0 && (
+                    <span style={{ color: "var(--muted-ink)", fontSize: 11 }}>
+                      {" "}({z.ppd_hours_excluded} h excluded)
+                    </span>
+                  )}
+                </td>
+                <td className="mono">{fmt(z.max_top, " °C")}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+      <p style={{ margin: "10px 0 0", fontSize: 12.5, color: "var(--muted-ink)", maxWidth: "96ch" }}>
+        Stated assumptions: met {a.met} · clo {a.clo} (summer ensemble) · air speed{" "}
+        {a.air_speed_m_s} m/s · occupied hours 9 am–10 pm (hour-ending 10–22) · window{" "}
+        {String(a.assessment_window ?? "May–September")} · adaptive: {a.adaptive_standard}{" "}
+        (Trm from EPW daily means) · PPD: {a.ppd_standard}.
+      </p>
+      <p style={{ margin: "6px 0 0", fontSize: 12, color: "var(--muted-ink)", maxWidth: "96ch" }}>
+        {c.computed_from}. Comfort mathematics come from the wrapped library only — nothing
+        is recomputed here; hours it cannot evaluate are excluded and counted, never
+        extrapolated. Relative humidity: {String(a.rh ?? "harvested from the same run")}.
+      </p>
+      {withReason.length > 0 && (
+        <p style={{ margin: "6px 0 0", fontSize: 12, color: "var(--muted-ink)" }}>
+          {withReason.map((z) => `${z.zone}: ${z.reason}`).join(" · ")}
+        </p>
+      )}
+    </Figure>
   );
 }
 

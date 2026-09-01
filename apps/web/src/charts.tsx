@@ -3,12 +3,12 @@ import * as echarts from "echarts";
 
 /* Sequential temperature scale: cool -> warm through the OverheatLens ramp. */
 export const TEMP_SCALE = [
-  [0.0, "#dcecef"],
-  [0.28, "#86a9b3"],
-  [0.5, "#f4c95d"],
-  [0.72, "#e58a3a"],
-  [0.88, "#d4553d"],
-  [1.0, "#8f2d3a"],
+  [0.0, "#47b9cf"],
+  [0.26, "#a7dde1"],
+  [0.5, "#d7ef78"],
+  [0.72, "#f39a3c"],
+  [0.88, "#e56f2f"],
+  [1.0, "#c94436"],
 ] as const;
 
 export const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",

@@ -12,10 +12,12 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from apps.api.app.main import REPO_ROOT, WEATHER_DIR, app
+from apps.api.app import main as main_mod
+from apps.api.app.main import DEMO_IDF, REPO_ROOT, WEATHER_DIR, app
 
 client = TestClient(app)
 FIXTURE = REPO_ROOT / "fixtures" / "epw" / "synthetic" / "good_file.epw"
+IDF_FIXTURE = REPO_ROOT / "fixtures" / "idf" / "synthetic_dwelling.idf"
 
 
 def _real_file() -> Path | None:
@@ -24,6 +26,19 @@ def _real_file() -> Path | None:
             if "DSY1_2020High50" in p.name:
                 return p
     return None
+
+
+_eplus_present = client.get("/api/version").json()["energyplus_version"] is not None
+
+
+@pytest.fixture()
+def upload_dirs(tmp_path, monkeypatch):
+    """Point the upload destinations at a scratch directory for the test."""
+    epw_dir = tmp_path / "uploads" / "epw"
+    idf_dir = tmp_path / "uploads" / "idf"
+    monkeypatch.setattr(main_mod, "UPLOAD_EPW_DIR", epw_dir)
+    monkeypatch.setattr(main_mod, "UPLOAD_IDF_DIR", idf_dir)
+    return epw_dir, idf_dir
 
 
 # --- version & rule packs -------------------------------------------------------
@@ -132,6 +147,110 @@ def test_comfort_adaptive_and_utci():
     assert u["status"] == "OK" and "utci" in u["values"]
 
 
+# --- models & uploads ---------------------------------------------------------------
+
+def test_models_lists_leeds_templates():
+    r = client.get("/api/models")
+    assert r.status_code == 200
+    models = r.json()["models"]
+    templates = [m for m in models if m["source"] == "template"]
+    leeds_dir = REPO_ROOT / "fixtures" / "idf" / "leeds"
+    if not leeds_dir.is_dir() or not any(leeds_dir.glob("*.idf")):
+        pytest.skip("no Leeds archetype templates present yet")
+    assert templates
+    for m in templates:
+        assert m["city"] == "Leeds"
+        for key in ("id", "name", "path", "description", "n_zones",
+                    "zone_names", "floor_area_m2", "source"):
+            assert key in m
+        assert Path(m["path"]).is_file()
+
+
+def test_models_upload_idf_happy_and_listed(upload_dirs):
+    _, idf_dir = upload_dirs
+    body = IDF_FIXTURE.read_bytes()
+    r = client.post("/api/models/upload",
+                    params={"name": "my_house.idf"}, content=body)
+    assert r.status_code == 200
+    out = r.json()
+    assert out["model"]["n_zones"] == 2
+    assert out["model"]["zone_names"]
+    assert out["model"]["source"] == "upload"
+    assert out["model"]["path"].startswith(str(idf_dir))
+    assert "readiness" in out and "status" in out["readiness"]
+    # listed as an upload afterwards
+    models = client.get("/api/models").json()["models"]
+    up = [m for m in models if m["id"] == "upload:my_house"]
+    assert up and up[0]["n_zones"] == 2
+    # a second upload with the same name must not overwrite the first
+    r2 = client.post("/api/models/upload",
+                     params={"name": "my_house.idf"}, content=body)
+    assert r2.status_code == 200
+    assert Path(r2.json()["model"]["path"]).name != "my_house.idf"
+    assert len(list(idf_dir.glob("*.idf"))) == 2
+
+
+def test_models_upload_rejects_garbage_and_keeps_nothing(upload_dirs):
+    _, idf_dir = upload_dirs
+    r = client.post("/api/models/upload",
+                    params={"name": "junk.idf"}, content=b"not an idf at all")
+    assert r.status_code == 400
+    assert "Version" in r.json()["detail"]
+    assert list(idf_dir.glob("*")) == []  # invalid upload is not persisted
+
+
+def test_models_upload_rejects_wrong_extension_and_traversal(upload_dirs):
+    r = client.post("/api/models/upload",
+                    params={"name": "model.epw"},
+                    content=b"Version, 25.1;")
+    assert r.status_code == 400
+    _, idf_dir = upload_dirs
+    r2 = client.post("/api/models/upload",
+                     params={"name": "../../escape.idf"},
+                     content=IDF_FIXTURE.read_bytes())
+    assert r2.status_code == 200
+    saved = Path(r2.json()["model"]["path"])
+    assert saved.parent == idf_dir  # sanitised, never escapes the upload root
+
+
+def test_models_upload_size_limit(upload_dirs):
+    _, idf_dir = upload_dirs
+    big = b"Version, 25.1;\n" + b"x" * (20 * 1024 * 1024)
+    r = client.post("/api/models/upload", params={"name": "big.idf"}, content=big)
+    assert r.status_code == 413
+    if idf_dir.exists():
+        assert list(idf_dir.glob("*")) == []
+
+
+def test_weather_upload_happy_path(upload_dirs):
+    epw_dir, _ = upload_dirs
+    body = FIXTURE.read_bytes()
+    r = client.post("/api/weather/upload",
+                    params={"name": "my_station.epw"}, content=body)
+    assert r.status_code == 200
+    out = r.json()
+    assert out["status"] == "PASS"
+    assert out["n_rows"] == 8760
+    assert out["path"].startswith(str(epw_dir))
+    # the saved file is inside the guarded roots and checkable like any library file
+    c = client.get("/api/weather/check", params={"path": out["path"]})
+    assert c.status_code == 200 and c.json()["n_rows"] == 8760
+    # it appears in the weather list as an upload with unknown compatibility
+    files = client.get("/api/weather").json()["files"]
+    up = [f for f in files if f["name"] == "[upload] my_station.epw"]
+    assert up and up[0]["compat_2017"] == "unknown"
+
+
+def test_weather_upload_rejects_text_file(upload_dirs):
+    r = client.post("/api/weather/upload",
+                    params={"name": "notes.epw"},
+                    content=b"# just some notes, definitely not weather\n1,2,3\n")
+    assert r.status_code == 400
+    assert "LOCATION" in r.json()["detail"]
+    epw_dir, _ = upload_dirs
+    assert list(epw_dir.glob("*")) == []
+
+
 # --- validation & analyze ------------------------------------------------------------
 
 def test_validation_rows_served():
@@ -145,12 +264,16 @@ def test_validation_rows_served():
 def test_analyze_guarded_against_outside_paths():
     r = client.post("/api/analyze", params={"weather_path": "README.md"})
     assert r.status_code in (400, 403)
+    # the model path has the same guard: only fixtures/idf and data/uploads/idf
+    r2 = client.post("/api/analyze", params={
+        "weather_path": str(FIXTURE),
+        "model_path": str(REPO_ROOT / "apps" / "api" / "model.idf")})
+    assert r2.status_code == 403
 
 
 @pytest.mark.skipif(_real_file() is None, reason="needs the local Leeds weather file")
-@pytest.mark.skipif(
-    client.get("/api/version").json()["energyplus_version"] is None,
-    reason="needs an installed EnergyPlus binary")
+@pytest.mark.skipif(not _eplus_present,
+                    reason="needs an installed EnergyPlus binary")
 def test_analyze_runs_full_pipeline():
     r = client.post("/api/analyze", params={
         "weather_path": str(_real_file()), "pack_id": "uk_tm59_2017"})
@@ -164,6 +287,53 @@ def test_analyze_runs_full_pipeline():
     r2 = client.post("/api/analyze", params={
         "weather_path": str(_real_file()), "pack_id": "uk_tm59_2017"})
     assert r2.json()["cached"] is True
+
+
+@pytest.mark.skipif(_real_file() is None, reason="needs the local Leeds weather file")
+@pytest.mark.skipif(not _eplus_present,
+                    reason="needs an installed EnergyPlus binary")
+def test_analyze_with_model_path_runs_chosen_model():
+    r = client.post("/api/analyze", params={
+        "weather_path": str(_real_file()), "pack_id": "uk_tm59_2017",
+        "model_path": str(IDF_FIXTURE)})
+    assert r.status_code == 200
+    body = r.json()
+    assert Path(body["model"]["path"]) == IDF_FIXTURE.resolve()
+    assert set(body["series"]) == {"living room", "bedroom 1"}
+    # every zone carries a harvested RH series from the same run (fixture outputs it)
+    assert all(body["rh"][z] is not None and len(body["rh"][z]) == 8760
+               for z in body["series"])
+
+
+@pytest.mark.skipif(_real_file() is None, reason="needs the local Leeds weather file")
+@pytest.mark.skipif(not _eplus_present,
+                    reason="needs an installed EnergyPlus binary")
+def test_comfort_run_shape_and_assumptions():
+    r = client.post("/api/comfort/run", params={
+        "weather_path": str(_real_file()), "pack_id": "uk_tm59_2017"})
+    assert r.status_code == 200
+    body = r.json()
+    a = body["assumptions"]
+    assert a["met"] == 1.2 and a["clo"] == 0.35 and a["air_speed_m_s"] == 0.1
+    assert a["assessment_window"].startswith("May")
+    assert "09:00" in a["occupied_hours"] and "22:00" in a["occupied_hours"]
+    assert a["library"] == "pythermalcomfort" and a["library_version"]
+    zones = body["zones"]
+    assert {z["zone"] for z in zones} == {"living room", "bedroom 1"}
+    for z in zones:
+        pct, ppd, top = (z["adaptive_acceptable_pct"], z["mean_ppd"], z["max_top"])
+        assert pct is None or 0.0 <= pct <= 100.0
+        assert ppd is None or 0.0 <= ppd <= 100.0
+        assert top is None or top > -10.0
+        assert z["adaptive_hours_excluded"] >= 0 and z["ppd_hours_excluded"] >= 0
+    # every zone must produce real numbers for the Leeds DSY file (nothing hidden)
+    assert all(z["adaptive_acceptable_pct"] is not None and z["max_top"] is not None
+               for z in zones)
+    # the cached run is reused, never re-simulated
+    r2 = client.post("/api/comfort/run", params={
+        "weather_path": str(_real_file()), "pack_id": "uk_tm59_2017"})
+    assert r2.status_code == 200
+    assert r2.json()["zones"] == zones
 
 
 def test_spa_root_served():
