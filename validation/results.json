@@ -1,12 +1,12 @@
 {
   "campaign_verdict": "PASS",
-  "started_utc": "2026-09-04T15:53:46+00:00",
-  "finished_utc": "2026-09-04T15:57:40+00:00",
+  "started_utc": "2026-09-04T18:43:12+00:00",
+  "finished_utc": "2026-09-04T18:51:25+00:00",
   "summary": {
-    "cases": 11,
+    "cases": 12,
     "fail": 0,
     "incomplete": 0,
-    "pass_or_confirmed": 11
+    "pass_or_confirmed": 12
   },
   "cases": [
     {
@@ -269,6 +269,63 @@
         "note": "app runs the Leeds DSY1 2020-High50 file; CIBSE publishes its example on its own weather \u2014 direction-only check"
       },
       "reference": "CIBSE TM59:2017 worked example (pack SHA-pinned)"
+    },
+    {
+      "id": "V12",
+      "title": "DesignBuilder 01BA baseline cross-check",
+      "layer": "L4",
+      "verdict": "CONFIRMED",
+      "detail": {
+        "app_overall": "FAIL",
+        "db_overall": "Fail",
+        "zones": [
+          {
+            "db_zone": "00GROUNDFLOOR:KITCHEN",
+            "app_room": "00GROUNDFLOOR:KITCHEN",
+            "db_verdict": "Fail",
+            "app_verdict": "FAIL",
+            "agree": true,
+            "db_critA_pct": 5.45,
+            "app_critA_pct": 4.12,
+            "db_critB_hr": null,
+            "app_critB_hr": null
+          },
+          {
+            "db_zone": "00GROUNDFLOOR:LOUNGE",
+            "app_room": "00GROUNDFLOOR:LOUNGE",
+            "db_verdict": "Fail",
+            "app_verdict": "FAIL",
+            "agree": true,
+            "db_critA_pct": 5.19,
+            "app_critA_pct": 4.22,
+            "db_critB_hr": null,
+            "app_critB_hr": null
+          },
+          {
+            "db_zone": "01FIRSTFLOOR:BEDROOM1",
+            "app_room": "01FIRSTFLOOR:BEDROOM1",
+            "db_verdict": "Fail",
+            "app_verdict": "FAIL",
+            "agree": true,
+            "db_critA_pct": 4.67,
+            "app_critA_pct": 5.56,
+            "db_critB_hr": 39.83,
+            "app_critB_hr": 141.0
+          },
+          {
+            "db_zone": "02SECONDFLOOR:BEDROOM2",
+            "app_room": "01FIRSTFLOOR:BEDROOM2",
+            "db_verdict": "Fail",
+            "app_verdict": "FAIL",
+            "agree": true,
+            "db_critA_pct": 14.13,
+            "app_critA_pct": 5.12,
+            "db_critB_hr": 117.67,
+            "app_critB_hr": 120.0
+          }
+        ]
+      },
+      "reference": "Safer_Heat_Harehills '01BA__Baseline (TM59).csv' (author PhD data)"
     }
   ]
 }

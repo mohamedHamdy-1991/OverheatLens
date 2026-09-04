@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "app_model": "data/uploads/idf/01BA_BL_Baseline_SaferHeat_Eplus251.idf",
+    "source_idf": "01BA__Baseline.idf (Safer_Heat_Harehills 01BA_BL_Baseline, sha256 06356ead\u2026)",
+    "weather": "Leeds_DSY1_2020High50_.epw",
+    "pack": "uk_tm59_2017",
+    "app_engine": "EnergyPlus 25.1.0 (migrated copy: People MRT ZoneAveraged\u2192EnclosureAveraged \u00d74, Version\u219225.1.0)",
+    "db_engine": "DesignBuilder E+ 23.1 internal (reference: '01BA__Baseline (TM59).csv')",
+    "app_overall": "FAIL",
+    "zones_app": 12
+  },
+  "zones": [
+    {
+      "db_zone": "00GROUNDFLOOR:KITCHEN",
+      "app_room": "00GROUNDFLOOR:KITCHEN",
+      "db_verdict": "Fail",
+      "app_verdict": "FAIL",
+      "agree": true,
+      "db_critA_pct": 5.45,
+      "app_critA_pct": 4.12,
+      "delta_pp": -1.33,
+      "db_critB_hr": null,
+      "app_critB_hr": null
+    },
+    {
+      "db_zone": "00GROUNDFLOOR:LOUNGE",
+      "app_room": "00GROUNDFLOOR:LOUNGE",
+      "db_verdict": "Fail",
+      "app_verdict": "FAIL",
+      "agree": true,
+      "db_critA_pct": 5.19,
+      "app_critA_pct": 4.22,
+      "delta_pp": -0.97,
+      "db_critB_hr": null,
+      "app_critB_hr": null
+    },
+    {
+      "db_zone": "01FIRSTFLOOR:BEDROOM1",
+      "app_room": "01FIRSTFLOOR:BEDROOM1",
+      "db_verdict": "Fail",
+      "app_verdict": "FAIL",
+      "agree": true,
+      "db_critA_pct": 4.67,
+      "app_critA_pct": 5.56,
+      "delta_pp": 0.89,
+      "db_critB_hr": 39.83,
+      "app_critB_hr": 141.0
+    },
+    {
+      "db_zone": "02SECONDFLOOR:BEDROOM2",
+      "app_room": "01FIRSTFLOOR:BEDROOM2",
+      "db_verdict": "Fail",
+      "app_verdict": "FAIL",
+      "agree": true,
+      "db_critA_pct": 14.13,
+      "app_critA_pct": 5.12,
+      "delta_pp": -9.01,
+      "db_critB_hr": 117.67,
+      "app_critB_hr": 120.0
+    }
+  ],
+  "corridors": {
+    "00GROUNDFLOOR:STAIRS": {
+      "app_pct": 1.5,
+      "app_flag": "NO_FLAG",
+      "db_stairsdown_pct": 0.87,
+      "db_stairsup_pct": 0.78,
+      "db_verdict": "Pass",
+      "both_below_3pct": true
+    }
+  },
+  "classification_notes": [
+    "BATHROOM and LANDING: DesignBuilder assesses them under the corridors criterion (hours >28C: 1.78/0.97% -> Pass); the app classifies them as living rooms (criterion a: 4.78/5.78% > 3% -> FAIL). Room-taxonomy difference between engines; the dwelling verdict is FAIL either way. Flagged for the author, not silently changed.",
+    "App-only zones (CHIMNEY x2, BAYWINDOWROOF:VOID, ROOF:LOFT, CUPBOARD) are geometry artefacts the DB report does not list; LOFT 40.42% FAIL contributes to the app's dwelling FAIL alongside the habitable rooms.",
+    "Zone naming: the IDF export places BEDROOM2 on 01FIRSTFLOOR where the DB report labels it 02SECONDFLOOR; mapped by zone name for this comparison."
+  ],
+  "verdict_agreement": "4/4 habitable zones agree",
+  "campaign_verdict": "CONFIRMED"
+}

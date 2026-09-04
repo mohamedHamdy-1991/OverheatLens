@@ -162,6 +162,21 @@ publishes the example for its own weather file; the app runs the Leeds file).
 
 ---
 
+### V12 — DesignBuilder 01BA baseline cross-check (L4)
+**Method:** the author's DesignBuilder-exported IDF for the Safer_Heat_Harehills
+01BA baseline (`01BA_BL_Baseline/01BA__Baseline.idf`, E+ 23.1 export) is run
+through the app's full TM59:2017 pipeline on `Leeds_DSY1_2020High50_.epw` and
+compared zone-by-zone with the verdicts in the author's DesignBuilder TM59
+export (`01BA__Baseline (TM59).csv`). A documented, semantics-preserving
+migration to EnergyPlus 25.1.0 is applied on a copy (People MRT
+`ZoneAveraged`→`EnclosureAveraged` — the only key in the 25.1 IDD, a pure
+zone→enclosure terminology rename; Version identifier updated). The original
+file is never modified. **Verdict CONFIRMED** when every shared habitable zone
+(kitchen, lounge, bedroom 1, bedroom 2) agrees; corridor zones must sit below
+the 3 % criterion in both. Absolute criterion percentages differ between the
+two engines and are reported, not thresholded.
+**Reference:** the author's DesignBuilder TM59 export (PhD data, kept local).
+
 ## 4. Verdict rules
 
 | Verdict | Meaning |

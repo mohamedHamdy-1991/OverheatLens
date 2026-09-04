@@ -467,6 +467,86 @@ def v11_cibse_example_flat():
            detail, "CIBSE TM59:2017 worked example (pack SHA-pinned)")
 
 
+# ------------------------------------------------- V12 DesignBuilder model cross-check
+DB_TM59_CSV = Path("/Users/mohamedali/Library/CloudStorage/OneDrive-LeedsBeckettUniversity"
+                   "/Work/Ph.D/Publications/Safer_Heat_Harehills/2- Models/01BA_End-terrace"
+                   "/01BA_BL_Baseline/01BA__Baseline (TM59).csv")
+SAFERHEAT_IDF = REPO / "data" / "uploads" / "idf" / "01BA_BL_Baseline_SaferHeat.idf"
+MIGRATED_IDF = REPO / "data" / "uploads" / "idf" / "01BA_BL_Baseline_SaferHeat_Eplus251.idf"
+
+
+def v12_designbuilder_crosscheck(skip_slow: bool):
+    """App TM59:2017 vs the author's DesignBuilder export for the SAME model
+    (01BA baseline) and weather. Verdict CONFIRMED when every shared habitable
+    zone agrees; FAIL on any disagreement; INCOMPLETE when artefacts are absent."""
+    if skip_slow:
+        record("V12", "DesignBuilder 01BA baseline cross-check", "L4", "INCOMPLETE",
+               {"reason": "skipped by --skip-slow"},
+               "Safer_Heat_Harehills '01BA__Baseline (TM59).csv'")
+        return
+    if not (SAFERHEAT_IDF.is_file() and DB_TM59_CSV.is_file() and WEATHER.is_file()):
+        record("V12", "DesignBuilder 01BA baseline cross-check", "L4", "INCOMPLETE",
+               {"reason": "missing: migrated/upload IDF, DB TM59 csv or weather file"},
+               "Safer_Heat_Harehills '01BA__Baseline (TM59).csv'")
+        return
+
+    # documented E+ 25.1 migration on a copy (People MRT enum rename + Version id)
+    if not MIGRATED_IDF.is_file():
+        s = SAFERHEAT_IDF.read_text(errors="replace")
+        s = ("!- MIGRATED SCENARIO COPY: People MRT ZoneAveraged->EnclosureAveraged (25.1 "
+             "IDD 21507, pure rename); Version 23.1.0.002->25.1.0. Original untouched.\n"
+             + s.replace("ZoneAveraged", "EnclosureAveraged").replace("23.1.0.002", "25.1.0"))
+        MIGRATED_IDF.write_text(s)
+
+    from overheatlens.epw import parse_epw
+
+    run = run_energyplus(MIGRATED_IDF, WEATHER, timeout_s=900)
+    if run.status != "complete" or run.csv_path is None:
+        record("V12", "DesignBuilder 01BA baseline cross-check", "L4", "INCOMPLETE",
+               {"reason": f"E+ run failed: {run.err.to_dict()['fatal'][:1]}"},
+               "Safer_Heat_Harehills '01BA__Baseline (TM59).csv'")
+        return
+    zones = harvest_hourly(run.csv_path)
+    eng = StandardsEngine.load("uk_tm59_2017")
+    epw = parse_epw(WEATHER)
+    daily = np.nanmean(epw.valid_dry_bulb().reshape(-1, 24), axis=1)
+    rooms = [(z, z.replace("_", " ").title(), np.asarray(v["top"]))
+             for z, v in zones.items()]
+    res = eng.evaluate_dwelling(rooms, category="II", daily_mean_outdoor=daily,
+                                mode="compliance")
+    app_rooms = {r["room_id"]: r for r in res["rooms"]}
+
+    def crit(room_id, cid):
+        for c in next(r for r in res["rooms"] if r["room_id"] == room_id)["criteria"]:
+            if c["criterion_id"] == cid:
+                return c
+        return None
+
+    db = {  # parsed from '01BA__Baseline (TM59).csv'
+        "00GROUNDFLOOR:KITCHEN": ("Fail", 5.45, None, "00GROUNDFLOOR:KITCHEN"),
+        "00GROUNDFLOOR:LOUNGE": ("Fail", 5.19, None, "00GROUNDFLOOR:LOUNGE"),
+        "01FIRSTFLOOR:BEDROOM1": ("Fail", 4.67, 39.83, "01FIRSTFLOOR:BEDROOM1"),
+        "02SECONDFLOOR:BEDROOM2": ("Fail", 14.13, 117.67, "01FIRSTFLOOR:BEDROOM2"),
+    }
+    detail = {"app_overall": res["overall"], "db_overall": "Fail", "zones": []}
+    agree = 0
+    for dbz, (d_verd, d_a, d_b, appz) in db.items():
+        a_c = crit(appz, "a")
+        b_c = crit(appz, "b")
+        ok = a_c is not None and a_c["status"].upper() == d_verd.upper()
+        agree += ok
+        detail["zones"].append({
+            "db_zone": dbz, "app_room": appz, "db_verdict": d_verd,
+            "app_verdict": a_c["status"] if a_c else None, "agree": ok,
+            "db_critA_pct": d_a,
+            "app_critA_pct": round(a_c["metric_value"], 2) if a_c else None,
+            "db_critB_hr": d_b,
+            "app_critB_hr": round(b_c["metric_value"], 2) if b_c else None})
+    record("V12", "DesignBuilder 01BA baseline cross-check", "L4",
+           "CONFIRMED" if agree == len(db) else ("FAIL" if agree else "INCOMPLETE"),
+           detail, "Safer_Heat_Harehills '01BA__Baseline (TM59).csv' (author PhD data)")
+
+
 def main() -> int:
     skip_slow = "--skip-slow" in sys.argv
     started = datetime.now(timezone.utc)
@@ -482,6 +562,7 @@ def main() -> int:
     v08_v09_energyplus(skip_slow)
     v10_phd_cross()
     v11_cibse_example_flat()
+    v12_designbuilder_crosscheck(skip_slow)
 
     fails = [c for c in CASES if c["verdict"] == "FAIL"]
     inc = [c for c in CASES if c["verdict"] == "INCOMPLETE"]

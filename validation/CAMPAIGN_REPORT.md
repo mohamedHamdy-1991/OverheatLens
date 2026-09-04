@@ -1,6 +1,6 @@
 # OverheatLens — Validation Campaign Report
 
-Run: 2026-09-04T15:53:46+00:00 → 2026-09-04T15:57:40+00:00  ·  Campaign verdict: **PASS**  ·  11 PASS/CONFIRMED · 0 INCOMPLETE · 0 FAIL
+Run: 2026-09-04T18:43:12+00:00 → 2026-09-04T18:51:25+00:00  ·  Campaign verdict: **PASS**  ·  12 PASS/CONFIRMED · 0 INCOMPLETE · 0 FAIL
 
 Method: see `validation/METHOD.md` (the full method document).
 
@@ -17,4 +17,5 @@ Method: see `validation/METHOD.md` (the full method document).
 | V09 — Energy meter internal consistency | L5 | **PASS** | EnergyPlus meter output (eplusmeter.csv via --readvars); monthly sums vs runperiod total ≤ 0.5 % |
 | V10 — Cross-check vs author's DesignBuilder PhD exports | L4 | **CONFIRMED_DIRECTIONAL** | Safer_Heat_Harehills DesignBuilder TM59 exports (author's PhD data) |
 | V11 — CIBSE TM59 Example 4 flat vs published outcome | L4 | **CONFIRMED_DIRECTIONAL** | CIBSE TM59:2017 worked example (pack SHA-pinned) |
+| V12 — DesignBuilder 01BA baseline cross-check | L4 | **CONFIRMED** | Safer_Heat_Harehills '01BA__Baseline (TM59).csv' (author PhD data) |
 

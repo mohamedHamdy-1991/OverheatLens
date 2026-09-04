@@ -151,5 +151,7 @@ Status: `PASS` / `FAIL` / `PENDING` (fixture exists, run pending) / `BLOCKED` (s
 | VAL-CAMP-10 (V10) | external cross-check | app TM59 verdict vs author's DesignBuilder exports | `data/mitigation/summary.json` | Safer_Heat_Harehills (PhD data) | same PASS/FAIL direction | 01BA: both FAIL — CONFIRMED_DIRECTIONAL (export weather unrecorded); 17BG/27BG: no DB baseline → INCOMPLETE | directional | CONFIRMED_DIRECTIONAL | 2026-09-04 | honest INCOMPLETE for missing exports |
 | VAL-CAMP-11 (V11) | published outcome | CIBSE TM59 Example 4 flat overheats | audit_report.json | CIBSE TM59:2017 worked example | app FAIL matches published direction | CONFIRMED_DIRECTIONAL | directional | CONFIRMED_DIRECTIONAL | 2026-09-04 | CIBSE weather ≠ Leeds file — direction-only |
 
-Campaign verdict 2026-09-04: **PASS** — 9 PASS + 2 CONFIRMED_DIRECTIONAL, 0 INCOMPLETE, 0 FAIL.
+| VAL-CAMP-12 (V12) | external model cross-check | app TM59:2017 pipeline vs the author's DesignBuilder result, same model + weather | `01BA__Baseline.idf` (Safer_Heat 01BA_BL_Baseline) × Leeds_DSY1_2020High50 | author's `01BA__Baseline (TM59).csv` | all 4 habitable zones same verdict; corridor <3 % both | kitchen/lounge/bed1/bed2 FAIL–FAIL (A: Δ −1.33/−0.97/+0.89/−9.01 pp; B: 39.83→141, 117.67→120 h); stairs <3 % both | verdict-level (engines differ) | CONFIRMED | 2026-09-04 | E+ 23.1→25.1 documented migration (MRT enum rename); bathroom/landing taxonomy difference flagged, dwelling FAIL either way; `validation/MODEL_01BA_DESIGNBUILDER_CROSSCHECK.md` |
+
+Campaign verdict 2026-09-04: **PASS** — 10 PASS + 2 CONFIRMED_DIRECTIONAL + 1 CONFIRMED, 0 INCOMPLETE, 0 FAIL.
 Re-run: `./.venv/bin/python validation/run_campaign.py`.
