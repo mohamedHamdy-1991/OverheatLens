@@ -528,46 +528,90 @@ function ComfortTable({ c }: { c: ComfortRunResult }) {
   );
 }
 
-/* Hottest-week operative temperature lines with a 26 °C reference. */
+/* Operative temperature lines — switch between the hottest outdoor week and
+   the whole simulated year; the 26 °C reference runs through both views. */
+const MONTH_DAYS = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+const MONTH_ABBR = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+function TimeViewButtons({ view, setView }: {
+  view: "week" | "year"; setView: (v: "week" | "year") => void;
+}) {
+  return (
+    <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+      {(["year", "week"] as const).map((v) => (
+        <button key={v} className={view === v ? "nb-btn" : "nb-btn secondary"}
+          style={{ minHeight: 32, fontSize: 11.5 }} onClick={() => setView(v)}>
+          {v === "year" ? "WHOLE YEAR" : "HOTTEST WEEK"}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function hottestWeekStart(outdoor: number[], week: number): number {
+  let best = 0, bestMean = -Infinity;
+  for (let i = 0; i + week <= outdoor.length; i += 24) {
+    const mean = outdoor.slice(i, i + week).reduce((a, b) => a + b, 0) / week;
+    if (mean > bestMean) { bestMean = mean; best = i; }
+  }
+  return Math.max(0, best - 24 * 3);
+}
+
 function RoomFigure({ r }: { r: AnalyzeResult }) {
+  const [view, setView] = useState<"week" | "year">("week");
   const ref = useRef<HTMLDivElement>(null);
   const chartRef = useChart(ref, null, []);
   const zones = Object.keys(r.series);
   const outdoor = r.daily_mean_outdoor;
 
   const week = 24 * 7;
-  const start = (() => {
-    let best = 0, bestMean = -Infinity;
-    for (let i = 0; i + week <= outdoor.length; i += 24) {
-      const mean = outdoor.slice(i, i + week).reduce((a, b) => a + b, 0) / week;
-      if (mean > bestMean) { bestMean = mean; best = i; }
-    }
-    return Math.max(0, best - 24 * 3);
-  })();
+  const total = r.series[zones[0]].length;
+  const hottestStart = hottestWeekStart(outdoor, week);
+  const start = view === "week" ? hottestStart : 0;
+  const hours = view === "week" ? week : total;
+
+  const xLabels = view === "year"
+    ? Array.from({ length: total }, (_, i) => {
+        const d = Math.floor(i / 24);
+        let m = 0, acc = 0;
+        while (m < 12 && acc + MONTH_DAYS[m] <= d) acc += MONTH_DAYS[m++];
+        return i % 24 === 0 && acc === d ? MONTH_ABBR[m] : "";
+      })
+    : Array.from({ length: week }, (_, i) => {
+        const h = (start + i) % 24;
+        const d = Math.floor((start + i) / 24) + 1;
+        return h === 0 && d % 2 === 1 ? `day ${d}` : "";
+      });
+
+  const outdoorLine = view === "year"
+    ? outdoor.flatMap((v) => Array(24).fill(v)).slice(0, total)
+    : outdoor.slice(start, start + week);
 
   useChart(ref, {
     ...nbBase(),
-    xAxis: nbCategoryAxis("hour", Array.from({ length: week }, (_, i) => {
-      const h = (start + i) % 24;
-      const d = Math.floor((start + i) / 24) + 1;
-      return h === 0 && d % 2 === 1 ? `day ${d}` : "";
-    })),
+    xAxis: nbCategoryAxis(view === "week" ? "hour" : "month",
+      xLabels.slice(0, hours)),
     yAxis: nbValueAxis("°C"),
     legend: {
       top: 0, left: 0, icon: "rect", itemWidth: 14, itemHeight: 10,
       textStyle: { fontFamily: "IBM Plex Mono, monospace", fontSize: 10, color: NB_INK },
     },
+    ...(view === "year" ? {
+      dataZoom: [{ type: "inside" }, { type: "slider", height: 18, bottom: 4 }],
+      grid: { left: 50, right: 16, top: 30, bottom: 52 },
+    } : {}),
     series: [
       {
         name: "outdoor (daily mean)", type: "line", symbol: "none",
-        data: outdoor.slice(start, start + week),
+        data: outdoorLine,
         lineStyle: { color: "#0a7a6e", width: 2, type: [6, 3] },
       },
       ...zones.slice(0, 8).map((z, i) => ({
         name: `${z} Top`,
         type: "line" as const, symbol: "none" as const, showSymbol: false,
-        data: r.series[z].slice(start, start + week),
-        lineStyle: { color: NB_SERIES[i % NB_SERIES.length], width: 3 },
+        data: r.series[z].slice(start, start + hours),
+        lineStyle: { color: NB_SERIES[i % NB_SERIES.length], width: view === "year" ? 2 : 3 },
         ...(nbThresholdLine(26, "26 °C ref") as object),
       })),
     ],
@@ -578,62 +622,82 @@ function RoomFigure({ r }: { r: AnalyzeResult }) {
       extraCssText: "box-shadow: 4px 4px 0 #161616; border-radius: 4px;",
       valueFormatter: (v: unknown) => `${Number(v).toFixed(1)} °C`,
     },
-  }, [r]);
+  }, [r, view]);
 
   const csvRows: (string | number | null)[][] = [];
-  for (let i = 0; i < week; i++) {
+  for (let i = 0; i < hours; i++) {
     const row: (string | number | null)[] = [start + i + 1];
     for (const z of zones) row.push(r.series[z][start + i] ?? null);
     csvRows.push(row);
   }
 
+  const viewNote = view === "year"
+    ? "whole simulated year (hourly — scroll/zoom inside the chart)"
+    : "hottest outdoor week (hourly)";
+
   return (
     <Figure figNo="FIG 5"
-      caption={`operative temperature during the hottest outdoor week (hourly, real run output)${zones.length > 8 ? ` — first 8 of ${zones.length} zones plotted` : ""}`}
+      caption={`operative temperature — ${viewNote}${zones.length > 8 ? ` — first 8 of ${zones.length} zones plotted` : ""}`}
       meta={<span>{zones.slice(0, 8).join(" · ")}</span>}>
-      <div ref={ref} style={{ height: 300 }} role="img"
-        aria-label="Line chart of outdoor mean and room operative temperatures over the hottest week" />
-      <ExportBar chartRef={chartRef} figureName={`fig_room_temps_${r.run.run_id}`}
-        caption={`Hourly operative temperature per zone during the hottest outdoor week. Model ${r.model.name}, weather ${r.weather.name}, run ${r.run.run_id}.`}
+      <TimeViewButtons view={view} setView={setView} />
+      <div ref={ref} style={{ height: view === "year" ? 330 : 300 }} role="img"
+        aria-label={`Line chart of outdoor mean and room operative temperatures, ${viewNote}`} />
+      <ExportBar chartRef={chartRef} figureName={`fig_room_temps_${view}_${r.run.run_id}`}
+        caption={`Hourly operative temperature per zone, ${viewNote}. Model ${r.model.name}, weather ${r.weather.name}, run ${r.run.run_id}.`}
         csv={{ header: ["hour_index_1", ...zones], rows: csvRows }} />
     </Figure>
   );
 }
 
-/* Zone × hour heatmap of operative temperature over the hottest week. */
+
+/* Zone × time heatmap of operative temperature — hottest week hour by hour,
+   or the whole year condensed to one daily-max cell per zone and day. */
 function ZoneHeatmap({ r }: { r: AnalyzeResult }) {
+  const [view, setView] = useState<"week" | "year">("week");
   const ref = useRef<HTMLDivElement>(null);
   const chartRef = useChart(ref, null, []);
   const zones = Object.keys(r.series).slice(0, 12);
   const outdoor = r.daily_mean_outdoor;
   const week = 24 * 7;
-  const start = (() => {
-    let best = 0, bestMean = -Infinity;
-    for (let i = 0; i + week <= outdoor.length; i += 24) {
-      const mean = outdoor.slice(i, i + week).reduce((a, b) => a + b, 0) / week;
-      if (mean > bestMean) { bestMean = mean; best = i; }
-    }
-    return Math.max(0, best - 24 * 3);
-  })();
+  const start = hottestWeekStart(outdoor, week);
+  const days = Math.floor(r.series[zones[0]].length / 24);
 
+  const xLabels: string[] = [];
   const data: [number, number, number][] = [];
-  zones.forEach((z, zi) => {
+  if (view === "week") {
     for (let i = 0; i < week; i++) {
-      const v = r.series[z][start + i];
-      if (v !== null && v !== undefined) data.push([i, zi, Math.round(v * 10) / 10]);
+      const h = (start + i) % 24;
+      const d = Math.floor((start + i) / 24) + 1;
+      xLabels.push(h === 12 ? `d${d}` : "");
     }
-  });
+    zones.forEach((z, zi) => {
+      for (let i = 0; i < week; i++) {
+        const v = r.series[z][start + i];
+        if (v !== null && v !== undefined) data.push([i, zi, Math.round(v * 10) / 10]);
+      }
+    });
+  } else {
+    for (let d = 0; d < days; d++) {
+      let m = 0, acc = 0;
+      while (m < 12 && acc + MONTH_DAYS[m] <= d) acc += MONTH_DAYS[m++];
+      xLabels.push(acc === d ? MONTH_ABBR[m] : "");
+    }
+    zones.forEach((z, zi) => {
+      for (let d = 0; d < days; d++) {
+        const dayVals = r.series[z].slice(d * 24, d * 24 + 24)
+          .filter((v) => v !== null && v !== undefined) as number[];
+        if (dayVals.length) data.push([d, zi, Math.round(Math.max(...dayVals) * 10) / 10]);
+      }
+    });
+  }
   const all = data.map((d) => d[2]);
   const lo = Math.min(...all), hi = Math.max(...all);
 
   useChart(ref, {
     ...nbBase(),
     grid: { left: 150, right: 16, top: 12, bottom: 40 },
-    xAxis: nbCategoryAxis("hour of hottest week", Array.from({ length: week }, (_, i) => {
-      const h = (start + i) % 24;
-      const d = Math.floor((start + i) / 24) + 1;
-      return h === 12 ? `d${d}` : "";
-    })),
+    xAxis: nbCategoryAxis(view === "week" ? "hour of hottest week" : "day of year (daily max)",
+      xLabels),
     yAxis: {
       type: "category", data: zones,
       axisLine: { show: true, lineStyle: { color: NB_INK, width: 2 } },
@@ -651,20 +715,27 @@ function ZoneHeatmap({ r }: { r: AnalyzeResult }) {
       extraCssText: "box-shadow: 4px 4px 0 #161616; border-radius: 4px;",
       formatter: (p: unknown) => {
         const v = (p as { value: [number, number, number] }).value;
-        return `${zones[v[1]]} · hour ${start + v[0] + 1} — ${v[2].toFixed(1)} °C`;
+        const where = view === "week" ? `hour ${start + v[0] + 1}` : `day ${v[0] + 1} (daily max)`;
+        return `${zones[v[1]]} · ${where} — ${v[2].toFixed(1)} °C`;
       },
     },
-  }, [r]);
+  }, [r, view]);
+
+  const range = `${lo.toFixed(1)}–${hi.toFixed(1)} °C`;
+  const viewNote = view === "week"
+    ? `hottest week, hour by hour (${range})`
+    : `whole year as daily maxima (${range})`;
 
   return (
     <Figure figNo="FIG 6"
-      caption={`zone × hour operative temperature, hottest week (${lo.toFixed(1)}–${hi.toFixed(1)} °C)`}
-      meta={<span>{zones.length} zones · hottest outdoor week</span>}>
+      caption={`zone × time operative temperature, ${viewNote}`}
+      meta={<span>{zones.length} zones · {view === "week" ? "hottest outdoor week" : `${days} days`}</span>}>
+      <TimeViewButtons view={view} setView={setView} />
       <div ref={ref} style={{ height: Math.max(220, zones.length * 30 + 80) }} role="img"
-        aria-label={`Heatmap of operative temperature per zone over the hottest week, ${lo.toFixed(1)} to ${hi.toFixed(1)} degrees.`} />
-      <ExportBar chartRef={chartRef} figureName={`fig_zone_heatmap_${r.run.run_id}`}
-        caption={`Zone by hour operative temperature heatmap over the hottest week. Model ${r.model.name}, weather ${r.weather.name}, run ${r.run.run_id}.`}
-        csv={{ header: ["zone", "hour_index_1", "top_c"], rows: zones.flatMap((z, zi) => data.filter((d) => d[1] === zi).map((d) => [z, start + d[0] + 1, d[2]] as (string | number | null)[])) }} />
+        aria-label={`Heatmap of operative temperature per zone, ${view === "week" ? "hottest week" : "whole year as daily maxima"}, ${lo.toFixed(1)} to ${hi.toFixed(1)} degrees.`} />
+      <ExportBar chartRef={chartRef} figureName={`fig_zone_heatmap_${view}_${r.run.run_id}`}
+        caption={`Zone by ${view === "week" ? "hour (hottest week)" : "day (daily maximum, whole year)"} operative temperature heatmap. Model ${r.model.name}, weather ${r.weather.name}, run ${r.run.run_id}.`}
+        csv={{ header: ["zone", view === "week" ? "hour_index_1" : "day_index_1", "top_c"], rows: zones.flatMap((z, zi) => data.filter((d) => d[1] === zi).map((d) => [z, start + d[0] + 1, d[2]] as (string | number | null)[])) }} />
     </Figure>
   );
 }
