@@ -11,7 +11,7 @@ tags:
 authors:
   - name: Mohamed Hamdy Ali
     affiliation: 1
-    orcid: 0000-0000-0000-0000
+    orcid: 0009-0009-6074-8524
 affiliations:
   - name: Leeds Sustainability Institute, School of the Built Environment and Architecture, Leeds Beckett University, United Kingdom
     index: 1

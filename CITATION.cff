@@ -8,6 +8,7 @@ authors:
     name-surname: Ali
     name-given-names: Mohamed Hamdy
     affiliation: Leeds Beckett University
+    orcid: "https://orcid.org/0009-0009-6074-8524" 
 version: 0.8.0.dev0
 date-released: "2026-09-04"
 license: MIT
