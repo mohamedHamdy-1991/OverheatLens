@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import { useChart, TEMP_SCALE, MONTHS } from "./charts";
+import { useChart, NB_HEAT_BINS, NB_INK, NB_PAPER, MONTHS } from "./charts";
 import { ExportBar } from "./ExportBar";
 
 /* The signature element: the thermal year ribbon — 365 days x 24 hours of the
@@ -29,14 +29,15 @@ export function ThermalRibbon({
   useChart(
     ref,
     {
+      backgroundColor: NB_PAPER,
       grid: { left: 34, right: 8, top: 8, bottom: 20 },
       xAxis: {
         type: "category",
         data: Array.from({ length: Math.ceil(dryBulb.length / hoursPerDay) }, (_, i) => i + 1),
-        axisLine: { lineStyle: { color: "#b7b8b3" } },
+        axisLine: { show: true, lineStyle: { color: NB_INK, width: 2 } },
         axisTick: { show: false },
         axisLabel: {
-          color: "#5e686e", fontFamily: "IBM Plex Mono", fontSize: 10,
+          color: NB_INK, fontFamily: "IBM Plex Mono, monospace", fontSize: 10,
           interval: (i: number) => [0, 30, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334].includes(i),
           formatter: (i: string) => MONTHS[monthOfDay(Number(i))],
         },
@@ -46,14 +47,14 @@ export function ThermalRibbon({
         data: hoursPerDay === 24 ? ["24", "18", "12", "6", "0"] : ["day"],
         axisLine: { show: false },
         axisTick: { show: false },
-        axisLabel: { color: "#5e686e", fontFamily: "IBM Plex Mono", fontSize: 10 },
+        axisLabel: { color: NB_INK, fontFamily: "IBM Plex Mono, monospace", fontSize: 10 },
         splitLine: { show: false },
       },
       visualMap: {
         show: false,
         min,
         max,
-        inRange: { color: TEMP_SCALE.map((s) => s[1]) },
+        inRange: { color: NB_HEAT_BINS },
       },
       series: [{
         type: "heatmap",
@@ -61,9 +62,15 @@ export function ThermalRibbon({
           ? dryBulb.map((v, i) => [Math.floor(i / 24), 23 - (i % 24), v])
           : dryBulb.map((v, i) => [i, 0, v]),
         progressive: 4000,
+        itemStyle: { borderWidth: 0 },
       }],
       tooltip: {
         confine: true,
+        backgroundColor: "#FCDD28",
+        borderColor: NB_INK,
+        borderWidth: 2,
+        textStyle: { color: NB_INK, fontFamily: "IBM Plex Mono, monospace", fontSize: 12 },
+        extraCssText: "box-shadow: 4px 4px 0 #161616; border-radius: 4px;",
         formatter: (p: unknown) => {
           const params = p as { value: [number, number, number] };
           const day = params.value[0] + 1;

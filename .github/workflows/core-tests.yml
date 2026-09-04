@@ -1,9 +1,10 @@
 name: core-tests
 
+# Manual only: private repos bill Actions minutes on every push-triggered run.
+# Run it from the Actions tab when you want a CI pass; the local suites
+# (Run Tests / validation campaign) are the everyday check.
 on:
-  push:
-    branches: [main]
-  pull_request:
+  workflow_dispatch:
 
 jobs:
   core:

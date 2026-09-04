@@ -160,3 +160,38 @@ research-labelled and MUST state the limitation in reports. It never presents as
 projections, regional vs 28-zone geography, CAMS solar) are an acknowledged bias of
 unknown sign and magnitude in all current TM59:2026 numbers; documented here, in the
 pack, and in IMPLEMENTATION_STATUS honest-gaps.
+
+## ADR-0013 — Harvest keyed by full zone path, Hourly-only (2026-09-04)
+
+**Context.** The 15-model regression (`scripts/audit_archetypes.py`) showed 4 DEEP
+models harvesting 3–28× too many rows (01BA: 4 keys × 26280). Root causes in
+`harvest_hourly`: (a) zone key truncated at the first colon, merging distinct
+rooms (`00GROUNDFLOOR:LOUNGE/KITCHEN/STAIRS` → one series); (b) every reporting
+frequency harvested and concatenated (Hourly+Monthly+RunPeriod). Either defect
+silently corrupts standards evaluation whenever lengths happen to align.
+
+**Decision.** Key zones by the full ReadVarsESO key field; accept only `(Hourly*)`
+columns; raise on duplicate (zone, variable) instead of concatenating. Operative
+temperature stays derived Top = 0.5(MAT+MRT) — models that also output direct
+`Zone Operative Temperature` do not switch source silently (comparability +
+documented assumption win). Regression locked by `test_harvest.py` (VAL-XSIM-05)
+plus the 15-model sweep (VAL-XSIM-06).
+
+**Consequences.** Pre-fix results from affected models must be discarded (same
+policy as ADR-0011). Room labels now carry full `LEVEL:ROOM` paths, which improves
+bedroom/living classification.
+
+## ADR-0014 — Run archive, batch, bundles are local-only (2026-09-04)
+
+**Decision.** `data/runs/`, `data/mitigation/`, `data/uploads/` are git-ignored
+(local derived research data, same copyright firewall as ADR-0009). Batch capped at
+96 runs, sequential execution. Reproducibility ZIPs are generated on demand and
+never stored.
+
+## ADR-0015 — Attribution spelling (2026-09-04)
+
+**Context.** The brief wrote "Mohamed Hamdi Ali"; LICENSE, CITATION.cff and
+PRODUCT.md all say "Mohamed Hamdy Ali".
+
+**Decision.** The repository's legal files win: every screen reads
+`OverheatLens · Mohamed Hamdy Ali · MIT`.

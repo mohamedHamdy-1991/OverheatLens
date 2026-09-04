@@ -1,0 +1,84 @@
+!- Chapter 6 IDF (v2 minimal template) — generated 2026-07-21T19:25:33Z
+!- Code: MOD04  Form: modern_house  Era: Part L 2021
+!- Derivation: REGULATORY_NOTIONAL  Source: Part L 2021
+!- Floor area: 79 m2  Storeys: 2  U_wall: 0.18 W/m2K
+!- Notes: Part L 2021 notional on 04KG geometry
+!- Wall: 228mm brick + 0.2025m mineral wool equiv + 13mm plaster (U=0.18)
+
+SimulationControl, No, No, No, No, Yes;
+Building, MOD04, 0, City, 0.04, 0.4, FullExterior, 25, 6;
+GlobalGeometryRules, LowerLeftCorner, CounterClockWise, Relative;
+RunPeriod, Annual, 1, 1, , 12, 31, , , Yes, Yes, No, Yes, Yes, No;
+Timestep, 6;
+ConvergenceLimits, 1, 25;
+Site:Location, Leeds, 53.836, -1.197, 0.0, 26.7;
+Site:GroundTemperature:BuildingSurface, 10.0, 10.7, 11.8, 13.5, 16.1, 18.2, 20.6, 19.5, 17.4, 14.0, 11.4, 10.4;
+OutputControl:Table:Style, CommaAndHTML, JtoKWH;
+Output:SQLite, SimpleAndTabular;
+
+! Materials
+Material, Brick228, MediumRough, 0.228, 0.77, 1700, 800, 0.9, 0.65, 0.65;
+Material, InsEquiv, MediumRough, 0.2025, 0.04, 40, 1400, 0.9, 0.6, 0.6;
+Material, Plaster13, Smooth, 0.013, 0.50, 1300, 1000, 0.9, 0.5, 0.5;
+Material, FloorMat, Rough, 0.15, 0.10, 400, 1600, 0.9, 0.6, 0.6;
+Material, RoofMat, Rough, 0.20, 0.04, 12, 1400, 0.9, 0.6, 0.6;
+Material, AdiabaticMat, Smooth, 0.15, 1.7, 2300, 1000;
+Construction, ExtWall, Brick228, InsEquiv, Plaster13;
+Construction, GroundFloor, FloorMat;
+Construction, LoftRoof, RoofMat;
+Construction, AdiabaticFlrCei, AdiabaticMat;
+WindowMaterial:Glazing, Glazing, SpectralAverage, , 0.004, 0.60, 0.07, 0.07, 0.80, 0.08, 0.08, 0.0, 0.84, 0.84, 0.9;
+WindowMaterial:Gas, ArgonGap, Argon, 0.016;
+Construction, DGGlazing, Glazing, ArgonGap, Glazing;
+
+! Schedules
+ScheduleTypeLimits, Frac, 0, 1, CONTINUOUS;
+ScheduleTypeLimits, OnOff, 0, 1, DISCRETE;
+ScheduleTypeLimits, ActLevel, 0, , CONTINUOUS;
+Schedule:Compact, AlwaysOn, Frac, Through: 12/31, For: AllDays, Until: 24:00, 1.0;
+Schedule:Compact, LivingOcc, Frac, Through: 12/31, For: AllDays, Until: 24:00, 0.5;
+Schedule:Compact, Act130W, ActLevel, Through: 12/31, For: AllDays, Until: 24:00, 130;
+
+! Zones + surfaces
+Zone, S1, 0, 0, 0.0, 3, 1, 1, 2.5, autocalculate, 39.5, TARP, TARP, Yes;
+BuildingSurface:Detailed, S1_WallN, Wall, ExtWall, S1, , Outdoors, , SunExposed, WindExposed, autocalculate, 4, 0,0,2.5, 6.285,0,2.5, 6.285,0,0.0, 0,0,0.0;
+BuildingSurface:Detailed, S1_WallE, Wall, ExtWall, S1, , Outdoors, , SunExposed, WindExposed, autocalculate, 4, 6.285,0,2.5, 6.285,6.285,2.5, 6.285,6.285,0.0, 6.285,0,0.0;
+BuildingSurface:Detailed, S1_WallS, Wall, ExtWall, S1, , Outdoors, , SunExposed, WindExposed, autocalculate, 4, 6.285,6.285,2.5, 0,6.285,2.5, 0,6.285,0.0, 6.285,6.285,0.0;
+BuildingSurface:Detailed, S1_WallW, Wall, ExtWall, S1, , Outdoors, , SunExposed, WindExposed, autocalculate, 4, 0,6.285,2.5, 0,0,2.5, 0,0,0.0, 0,6.285,0.0;
+BuildingSurface:Detailed, S1_Floor, Floor, GroundFloor, S1, , Ground, , NoSun, NoWind, autocalculate, 4, 0,0,0.0, 0,6.285,0.0, 6.285,6.285,0.0, 6.285,0,0.0;
+BuildingSurface:Detailed, S1_Ceil, Ceiling, AdiabaticFlrCei, S1, , Adiabatic, , NoSun, NoWind, autocalculate, 4, 0,0,2.5, 6.285,0,2.5, 6.285,6.285,2.5, 0,6.285,2.5;
+FenestrationSurface:Detailed, S1_WinS, Window, DGGlazing, S1_WallS, , autocalculate, , , 4, 1.885,6.285,2.500, 1.885,6.285,1.000, 4.399,6.285,1.000, 4.399,6.285,2.500;
+People, S1_P, S1, LivingOcc, People, 2, , , 0.3, autocalculate, Act130W, 3.82E-8, No, EnclosureAveraged;
+Lights, S1_L, S1, LivingOcc, Watts/Area, , 2.0, , 0, 0.42, 0.18, 1;
+ElectricEquipment, S1_E, S1, LivingOcc, EquipmentLevel, 150, , , 0, 0, 0;
+ZoneVentilation:DesignFlowRate, S1_V, S1, S3_NightPurgeVent, Flow/Zone, 1.50, , , 4.0, , , 0.5, 22.0, -100.0, 100.0, 0.0;
+ZoneInfiltration:DesignFlowRate, S1_I, S1, AlwaysOn, Flow/Zone, 0.05, , , , 0.5, , , , , , ;
+Zone, S2, 0, 0, 2.5, 3, 1, 1, 2.5, autocalculate, 39.5, TARP, TARP, Yes;
+BuildingSurface:Detailed, S2_WallN, Wall, ExtWall, S2, , Outdoors, , SunExposed, WindExposed, autocalculate, 4, 0,0,5.0, 6.285,0,5.0, 6.285,0,2.5, 0,0,2.5;
+BuildingSurface:Detailed, S2_WallE, Wall, ExtWall, S2, , Outdoors, , SunExposed, WindExposed, autocalculate, 4, 6.285,0,5.0, 6.285,6.285,5.0, 6.285,6.285,2.5, 6.285,0,2.5;
+BuildingSurface:Detailed, S2_WallS, Wall, ExtWall, S2, , Outdoors, , SunExposed, WindExposed, autocalculate, 4, 6.285,6.285,5.0, 0,6.285,5.0, 0,6.285,2.5, 6.285,6.285,2.5;
+BuildingSurface:Detailed, S2_WallW, Wall, ExtWall, S2, , Outdoors, , SunExposed, WindExposed, autocalculate, 4, 0,6.285,5.0, 0,0,5.0, 0,0,2.5, 0,6.285,2.5;
+BuildingSurface:Detailed, S2_Floor, Floor, AdiabaticFlrCei, S2, , Adiabatic, , NoSun, NoWind, autocalculate, 4, 0,0,2.5, 0,6.285,2.5, 6.285,6.285,2.5, 6.285,0,2.5;
+BuildingSurface:Detailed, S2_Roof, Roof, LoftRoof, S2, , Outdoors, , SunExposed, WindExposed, autocalculate, 4, 0,0,5.0, 6.285,0,5.0, 6.285,6.285,5.0, 0,6.285,5.0;
+FenestrationSurface:Detailed, S2_WinS, Window, DGGlazing, S2_WallS, , autocalculate, , , 4, 1.885,6.285,5.000, 1.885,6.285,3.500, 4.399,6.285,3.500, 4.399,6.285,5.000;
+People, S2_P, S2, LivingOcc, People, 2, , , 0.3, autocalculate, Act130W, 3.82E-8, No, EnclosureAveraged;
+Lights, S2_L, S2, LivingOcc, Watts/Area, , 2.0, , 0, 0.42, 0.18, 1;
+ElectricEquipment, S2_E, S2, LivingOcc, EquipmentLevel, 150, , , 0, 0, 0;
+ZoneVentilation:DesignFlowRate, S2_V, S2, S3_NightPurgeVent, Flow/Zone, 1.50, , , 4.0, , , 0.5, 22.0, -100.0, 100.0, 0.0;
+ZoneInfiltration:DesignFlowRate, S2_I, S2, AlwaysOn, Flow/Zone, 0.05, , , , 0.5, , , , , , ;
+
+!- Ventilation scenario S3: Night-purge-enabled
+!- Windows open overnight (22:00-07:00) for cooling purge; closed daytime
+!- Analogous to Harehills NightPurge variant in intent
+Schedule:Compact, S3_NightPurgeVent, Frac,
+    Through: 12/31, For: AllDays,
+    Until: 07:00, 1.0,
+    Until: 20:00, 0.0,
+    Until: 24:00, 1.0;
+
+! Outputs
+Output:Variable, *, Zone Operative Temperature, hourly;
+Output:Variable, *, Zone Mean Air Temperature, hourly;
+Output:Variable, *, Site Outdoor Air Drybulb Temperature, hourly;
+Output:Table:SummaryReports, AllSummary;
+

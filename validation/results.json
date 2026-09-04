@@ -1,0 +1,274 @@
+{
+  "campaign_verdict": "PASS",
+  "started_utc": "2026-09-04T15:53:46+00:00",
+  "finished_utc": "2026-09-04T15:57:40+00:00",
+  "summary": {
+    "cases": 11,
+    "fail": 0,
+    "incomplete": 0,
+    "pass_or_confirmed": 11
+  },
+  "cases": [
+    {
+      "id": "V01",
+      "title": "Rule packs machine-verified to official PDFs",
+      "layer": "L1",
+      "verdict": "PASS",
+      "detail": {
+        "uk_tm59_2017": {
+          "sha_in_note": true,
+          "ado_referenced": false,
+          "criteria_statuses": [
+            "source_verified"
+          ]
+        },
+        "uk_tm59_2026": {
+          "sha_in_note": true,
+          "ado_referenced": false,
+          "criteria_statuses": [
+            "source_verified"
+          ]
+        },
+        "uk_part_o_dynamic": {
+          "sha_in_note": false,
+          "ado_referenced": true,
+          "criteria_statuses": []
+        },
+        "uk_tm52": {
+          "sha_in_note": true,
+          "ado_referenced": false,
+          "criteria_statuses": [
+            "source_verified"
+          ]
+        }
+      },
+      "reference": "SOURCE_REGISTER.md; docs/standards/*_VERIFICATION.md"
+    },
+    {
+      "id": "V02",
+      "title": "EPW parser & QC on real research weather",
+      "layer": "L4",
+      "verdict": "PASS",
+      "detail": {
+        "n_hours": 8760,
+        "columns_first_data_row": 32,
+        "qc_verdict": "PASS",
+        "n_errors": 0,
+        "n_warnings": 0,
+        "annual_mean_db_c": 11.49
+      },
+      "reference": "CIBSE/Met Office DSY format; Leeds DSY1 2020-high climate envelope"
+    },
+    {
+      "id": "V03",
+      "title": "TM59:2017 verdict flips at published boundaries",
+      "layer": "L3",
+      "verdict": "PASS",
+      "detail": {
+        "flips": {
+          "59_h": "PASS",
+          "60_h": "FAIL",
+          "rounding_0.45K_counts": 0.0,
+          "april_excluded_percent": 0.0,
+          "criterion_b_32h": "PASS",
+          "criterion_b_33h": "FAIL",
+          "criterion_b_daytime_hours": 0.0
+        }
+      },
+      "reference": "CIBSE TM59:2017 \u00a75.2 (pack SHA-pinned, adaptive criteria + 32 h rule)"
+    },
+    {
+      "id": "V04",
+      "title": "TM52 published worked example + rounding boundaries",
+      "layer": "L2/L3",
+      "verdict": "PASS",
+      "detail": {
+        "we_pattern": {
+          "expected": 10.0,
+          "got": 10.0,
+          "status": "FAIL"
+        },
+        "c1_rounding": {
+          "dt0.45_percent": 0.0,
+          "dt0.50_percent": 100.0,
+          "basis_hours": 1377.0
+        },
+        "c3_4K": {
+          "status": "FAIL"
+        }
+      },
+      "reference": "CIBSE TM52-2013 \u00a76.1.1\u2013\u00a76.1.3 (pack SHA-pinned)"
+    },
+    {
+      "id": "V05",
+      "title": "PMV/PPD matches published ISO 7730 anchors",
+      "layer": "L2",
+      "verdict": "PASS",
+      "detail": {
+        "pmv_-1.0": {
+          "tdb_c": 21.378,
+          "pmv": -1.0,
+          "ppd": 26.3,
+          "published_ppd": 25.67
+        },
+        "pmv_-0.5": {
+          "tdb_c": 23.012,
+          "pmv": -0.51,
+          "ppd": 10.3,
+          "published_ppd": 10.15
+        },
+        "pmv_0.0": {
+          "tdb_c": 24.701,
+          "pmv": -0.0,
+          "ppd": 5.0,
+          "published_ppd": 5.0
+        },
+        "pmv_0.5": {
+          "tdb_c": 26.369,
+          "pmv": 0.5,
+          "ppd": 10.1,
+          "published_ppd": 10.15
+        },
+        "pmv_1.0": {
+          "tdb_c": 28.015,
+          "pmv": 0.99,
+          "ppd": 25.9,
+          "published_ppd": 25.67
+        },
+        "beyond_applicability_33C": {
+          "status": "OUTSIDE_APPLICABILITY",
+          "values_returned": []
+        }
+      },
+      "reference": "ISO 7730 PPD relation 100-95*exp(-0.03353*PMV^4-0.2179*PMV^2); anchor table PPD(0)=5%, (\u00b10.5)\u224810%, (\u00b11)\u224825%, (\u00b12)\u224875%"
+    },
+    {
+      "id": "V06",
+      "title": "UTCI reproduces published reference-condition agreement",
+      "layer": "L2",
+      "verdict": "PASS",
+      "detail": {
+        "utci_at_reference_c": 24.9,
+        "published_expectation": "UTCI \u2248 Ta (25 \u00b0C) at reference conditions (Tr=Ta, RH 50 %, v 0.5 m/s), Br\u00f6de 2012 r\u00b2\u22480.995",
+        "utci_with_tr_45c": 30.5
+      },
+      "reference": "Br\u00f6de et al. 2012, Int J Biometeorol 56:481\u2013494 (reference conditions)"
+    },
+    {
+      "id": "V07",
+      "title": "Adaptive limits match published formulae (TM52 Eq 8 / EN 16798-1)",
+      "layer": "L2",
+      "verdict": "PASS",
+      "detail": {
+        "trm_10.0": {
+          "flip_top_c": 25.6,
+          "engine_tmax": 25.1,
+          "formula": 25.1
+        },
+        "trm_15.0": {
+          "flip_top_c": 27.25,
+          "engine_tmax": 26.75,
+          "formula": 26.75
+        },
+        "trm_17.0": {
+          "flip_top_c": 27.91,
+          "engine_tmax": 27.41,
+          "formula": 27.41
+        },
+        "trm_23.0": {
+          "flip_top_c": 29.89,
+          "engine_tmax": 29.39,
+          "formula": 29.39
+        },
+        "trm_30.0": {
+          "flip_top_c": 32.2,
+          "engine_tmax": 31.7,
+          "formula": 31.7
+        },
+        "trm_8.0": {
+          "flip_top_c": 25.6,
+          "engine_tmax": 25.1,
+          "formula": 25.1
+        },
+        "en16798_tcomf_trm23": {
+          "got": 26.4,
+          "formula": 26.39
+        }
+      },
+      "reference": "CIBSE TM52-2013 Eq 8 (pack SHA-pinned); EN 16798-1 via pythermalcomfort"
+    },
+    {
+      "id": "V08",
+      "title": "EnergyPlus determinism (two identical runs)",
+      "layer": "L5",
+      "verdict": "PASS",
+      "detail": {
+        "zones": 12,
+        "series_identical": true,
+        "meters_identical": true,
+        "electricity_kwh": 2391.319034999803
+      },
+      "reference": "EnergyPlus 25.1.0 official binary; app runner (isolated dirs)"
+    },
+    {
+      "id": "V09",
+      "title": "Energy meter internal consistency",
+      "layer": "L5",
+      "verdict": "PASS",
+      "detail": {
+        "monthly_sum_kwh": 2391.32,
+        "annual_kwh": 2391.32,
+        "relative_drift": 0.0,
+        "gas_annual_kwh": 0.0,
+        "n_monthly_rows": 12
+      },
+      "reference": "EnergyPlus meter output (eplusmeter.csv via --readvars); monthly sums vs runperiod total \u2264 0.5 %"
+    },
+    {
+      "id": "V10",
+      "title": "Cross-check vs author's DesignBuilder PhD exports",
+      "layer": "L4",
+      "verdict": "CONFIRMED_DIRECTIONAL",
+      "detail": {
+        "dwellings_confirmed": 1,
+        "dwellings_incomplete": 2,
+        "per_dwelling": {
+          "01BA": {
+            "app_overall": "FAIL",
+            "designbuilder_zones": 4,
+            "designbuilder_verdicts": [
+              "FAIL"
+            ],
+            "agreement": true,
+            "note": "weather metadata not recorded in the DesignBuilder export \u2014 directional check"
+          },
+          "17BG": {
+            "app_overall": "FAIL",
+            "designbuilder_baseline_rows": 0,
+            "verdict": "INCOMPLETE",
+            "reason": "no DesignBuilder baseline export recorded"
+          },
+          "27BG": {
+            "app_overall": "FAIL",
+            "designbuilder_baseline_rows": 0,
+            "verdict": "INCOMPLETE",
+            "reason": "no DesignBuilder baseline export recorded"
+          }
+        }
+      },
+      "reference": "Safer_Heat_Harehills DesignBuilder TM59 exports (author's PhD data)"
+    },
+    {
+      "id": "V11",
+      "title": "CIBSE TM59 Example 4 flat vs published outcome",
+      "layer": "L4",
+      "verdict": "CONFIRMED_DIRECTIONAL",
+      "detail": {
+        "app_overall": "FAIL",
+        "published_direction": "the reference flat overheats (criterion a fail) under a 2020s DSY in the CIBSE worked example",
+        "note": "app runs the Leeds DSY1 2020-High50 file; CIBSE publishes its example on its own weather \u2014 direction-only check"
+      },
+      "reference": "CIBSE TM59:2017 worked example (pack SHA-pinned)"
+    }
+  ]
+}

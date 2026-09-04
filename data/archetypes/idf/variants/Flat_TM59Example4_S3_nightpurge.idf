@@ -1,0 +1,230 @@
+!- FIXED FOR TM59 PART O (Flat_TM59Example4 builder v3, 2026-07-06)
+!- Source: TM59 (2020) Example 4 — mid-floor 2-bed purpose-built flat (NOT from DEEP)
+!- Staged as: Flat_TM59Example4.idf
+!- Geometry: 64 m2 internal, mid-floor (adiabatic floor + ceiling), 4 zones
+!- Fabric: UK Part L 2021 (wall U=0.18, glazing U=1.4, g=0.6)
+!- TM59 Part O: free-running (no cooling), temperature-triggered window venting
+!- Weather file supplied at run time via EnergyPlus -w (see run_simulations.py)
+
+! ========================= Simulation control =========================
+OutputControl:Table:Style, Comma, None;
+
+SimulationControl,
+    No, No, No, No, Yes;          !- sizing toggles + run for weather file
+
+Building,
+    Flat_TM59,                    !- Name
+    0,                            !- North Axis
+    Suburbs,                      !- Terrain
+    0.04,                         !- Loads Convergence Tolerance Value
+    0.4,                          !- Temperature Convergence Tolerance Value
+    FullExterior,                 !- Solar Distribution
+    25,                           !- Maximum Number of Warmup Days
+    6;                            !- Minimum Number of Warmup Days
+
+GlobalGeometryRules,
+    LowerLeftCorner,              !- Starting Vertex Position
+    CounterClockWise,             !- Vertex Entry Direction
+    Relative;                     !- Coordinate System
+
+RunPeriod,
+    Flat Annual,                  !- Name
+    1, 1,                         !- Begin Month, Begin Day
+    ,                             !- Begin Year (blank)
+    12, 31,                       !- End Month, End Day
+    ,                             !- End Year (blank)
+    ,                             !- Day of Week for Start Day
+    Yes,                          !- use weather holidays
+    Yes,                          !- use weather DS
+    No,                           !- Apply Weekend Holiday
+    Yes,                          !- use rain
+    Yes,                          !- use snow
+    No;                           !- Treat Weather as Actual
+
+Timestep, 6;                      !- 6 timesteps/hour (TM59 preferred)
+
+ConvergenceLimits, 1, 25;
+
+RunPeriodControl:DaylightSavingTime, Last Sunday in March, Last Sunday in October;
+
+! ========================= Site (Leeds) =========================
+Site:Location,
+    Leeds,                        !- Name
+    53.836,                       !- Latitude {deg}
+    -1.197,                       !- Longitude {deg}
+    0.0,                          !- Time Zone {hr}
+    26.7;                         !- Elevation {m}
+
+Site:GroundTemperature:BuildingSurface,
+    10.0, 10.7, 11.8, 13.5, 16.1, 18.2, 20.6, 19.5, 17.4, 14.0, 11.4, 10.4;
+
+! ========================= Materials (Part L 2021) =========================
+Material,
+    ExtWall_Insulation,           !- Name
+    MediumRough,                  !- Roughness
+    0.30,                         !- Thickness {m}
+    0.04,                         !- Conductivity {W/m-K}
+    40,                           !- Density {kg/m3}
+    1400,                         !- Specific Heat {J/kg-K}
+    0.9,                          !- Thermal Absorptance
+    0.6,                          !- Solar Absorptance
+    0.6;                          !- Visible Absorptance
+
+Material, IntPartition, Smooth, 0.10, 0.22, 950, 1000;
+Material, AdiabaticSlab, Smooth, 0.15, 1.7, 2300, 1000;
+
+WindowMaterial:Glazing,
+    DG_LowE_Glazing, SpectralAverage, , 0.004, 0.60, 0.07, 0.07, 0.80, 0.08, 0.08, 0.0, 0.84, 0.84, 0.9;
+
+WindowMaterial:Gas,
+    DG_ArgonGap, Argon, 0.016;
+
+Construction, ExtWall, ExtWall_Insulation;
+Construction, IntPartition_Const, IntPartition;
+Construction, AdiabaticFlrCei, AdiabaticSlab;
+Construction, DG_Window, DG_LowE_Glazing, DG_ArgonGap, DG_LowE_Glazing;
+
+! ========================= Schedules (TM59) =========================
+ScheduleTypeLimits, FracAny, 0, 1, CONTINUOUS;
+ScheduleTypeLimits, TempAny, , , CONTINUOUS;
+ScheduleTypeLimits, OnOff, 0, 1, DISCRETE;
+ScheduleTypeLimits, AnyNumber, , , CONTINUOUS;
+
+Schedule:Compact,
+    130_W_Activity, AnyNumber,
+    Through: 12/31, For: AllDays,
+    Until: 24:00, 130.0;
+
+Schedule:Compact,
+    TM59_Living_Occ, FracAny,
+    Through: 12/31, For: AllDays,
+    Until: 09:00, 0.0, Until: 22:00, 0.75, Until: 24:00, 0.0;
+
+Schedule:Compact,
+    TM59_DoubleBed_Occ, FracAny,
+    Through: 12/31, For: AllDays,
+    Until: 08:00, 1.0, Until: 22:00, 0.5, Until: 24:00, 1.0;
+
+Schedule:Compact,
+    TM59_SingleBed_Occ, FracAny,
+    Through: 12/31, For: AllDays,
+    Until: 08:00, 1.0, Until: 23:00, 0.5, Until: 24:00, 1.0;
+
+Schedule:Compact,
+    TM59_Living_Heat, TempAny,
+    Through: 12/31, For: AllDays,
+    Until: 14:00, 12.0, Until: 23:00, 21.0, Until: 24:00, 12.0;
+
+Schedule:Compact,
+    TM59_DomBed_Heat, TempAny,
+    Through: 12/31, For: AllDays,
+    Until: 09:00, 18.0, Until: 20:00, 12.0, Until: 24:00, 18.0;
+
+Schedule:Compact,
+    CoolingOff100C, TempAny,
+    Through: 12/31, For: AllDays,
+    Until: 24:00, 100.0;
+
+Schedule:Compact,
+    VentOnWhenOccupied, FracAny,
+    Through: 12/31, For: AllDays,
+    Until: 24:00, 1.0;
+
+! ========================= Zones (4 habitable) =========================
+Zone, LIVING,   0, 0, 0, 3, 1, 1, 2.5, autocalculate, 64, TARP, TARP, Yes;
+Zone, KITCHEN,  0, 0, 0, 3, 1, 1, 2.5, autocalculate, 10, TARP, TARP, Yes;
+Zone, BEDROOM1, 0, 0, 0, 3, 1, 1, 2.5, autocalculate, 40, TARP, TARP, Yes;
+Zone, BEDROOM2, 0, 0, 0, 3, 1, 1, 2.5, autocalculate, 40, TARP, TARP, Yes;
+
+! ========================= Surfaces =========================
+BuildingSurface:Detailed, LIVING_SOUTH_WALL, WALL, ExtWall, LIVING, , Outdoors, , SunExposed, WindExposed, autocalculate, 4, 0,0,3, 6,0,3, 6,0,5.5, 0,0,5.5;
+BuildingSurface:Detailed, BED1_SOUTH_WALL, WALL, ExtWall, BEDROOM1, , Outdoors, , SunExposed, WindExposed, autocalculate, 4, 6,0,3, 8,0,3, 8,0,5.5, 6,0,5.5;
+BuildingSurface:Detailed, LIVING_FLOOR_ADIABATIC, FLOOR, AdiabaticFlrCei, LIVING, , Adiabatic, , NoSun, NoWind, autocalculate, 4, 0,0,3, 6,0,3, 6,6,3, 0,6,3;
+BuildingSurface:Detailed, LIVING_CEIL_ADIABATIC, CEILING, AdiabaticFlrCei, LIVING, , Adiabatic, , NoSun, NoWind, autocalculate, 4, 0,6,5.5, 6,6,5.5, 6,0,5.5, 0,0,5.5;
+BuildingSurface:Detailed, LIVING_EAST_PART, WALL, IntPartition_Const, LIVING, , Adiabatic, , NoSun, NoWind, autocalculate, 4, 6,0,3, 6,6,3, 6,6,5.5, 6,0,5.5;
+BuildingSurface:Detailed, LIVING_NORTH_PART, WALL, IntPartition_Const, LIVING, , Adiabatic, , NoSun, NoWind, autocalculate, 4, 0,6,3, 6,6,3, 6,6,5.5, 0,6,5.5;
+BuildingSurface:Detailed, LIVING_WEST_PART, WALL, IntPartition_Const, LIVING, , Adiabatic, , NoSun, NoWind, autocalculate, 4, 0,0,3, 0,6,3, 0,6,5.5, 0,0,5.5;
+BuildingSurface:Detailed, BED1_FLOOR, FLOOR, AdiabaticFlrCei, BEDROOM1, , Adiabatic, , NoSun, NoWind, autocalculate, 4, 6,0,3, 8,0,3, 8,4,3, 6,4,3;
+BuildingSurface:Detailed, BED1_CEIL, CEILING, AdiabaticFlrCei, BEDROOM1, , Adiabatic, , NoSun, NoWind, autocalculate, 4, 6,0,5.5, 8,0,5.5, 8,4,5.5, 6,4,5.5;
+BuildingSurface:Detailed, BED1_NORTH, WALL, IntPartition_Const, BEDROOM1, , Adiabatic, , NoSun, NoWind, autocalculate, 4, 6,4,3, 8,4,3, 8,4,5.5, 6,4,5.5;
+BuildingSurface:Detailed, BED1_EAST, WALL, IntPartition_Const, BEDROOM1, , Adiabatic, , NoSun, NoWind, autocalculate, 4, 8,0,3, 8,4,3, 8,4,5.5, 8,0,5.5;
+BuildingSurface:Detailed, BED1_WEST, WALL, IntPartition_Const, BEDROOM1, , Adiabatic, , NoSun, NoWind, autocalculate, 4, 6,0,3, 6,4,3, 6,4,5.5, 6,0,5.5;
+BuildingSurface:Detailed, BED2_FLOOR, FLOOR, AdiabaticFlrCei, BEDROOM2, , Adiabatic, , NoSun, NoWind, autocalculate, 4, 0,4,3, 6,4,3, 6,6,3, 0,6,3;
+BuildingSurface:Detailed, BED2_CEIL, CEILING, AdiabaticFlrCei, BEDROOM2, , Adiabatic, , NoSun, NoWind, autocalculate, 4, 0,4,5.5, 6,4,5.5, 6,6,5.5, 0,6,5.5;
+BuildingSurface:Detailed, BED2_SOUTH, WALL, IntPartition_Const, BEDROOM2, , Adiabatic, , NoSun, NoWind, autocalculate, 4, 0,4,3, 6,4,3, 6,4,5.5, 0,4,5.5;
+BuildingSurface:Detailed, BED2_NORTH, WALL, IntPartition_Const, BEDROOM2, , Adiabatic, , NoSun, NoWind, autocalculate, 4, 0,6,3, 6,6,3, 6,6,5.5, 0,6,5.5;
+BuildingSurface:Detailed, BED2_WEST, WALL, IntPartition_Const, BEDROOM2, , Adiabatic, , NoSun, NoWind, autocalculate, 4, 0,4,3, 0,6,3, 0,6,5.5, 0,4,5.5;
+BuildingSurface:Detailed, KIT_FLOOR, FLOOR, AdiabaticFlrCei, KITCHEN, , Adiabatic, , NoSun, NoWind, autocalculate, 4, 6,4,3, 8,4,3, 8,6,3, 6,6,3;
+BuildingSurface:Detailed, KIT_CEIL, CEILING, AdiabaticFlrCei, KITCHEN, , Adiabatic, , NoSun, NoWind, autocalculate, 4, 6,4,5.5, 8,4,5.5, 8,6,5.5, 6,6,5.5;
+BuildingSurface:Detailed, KIT_EAST, WALL, IntPartition_Const, KITCHEN, , Adiabatic, , NoSun, NoWind, autocalculate, 4, 8,4,3, 8,6,3, 8,6,5.5, 8,4,5.5;
+BuildingSurface:Detailed, KIT_NORTH, WALL, IntPartition_Const, KITCHEN, , Adiabatic, , NoSun, NoWind, autocalculate, 4, 6,6,3, 8,6,3, 8,6,5.5, 6,6,5.5;
+
+! ========================= Windows (south, 20% WWR) =========================
+FenestrationSurface:Detailed, LIVING_WINDOW, WINDOW, DG_Window, LIVING_SOUTH_WALL, , autocalculate, , , 4, 1.5,0,3.6, 4.5,0,3.6, 4.5,0,5.0, 1.5,0,5.0;
+FenestrationSurface:Detailed, BED1_WINDOW, WINDOW, DG_Window, BED1_SOUTH_WALL, , autocalculate, , , 4, 6.5,0,3.6, 7.5,0,3.6, 7.5,0,5.0, 6.5,0,5.0;
+
+! ========================= Internal gains (TM59) =========================
+People, LIVING_People, LIVING, TM59_Living_Occ, People, 2, , , 0.3, autocalculate, 130_W_Activity, 3.82E-8, No, EnclosureAveraged;
+People, KITCHEN_People, KITCHEN, TM59_Living_Occ, People, 2, , , 0.3, autocalculate, 130_W_Activity, 3.82E-8, No, EnclosureAveraged;
+People, BED1_People, BEDROOM1, TM59_DoubleBed_Occ, People, 2, , , 0.3, autocalculate, 130_W_Activity, 3.82E-8, No, EnclosureAveraged;
+People, BED2_People, BEDROOM2, TM59_SingleBed_Occ, People, 1, , , 0.3, autocalculate, 130_W_Activity, 3.82E-8, No, EnclosureAveraged;
+
+Lights, LIVING_Lights, LIVING, TM59_Living_Occ, Watts/Area, , 2.0, , 0, 0.42, 0.18, 1;
+Lights, KITCHEN_Lights, KITCHEN, TM59_Living_Occ, Watts/Area, , 2.0, , 0, 0.42, 0.18, 1;
+Lights, BED1_Lights, BEDROOM1, TM59_DoubleBed_Occ, Watts/Area, , 2.0, , 0, 0.42, 0.18, 1;
+Lights, BED2_Lights, BEDROOM2, TM59_SingleBed_Occ, Watts/Area, , 2.0, , 0, 0.42, 0.18, 1;
+
+ElectricEquipment, LIVING_Equip, LIVING, TM59_Living_Occ, EquipmentLevel, 150, , , 0, 0, 0;
+ElectricEquipment, KITCHEN_Equip, KITCHEN, TM59_Living_Occ, EquipmentLevel, 300, , , 0, 0, 0;
+ElectricEquipment, BED1_Equip, BEDROOM1, TM59_DoubleBed_Occ, EquipmentLevel, 80, , , 0, 0, 0;
+ElectricEquipment, BED2_Equip, BEDROOM2, TM59_SingleBed_Occ, EquipmentLevel, 80, , , 0, 0, 0;
+
+! ========================= Infiltration (simple) =========================
+ZoneInfiltration:DesignFlowRate, LIVING_Inf, LIVING, VentOnWhenOccupied, Flow/Zone, 0.05, , , , 0.5, , , , , , ;
+ZoneInfiltration:DesignFlowRate, KITCHEN_Inf, KITCHEN, VentOnWhenOccupied, Flow/Zone, 0.01, , , , 0.5, , , , , , ;
+ZoneInfiltration:DesignFlowRate, BED1_Inf, BEDROOM1, TM59_DoubleBed_Occ, Flow/Zone, 0.03, , , , 0.5, , , , , , ;
+ZoneInfiltration:DesignFlowRate, BED2_Inf, BEDROOM2, TM59_SingleBed_Occ, Flow/Zone, 0.03, , , , 0.5, , , , , , ;
+
+! ========================= Window venting (TM59 purge) =========================
+ZoneVentilation:DesignFlowRate, LIVING_Vent, LIVING, S3_NightPurgeVent, Flow/Zone, 1.5, , , 4.0, , , 0.5, 22.0, -100.0, 100.0, 0.0;
+ZoneVentilation:DesignFlowRate, BED1_Vent, BEDROOM1, S3_NightPurgeVent, Flow/Zone, 1.0, , , 4.0, , , 0.5, 22.0, -100.0, 100.0, 0.0;
+
+! ========================= HVAC: IdealLoads =========================
+ZoneHVAC:EquipmentConnections, LIVING, LIVING_EqList, LIVING_In, , LIVING_ZoneNode, LIVING_Out;
+ZoneHVAC:EquipmentList, LIVING_EqList, SequentialLoad, ZoneHVAC:IdealLoadsAirSystem, LIVING_IdealLoads, 1, 1;
+ZoneHVAC:IdealLoadsAirSystem, LIVING_IdealLoads, VentOnWhenOccupied, LIVING_In, , , 35, 12, 0.0156, 0.0077, NoLimit, , , , , , , , , , , , , , ;
+
+ZoneHVAC:EquipmentConnections, KITCHEN, KITCHEN_EqList, KITCHEN_In, , KITCHEN_ZoneNode, KITCHEN_Out;
+ZoneHVAC:EquipmentList, KITCHEN_EqList, SequentialLoad, ZoneHVAC:IdealLoadsAirSystem, KITCHEN_IdealLoads, 1, 1;
+ZoneHVAC:IdealLoadsAirSystem, KITCHEN_IdealLoads, VentOnWhenOccupied, KITCHEN_In, , , 35, 12, 0.0156, 0.0077, NoLimit, , , , , , , , , , , , , , ;
+
+ZoneHVAC:EquipmentConnections, BEDROOM1, BED1_EqList, BED1_In, , BED1_ZoneNode, BED1_Out;
+ZoneHVAC:EquipmentList, BED1_EqList, SequentialLoad, ZoneHVAC:IdealLoadsAirSystem, BED1_IdealLoads, 1, 1;
+ZoneHVAC:IdealLoadsAirSystem, BED1_IdealLoads, TM59_DoubleBed_Occ, BED1_In, , , 35, 12, 0.0156, 0.0077, NoLimit, , , , , , , , , , , , , , ;
+
+ZoneHVAC:EquipmentConnections, BEDROOM2, BED2_EqList, BED2_In, , BED2_ZoneNode, BED2_Out;
+ZoneHVAC:EquipmentList, BED2_EqList, SequentialLoad, ZoneHVAC:IdealLoadsAirSystem, BED2_IdealLoads, 1, 1;
+ZoneHVAC:IdealLoadsAirSystem, BED2_IdealLoads, TM59_SingleBed_Occ, BED2_In, , , 35, 12, 0.0156, 0.0077, NoLimit, , , , , , , , , , , , , , ;
+
+! ========================= Outputs =========================
+EnergyManagementSystem:Sensor, LIVING_MAT, LIVING, Zone Mean Air Temperature;
+EnergyManagementSystem:Sensor, KITCHEN_MAT, KITCHEN, Zone Mean Air Temperature;
+EnergyManagementSystem:Sensor, BED1_MAT, BEDROOM1, Zone Mean Air Temperature;
+EnergyManagementSystem:Sensor, BED2_MAT, BEDROOM2, Zone Mean Air Temperature;
+EnergyManagementSystem:Sensor, OutDBT, Environment, Site Outdoor Air Drybulb Temperature;
+
+!- Ventilation scenario S3: Night-purge-enabled
+!- Windows open overnight (22:00-07:00) for cooling purge; closed daytime
+!- Analogous to Harehills NightPurge variant in intent
+Schedule:Compact, S3_NightPurgeVent, Frac,
+    Through: 12/31, For: AllDays,
+    Until: 07:00, 1.0,
+    Until: 20:00, 0.0,
+    Until: 24:00, 1.0;
+
+Output:Variable, *, Zone Operative Temperature, hourly;
+Output:Variable, *, Zone Mean Air Temperature, hourly;
+Output:Variable, *, Site Outdoor Air Drybulb Temperature, hourly;
+Output:Variable, *, Zone Air Relative Humidity, hourly;
+
+Output:SQLite, Simple;

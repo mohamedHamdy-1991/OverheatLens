@@ -3,6 +3,121 @@
 All notable changes to OverheatLens are documented here.
 Format based on Keep a Changelog; versioning is SemVer.
 
+## [0.8.0.dev0] — 2026-09-04 (Neo-Brutalist laboratory rebuild + harvest fix)
+
+### Fixed (science first)
+- **Harvest corruption (VAL-XSIM-05, critical)**: `harvest_hourly` keyed zones by
+  `name.split(":")[0].lower()` and harvested every reporting frequency, so DEEP
+  models collapsed distinct rooms (`00GROUNDFLOOR:LOUNGE/KITCHEN/STAIRS` → one key)
+  and stacked Hourly+Monthly+RunPeriod columns (01BA: 4 keys × 26280 rows instead of
+  12 zones × 8760). Now: full colon-bearing zone keys, Hourly-only columns,
+  duplicates raise instead of concatenating. All 15 bundled IDFs evaluate end to
+  end (VAL-XSIM-06, re-confirmed by re-run 2026-09-04: 15/15 complete, 0 fatal,
+  0 severe, 0 warnings; TM59:2017 = **10 PASS / 5 FAIL** — the fails are exactly the
+  documented legitimate set: the measured 01BA / 17BG / 27BG / 52NP dwellings plus
+  the CIBSE TM59 Example 4 reference flat, which genuinely fail DSY1-High50).
+- New regression tests `packages/overheatlens-core/tests/test_harvest.py` (always run,
+  no EnergyPlus needed); validation matrix rows VAL-XSIM-05/06.
+
+### Fixed (app & launchers, 2026-09-04 session 2)
+- Debug launchers (`Debug OverheatLens.{command,sh,bat}`): removed the pip-extras
+  block that could hang under cloud-sync stalls (deps already installed);
+  fixed `DEBUG_NORELOAD=1` fall-through (`exec … | tee` runs in a pipeline
+  subshell, so the script previously went on to start a second, reload-mode
+  server after the first was closed). Verified end-to-end on macOS: self-check,
+  `/`, `/img/*`, `/api/version` 200, auto-reload on touch, Close kills, log file
+  written, NORELOAD boots without a reloader and exits cleanly.
+- Sidebar no longer scrolls away: `.page-shell` now uses `overflow: clip`
+  (`hidden` created a scroll container that silently disabled the rail's
+  `position: sticky`).
+- Model display names are now public typology names ("End-terrace house (1930s)",
+  "Back-to-back house (mid)") — internal case-study codes remain only in file
+  stems/ids; the mitigation catalogue serves a `house_names` code→name map.
+- `.gitignore`: `logs/` added (launcher logs stay local).
+
+### Added (archetype library, 2026-09-04 session 2)
+- The complete Chapter 6 model set is stored with the app:
+  `data/archetypes/idf/` now holds the 15 base IDFs (SHA-256-verified against the
+  author's masters) **plus 30 scenario variants** (`variants/` — S2 restricted
+  window opening, S3 night-purge, one pair per base), registered in
+  `provenance.json` under a `variants` key (parent model, scenario, SHA-256,
+  zone count; `run_status: NOT_RUN` until audited). `/api/models` and the audit
+  regression scope stay with the 15 base models until the author promotes the
+  variants. Real EPWs are never stored: validation reads the author's external
+  Leeds MET Office folder.
+
+### Added (science validation campaign + energy, 2026-09-04 session 2)
+- `validation/` — a full scientific validation campaign (`METHOD.md` documents the
+  method; `run_campaign.py` automates 11 cases and writes `results.json` +
+  `CAMPAIGN_REPORT.md`). Verdict 2026-09-04: **PASS** — 9 PASS +
+  2 CONFIRMED_DIRECTIONAL, 0 INCOMPLETE, 0 FAIL. Layers: rule-pack source chain;
+  real-EPW QC; TM59:2017 + TM52 boundary/ worked-example exactness; PMV/PPD vs
+  published ISO 7730 anchors and applicability refusal; UTCI vs Bröde 2012
+  reference conditions; adaptive limits vs TM52 Eq 8 / EN 16798-1; EnergyPlus
+  determinism; meter internal consistency; cross-checks vs the author's
+  DesignBuilder PhD exports and the CIBSE Example 4 published outcome.
+  Surfaced in-app on the Validation page (`GET /api/validation/campaign`).
+- Energy harvest: the worker now keeps `eplusout.mtr` and `harvest_meters()`
+  parses annual/monthly facility totals (J → kWh, J-meters only); analyze
+  payloads gain `energy`, `standards_summary` (same run judged by every
+  compliance-allowed pack) and `comfort` (PMV + adaptive EN on the real
+  simulated temperatures).
+- Mitigation Lab "Energy saved": real paired EnergyPlus experiments — baseline
+  vs the author's stored S2/S3 strategy variants on a chosen weather file —
+  reported per case with TM59 verdicts and kWh saved; models without facility
+  meters report INCOMPLETE rather than an estimate.
+- Fixed: harvest meter file naming (ReadVars writes hourly-only `eplusmtr.csv`;
+  annual totals come from the raw `.mtr`).
+
+### Added (developer)
+- `IMAGE_ASSETS_BRIEF.md` + `IMAGE_GENERATION_PROMPTS.md`: complete image asset
+  plan (43 assets: covers, banners, blocks, empty states, portraits) with
+  generation prompts.
+
+### Added (backend)
+- Persistent run archive `data/runs/` (git-ignored): every fresh analysis persists
+  with manifest; GET /api/runs merges session + disk, GET/DELETE /api/runs/{id}.
+- POST /api/batch: controlled 1×N / N×1 / matrix batches (cap 96, sequential,
+  cache-aware) powering Scenario & Batch.
+- GET /api/models/detail: full dossier (zones, object census, readiness,
+  SHA-256, EnergyPlus version); /api/models research entries gain kind/status/era
+  from the rebuilt `data/archetypes/provenance.json` (15 entries, script-owned).
+- GET /api/mitigation/catalogue serving the generated Harehills catalogue
+  (`scripts/build_mitigation_catalogue.py` run: 01BA 15 / 17BG 20 / 27BG 15
+  strategies; partial TM59 exports shown honestly, 27BG baseline missing).
+- GET /api/bundle: reproducibility ZIP (manifest, results, criteria CSV, report,
+  input files, provenance).
+- Scripts: `audit_archetypes.py` (15-model E+ regression), `build_archetype_provenance.py`.
+
+### Added (frontend — Neo-Brutalist laboratory)
+- Single token layer `nb-tokens.css` (guideline palette verbatim) + brutal `shell.css`
+  rewrite; shared ECharts theme helpers (`charts.tsx`); component library
+  (`StatusPill`, `StandardBadge`, `ResultVerdict`, `MarginBar`, `ProvenanceDrawer`,
+  `MethodNote`, `EmptyState`, …); restyled ThermalRibbon/ExportBar/CommandPalette.
+- Laboratory desktop (Overview) with hero, module folders, research-status strip.
+- Analyze: 4-stage launcher, honest run stages, experiment context bar, verdict
+  banner, threshold-margin bars, criterion matrix, hottest-week lines + zone×time
+  heatmap (FIG 5/6), comfort-from-run, readiness table, provenance drawer, bundle link,
+  archived-run opening (`?run=`).
+- Weather Lab dossier + compat review; Atlas cards/matrix/dossier + model detail;
+  Compare weather×weather (scatter added) and run×run (controlled/variable header +
+  overlay); Comfort Lab manual mode with PMV scale + UTCI bands; Mitigation Lab;
+  Run Archive; Scenario & Batch; Validation evidence counts + filters; Methods/Docs/About.
+- 11 → 13 routes (`/runs`, `/scenarios`); Mitigation Lab is real (no placeholders).
+- API tests +10 (archive/batch/detail/catalogue/bundle guards); web tests +5.
+
+### Notes
+- Author attribution standardised to LICENSE/CITATION spelling: Mohamed Hamdy Ali.
+- `.gitignore`: `data/mitigation/`, `data/runs/`, `logs/` stay local.
+- Test suites (verified 2026-09-04): **core 145 passed, API 34 passed,
+  web 12 passed**, live `POST /api/analyze` smoke green (01BA ×
+  Leeds_DSY1_2020High50 × uk_tm59_2017 → 200, verdict FAIL (legitimate),
+  12 zone series × 8760 values keyed `LEVEL:ROOM`).
+- Web tests now run locally: the earlier "vitest hangs on this machine" note was
+  an artifact of running in-place on the OneDrive copy. A fresh local-disk copy
+  (`rsync` sources + `npm ci`) runs the whole suite in under a second on Node 26
+  with the same `vmThreads` pool config. `tsc -b` + `vite build` green in place.
+
 ## [0.7.0.dev0] — 2026-08-29 (session 7: uploads, Leeds archetypes, Atlas, dashboard redesign)
 
 ### Added

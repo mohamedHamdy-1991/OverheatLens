@@ -116,6 +116,8 @@ Status: `PASS` / `FAIL` / `PENDING` (fixture exists, run pending) / `BLOCKED` (s
 | VAL-XSIM-02 | harvest | 8760 hourly MAT/MRT per zone; Top = 0.5(MAT+MRT) | eplusout.csv | derived metric consistent | verified both zones | PASS | 2026-08-28 | Top labelled derived (RULE 6) |
 | VAL-XSIM-03 | end-to-end | readiness -> simulate -> harvest -> TM59:2017 compliance evaluation | full chain | overall in PASS/FAIL/INCOMPLETE with provenance on every criterion | verified: dwelling PASS, all criteria source_verified | PASS | 2026-08-28 | illustrative fixture, not a validated archetype |
 | VAL-XSIM-04 | err interpreter | severity grouping + unusable-on-severe | crafted .err file | fatal/severe/warning/recurring groups; is_usable false on severe | verified | PASS | 2026-08-28 | plan 12.5 |
+| VAL-XSIM-05 | harvest | colon-bearing zone keys stay distinct; only (Hourly) columns harvested; duplicates refused | synthetic stacked eplusout.csv (`test_harvest.py`) + real 01BA eplusout.csv | 12 true zones × 8760 h (was 4 merged keys × 26280); duplicate raises | verified | PASS | 2026-09-04 | caught live: DEEP Monthly/RunPeriod siblings stacked, level:room keys merged |
+| VAL-XSIM-06 | archetype regression | all 15 bundled IDFs: parse + readiness + E+ 25.1.0 + harvest + TM59:2017 evaluable | `scripts/audit_archetypes.py` × `Leeds_DSY1_2020High50_.epw` | 15/15 complete, 0 fatal/severe; 10 PASS / 5 FAIL (legitimate verdicts: 01BA, 17BG, 27BG, 52NP + TM59 Ex4 flat) | verified (re-run 2026-09-04) | PASS | 2026-09-04 | the earlier "11 PASS / 4 FAIL" note miscounted its own enumeration; the 5 fails are exactly the documented legitimate set |
 
 ## C. Provenance / reproducibility
 
@@ -132,3 +134,22 @@ Status: `PASS` / `FAIL` / `PENDING` (fixture exists, run pending) / `BLOCKED` (s
 | VAL-REF-01 | independent reference implementation of TM59:2017 criteria | scheduled with Phase 3 completion (Tier 2; never copy production function) |
 | VAL-XSW-01 | DesignBuilder cross-check | author access exists; awaits frozen archetype set (Tier 4) |
 | VAL-PRSR-01..n | parser fault injection full campaign (plan §27.2) | partial coverage now (V-EPW-03..08); campaign completes with fuzz/property suite |
+
+## K. Independent validation campaign (validation/run_campaign.py — method: validation/METHOD.md)
+
+| ID | Method | Rule/property | Fixture | Source | Expected | Actual | Tolerance | Status | Date | Notes |
+|---|---|---|---|---|---|---|---|---|---|---|
+| VAL-CAMP-01 (V01) | source chain | all 4 rule packs machine-verified to official PDFs | `overheatlens/rules/*.yaml` | SOURCE_REGISTER S-01..S-04 | SHA-256 recorded; every criteria block source_verified | verified | exact | PASS | 2026-09-04 | Part O inherits TM59:2017 criteria (ADO overrides) |
+| VAL-CAMP-02 (V02) | parser+QC | real research EPW parses; QC non-FAIL; Leeds climate envelope | `Leeds_DSY1_2020High50_.epw` (local) | CIBSE/Met Office DSY | 8760 h, ≥32 cols, PASS/WARN, mean 8–13 °C | 8760 h, PASS, 11.49 °C | exact/envelope | PASS | 2026-09-04 | |
+| VAL-CAMP-03 (V03) | boundary hand-calc | TM59:2017 verdict flips at published boundaries | synthetic series | TM59:2017 §5.2 (SHA-pinned) | 59 h PASS / 60 h FAIL (3 % of 1989 h); rounding 0.45 K counts 0; April excluded; crit B 32/33 h flip; daytime never counts | all verified | exact | PASS | 2026-09-04 | |
+| VAL-CAMP-04 (V04) | published worked example | TM52 §6.1.2 We pattern + rounding + 4 K rule | synthetic series | TM52-2013 §6.1.1–6.1.3 | We=10 FAIL; ΔT 0.45→0 %; 0.50→100 %; DT>4 K FAIL | all verified | exact | PASS | 2026-09-04 | |
+| VAL-CAMP-05 (V05) | published anchors | PMV/PPD vs ISO 7730 PPD relation + applicability | bisection at met 1.2 / clo 0.5 | ISO 7730 | PPD(0)=5 %, (±0.5)≈10 %, (±1)≈26 %, ±0.75 pp; |PMV|>2 refused | verified (5 anchors + refusal) | ±0.75 pp | PASS | 2026-09-04 | wrapped library is the calculator (RULE 4) |
+| VAL-CAMP-06 (V06) | published reference | UTCI ≈ Ta at Bröde reference conditions | UTCI(25,25,0.5,50 %) | Bröde et al. 2012 | 25 ± 0.5 °C; Tr 45 °C raises UTCI | verified | ±0.5 °C | PASS | 2026-09-04 | |
+| VAL-CAMP-07 (V07) | published formulae | TM52 Eq 8 Tmax + EN 16798-1 Tcomf | behavioural probe per Trm | TM52 Eq 8 / EN 16798-1 | Tmax = 0.33·Trm+21.8 (clamp 10–30); Tcomf = 0.33·Trm+18.8 | verified (6 Trm points + Tcomf) | ±0.01 K | PASS | 2026-09-04 | |
+| VAL-CAMP-08 (V08) | determinism | same IDF+EPW twice → identical series and meters | 01BA × Leeds DSY1 2020High50 | EnergyPlus 25.1.0 | byte-equal harvested series; equal annual meters | identical (12 zones) | exact | PASS | 2026-09-04 | |
+| VAL-CAMP-09 (V09) | internal consistency | monthly meter sums vs runperiod total; non-negative | 01BA meter output | EnergyPlus meters | drift ≤ 0.5 % | verified | ≤ 0.5 % | PASS | 2026-09-04 | harvest from raw eplusout.mtr (ReadVars CSV is hourly-only) |
+| VAL-CAMP-10 (V10) | external cross-check | app TM59 verdict vs author's DesignBuilder exports | `data/mitigation/summary.json` | Safer_Heat_Harehills (PhD data) | same PASS/FAIL direction | 01BA: both FAIL — CONFIRMED_DIRECTIONAL (export weather unrecorded); 17BG/27BG: no DB baseline → INCOMPLETE | directional | CONFIRMED_DIRECTIONAL | 2026-09-04 | honest INCOMPLETE for missing exports |
+| VAL-CAMP-11 (V11) | published outcome | CIBSE TM59 Example 4 flat overheats | audit_report.json | CIBSE TM59:2017 worked example | app FAIL matches published direction | CONFIRMED_DIRECTIONAL | directional | CONFIRMED_DIRECTIONAL | 2026-09-04 | CIBSE weather ≠ Leeds file — direction-only |
+
+Campaign verdict 2026-09-04: **PASS** — 9 PASS + 2 CONFIRMED_DIRECTIONAL, 0 INCOMPLETE, 0 FAIL.
+Re-run: `./.venv/bin/python validation/run_campaign.py`.

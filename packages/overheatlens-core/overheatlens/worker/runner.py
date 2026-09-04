@@ -89,6 +89,7 @@ class RunResult:
     err: ErrSummary
     csv_path: Path | None
     manifest: dict[str, Any]
+    meter_path: Path | None = None   # eplusout.mtr (raw facility-meter records), when produced
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -96,6 +97,7 @@ class RunResult:
             "energyplus_version": self.energyplus_version,
             "out_dir": self.out_dir, "err": self.err.to_dict(),
             "manifest": self.manifest,
+            "meter_path": str(self.meter_path) if self.meter_path else None,
         }
 
 
@@ -179,15 +181,19 @@ def run_energyplus(
                          f"{stdout_tail[-300:]}")
 
     csv_path = out_dir / "eplusout.csv"
+    # raw meter records live in eplusout.mtr (ReadVars converts only the Hourly
+    # block to eplusmtr.csv, so the annual/monthly totals must come from here)
+    meter_path = out_dir / "eplusout.mtr"
     status = "complete" if err.is_usable and csv_path.exists() else "failed"
     manifest = _manifest(run_id, chosen["version"], chosen["binary"], idf_path,
                          epw_path, started, status=status, notes=[stdout_tail])
     _write_manifest(out_dir, manifest)
 
     if not keep_dir and status == "complete" and not os.environ.get("OHX_KEEP_RUNS"):
-        # keep only manifest + csv + err unless told otherwise (plan §12.3 cleanup)
+        # keep only manifest + csvs + err unless told otherwise (plan §12.3 cleanup)
         for item in out_dir.iterdir():
-            if item.name not in ("run_manifest.json", "eplusout.csv", "eplusout.err"):
+            if item.name not in ("run_manifest.json", "eplusout.csv",
+                                 "eplusout.mtr", "eplusout.err"):
                 try:
                     item.unlink()
                 except OSError:
@@ -195,7 +201,8 @@ def run_energyplus(
 
     return RunResult(run_id, status, chosen["binary"], chosen["version"],
                      str(out_dir), err,
-                     csv_path if csv_path.exists() else None, manifest)
+                     csv_path if csv_path.exists() else None, manifest,
+                     meter_path if meter_path.exists() else None)
 
 
 def _manifest(run_id, ep_version, binary, idf_path, epw_path, started, status,
@@ -221,6 +228,12 @@ def _write_manifest(out_dir: Path, manifest: dict) -> None:
     (out_dir / "run_manifest.json").write_text(json.dumps(manifest, indent=2))
 
 
+_HARVEST_RE = re.compile(
+    r"^(?P<key>.+?):(?P<variable>[^:]+?)\s*\[(?P<units>[^\]]*)\]"
+    r"\s*\((?P<frequency>[^):]+)(?::[^)]*)?\)\s*$"
+)
+
+
 def harvest_hourly(csv_path: str | Path) -> dict[str, dict[str, list[float] | None]]:
     """Parse eplusout.csv (ReadVarsESO output) into per-zone hourly series.
 
@@ -228,8 +241,12 @@ def harvest_hourly(csv_path: str | Path) -> dict[str, dict[str, list[float] | No
     where ``top`` is the DERIVED operative temperature 0.5*(MAT+MRT) (low air speed)
     and ``rh`` is the harvested Zone Air Relative Humidity in % — ``None`` when the
     model does not output it (never interpolated or invented).
-    Column naming follows ReadVarsESO: 'Environment:...,ZONE NAME:Zone Mean Air
-    Temperature [C](TimeStep)'.
+    Column naming follows ReadVarsESO: 'ZONE KEY:Zone Mean Air Temperature
+    [C](Hourly)'. Only ``(Hourly)`` columns are harvested — Monthly/RunPeriod
+    siblings are skipped — and the FULL key field (which may itself contain
+    colons, e.g. ``00GROUNDFLOOR:LOUNGE``) identifies the zone, so distinct
+    thermal zones are never merged. A second column mapping to an already-seen
+    (zone, variable) raises instead of silently concatenating (VAL-XSIM-05).
     """
     import csv as _csv
 
@@ -243,22 +260,31 @@ def harvest_hourly(csv_path: str | Path) -> dict[str, dict[str, list[float] | No
     if not data:
         raise ValueError("eplusout.csv has no data rows")
 
-    markers = ("Zone Mean Air Temperature", "Zone Mean Radiant Temperature",
-               "Zone Air Relative Humidity")
+    markers = {"Zone Mean Air Temperature": "mat",
+               "Zone Mean Radiant Temperature": "mrt",
+               "Zone Air Relative Humidity": "rh"}
     zones: dict[str, dict[str, list[float]]] = {}
     for col, name in enumerate(header):
         if col == 0:
             continue
         name = name.strip()
-        wanted = [m for m in markers if m in name]
+        m = _HARVEST_RE.match(name)
+        if not m:
+            continue
+        if m.group("frequency").strip().lower() != "hourly":
+            continue  # Monthly/Daily/RunPeriod siblings must never stack
+        wanted = [marker for marker in markers if marker in m.group("variable")]
         if not wanted:
             continue
-        zone = name.split(":")[0].strip().lower()
-        key = {"Zone Mean Air Temperature": "mat",
-               "Zone Mean Radiant Temperature": "mrt",
-               "Zone Air Relative Humidity": "rh"}[wanted[0]]
-        zones.setdefault(zone, {})
-        vals = zones[zone].setdefault(key, [])
+        zone = m.group("key").strip()
+        key = markers[wanted[0]]
+        slot = zones.setdefault(zone, {})
+        if key in slot:
+            raise ValueError(
+                f"duplicate hourly column for zone {zone!r} variable {wanted[0]!r} "
+                f"in {csv_path.name} — refusing to concatenate")
+        vals: list[float] = []
+        slot[key] = vals
         for row in data:
             try:
                 vals.append(float(row[col]))
@@ -283,6 +309,65 @@ def harvest_hourly(csv_path: str | Path) -> dict[str, dict[str, list[float] | No
         raise ValueError(
             "no zone temperature columns found in eplusout.csv — add Output:Variable "
             "objects for Zone Mean Air Temperature and Zone Mean Radiant Temperature")
+    return out
+
+
+J_TO_KWH = 1.0 / 3_600_000.0
+
+
+def harvest_meters(meter_path: str | Path) -> dict[str, dict[str, Any]]:
+    """Parse the raw eplusout.mtr into annual (runperiod) and monthly totals.
+
+    The .mtr data dictionary maps record numbers to meter names and frequencies;
+    ReadVars only converts the Hourly block to CSV, so the annual totals must be
+    read from here. EnergyPlus meters are Joules; reported in kWh. Models without
+    runperiod records get ``annual_kwh: None`` — never estimated.
+    """
+    import re as _re
+
+    meter_path = Path(meter_path)
+    dictionary: dict[int, tuple[str, str]] = {}
+    values: dict[int, float] = {}
+    monthly: dict[int, list[float]] = {}
+    in_dict = True
+    for line in meter_path.read_text(errors="replace").splitlines():
+        line = line.strip()
+        if not line or line.startswith("!"):
+            continue
+        if in_dict:
+            if line.lower().startswith("end of data dictionary"):
+                in_dict = False
+                continue
+            m = _re.match(r"^(\d+)\s*,\s*\d+\s*,\s*([^,!]+?)\s*\[([^]]*)\]\s*!(\w+)", line)
+            if m:
+                code = int(m.group(1))
+                name = m.group(2).strip()
+                unit = m.group(3).strip()
+                freq = m.group(4).strip().lower()
+                # only energy meters carry Joules; water/CO2 meters have their
+                # own units and must not be force-converted to kWh
+                if unit.upper() == "J":
+                    dictionary[code] = (name, freq)
+            continue
+        m = _re.match(r"^(\d+)\s*,\s*([-+0-9.eE]+)", line)
+        if not m:
+            continue
+        code, value = int(m.group(1)), float(m.group(2))
+        if code in dictionary:
+            values[code] = value
+            name, freq = dictionary[code]
+            if freq == "monthly":
+                monthly.setdefault(code, []).append(value)
+
+    out: dict[str, dict[str, Any]] = {}
+    for code, vals in monthly.items():
+        name = dictionary[code][0]
+        out.setdefault(name, {"annual_kwh": None, "monthly_kwh": []})
+        out[name]["monthly_kwh"] = [v * J_TO_KWH for v in vals]
+    for code, (name, freq) in dictionary.items():
+        if freq == "runperiod" and code in values:
+            entry = out.setdefault(name, {"annual_kwh": None, "monthly_kwh": []})
+            entry["annual_kwh"] = values[code] * J_TO_KWH
     return out
 
 

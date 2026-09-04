@@ -39,3 +39,10 @@ eplusout.*/
 
 # --- User uploads (stay local, like real weather) ---
 data/uploads/
+
+# --- Derived research data (regenerated locally, never committed) ---
+data/mitigation/
+data/runs/
+
+# --- Launcher logs (debug server output, timestamps, local only) ---
+logs/

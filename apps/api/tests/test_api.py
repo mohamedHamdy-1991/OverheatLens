@@ -282,7 +282,9 @@ def test_analyze_runs_full_pipeline():
     assert body["readiness"]["status"] in ("PASS", "PASS_WITH_WARNINGS")
     assert body["run"]["status"] == "complete"
     assert body["result"]["overall"] in ("PASS", "FAIL", "INCOMPLETE")
-    assert set(body["series"]) == {"living room", "bedroom 1"}
+    # keys preserve the model's true zone identity as EnergyPlus reports it
+    # (E+ 25.1 uppercases; VAL-XSIM-05 forbids lowercasing/merging)
+    assert set(body["series"]) == {"LIVING ROOM", "BEDROOM 1"}
     # second call must be served from the run cache
     r2 = client.post("/api/analyze", params={
         "weather_path": str(_real_file()), "pack_id": "uk_tm59_2017"})
@@ -299,7 +301,7 @@ def test_analyze_with_model_path_runs_chosen_model():
     assert r.status_code == 200
     body = r.json()
     assert Path(body["model"]["path"]) == IDF_FIXTURE.resolve()
-    assert set(body["series"]) == {"living room", "bedroom 1"}
+    assert set(body["series"]) == {"LIVING ROOM", "BEDROOM 1"}
     # every zone carries a harvested RH series from the same run (fixture outputs it)
     assert all(body["rh"][z] is not None and len(body["rh"][z]) == 8760
                for z in body["series"])
@@ -319,7 +321,7 @@ def test_comfort_run_shape_and_assumptions():
     assert "09:00" in a["occupied_hours"] and "22:00" in a["occupied_hours"]
     assert a["library"] == "pythermalcomfort" and a["library_version"]
     zones = body["zones"]
-    assert {z["zone"] for z in zones} == {"living room", "bedroom 1"}
+    assert {z["zone"] for z in zones} == {"LIVING ROOM", "BEDROOM 1"}
     for z in zones:
         pct, ppd, top = (z["adaptive_acceptable_pct"], z["mean_ppd"], z["max_top"])
         assert pct is None or 0.0 <= pct <= 100.0
@@ -441,3 +443,75 @@ def test_report_renderer_is_self_contained_html():
 
 def test_report_endpoint_requires_params():
     assert client.get("/api/report").status_code == 422
+
+
+# --- run archive / batch / model detail / mitigation / bundle --------------------
+
+def test_runs_list_shape():
+    r = client.get("/api/runs")
+    assert r.status_code == 200
+    runs = r.json()["runs"]
+    assert isinstance(runs, list)
+    for e in runs:
+        assert {"run_id", "weather", "pack_id", "overall"} <= set(e)
+
+
+def test_run_detail_unknown_id_404s():
+    assert client.get("/api/runs/does-not-exist-zzz").status_code == 404
+
+
+def test_run_delete_unknown_id_404s():
+    assert client.delete("/api/runs/does-not-exist-zzz").status_code == 404
+
+
+def test_batch_rejects_bad_bodies():
+    assert client.post("/api/batch", json={}).status_code == 400
+    assert client.post("/api/batch", json={"runs": []}).status_code == 400
+    big = {"runs": [{"weather_path": str(FIXTURE)}] * 97}
+    assert client.post("/api/batch", json=big).status_code == 400
+    # entries without a weather path are reported, not fatal
+    r = client.post("/api/batch", json={"runs": [{"model_path": str(IDF_FIXTURE)}]})
+    assert r.status_code == 200
+    assert "error" in r.json()["runs"][0]
+
+
+def test_model_detail_on_fixture():
+    r = client.get("/api/models/detail", params={"path": str(IDF_FIXTURE)})
+    assert r.status_code == 200
+    body = r.json()
+    assert body["n_zones"] == 2
+    assert len(body["sha256"]) == 64
+    assert body["readiness"]["status"]
+    assert isinstance(body["object_census"], dict)
+    assert body["energyplus_version"]
+
+
+def test_model_detail_guards_paths():
+    assert client.get("/api/models/detail",
+                      params={"path": str(REPO_ROOT / "README.md")}).status_code in (400, 403)
+
+
+def test_models_lists_research_archetypes_with_kind():
+    r = client.get("/api/models")
+    assert r.status_code == 200
+    research = [m for m in r.json()["models"] if m["source"] == "research"]
+    if not (REPO_ROOT / "data" / "archetypes" / "idf").is_dir():
+        pytest.skip("no bundled archetype IDFs")
+    assert len(research) >= 15
+    for m in research:
+        assert m.get("kind") in ("research", "reference", "template")
+
+
+def test_mitigation_catalogue_honest_shape():
+    r = client.get("/api/mitigation/catalogue")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["status"] in ("ready", "not_generated")
+    if body["status"] == "ready":
+        assert set(body["catalogue"]["houses"]) >= {"01BA", "17BG", "27BG"}
+    else:
+        assert "detail" in body
+
+
+def test_bundle_unknown_run_404s():
+    assert client.get("/api/bundle", params={"run_id": "does-not-exist-zzz"}).status_code == 404

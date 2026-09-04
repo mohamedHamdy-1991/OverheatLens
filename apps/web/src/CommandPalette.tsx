@@ -8,17 +8,19 @@ interface Command {
 }
 
 const COMMANDS: Command[] = [
-  { label: "Analyze a building", hint: "run the pipeline", to: "/analyze" },
+  { label: "Analyze a building", hint: "model × weather × standard", to: "/analyze" },
   { label: "Weather Lab", hint: "check an EPW", to: "/weather" },
   { label: "Comfort Lab", hint: "PMV · adaptive · UTCI", to: "/comfort" },
-  { label: "Compare weather files", hint: "2–8 EPWs side by side", to: "/compare" },
+  { label: "Compare", hint: "weather · runs · mitigation", to: "/compare" },
+  { label: "Run Archive", hint: "every experiment, reproducible", to: "/runs" },
+  { label: "Scenario & Batch", hint: "matrices of EnergyPlus runs", to: "/scenarios" },
   { label: "Validation", hint: "the live evidence matrix", to: "/validation" },
-  { label: "Archetype Atlas", hint: "scheduled — Phase 14", to: "/atlas" },
-  { label: "Mitigation Lab", hint: "scheduled — Phase 13", to: "/mitigation" },
+  { label: "Archetype Atlas", hint: "research model dossiers", to: "/atlas" },
+  { label: "Mitigation Lab", hint: "Harehills parametric evidence", to: "/mitigation" },
   { label: "Methods", hint: "how the science is implemented", to: "/methods" },
   { label: "Docs", hint: "quick start & guides", to: "/docs" },
   { label: "About OverheatLens", hint: "project & licence", to: "/about" },
-  { label: "Home", hint: "overview & live thermal year", to: "/" },
+  { label: "Overview", hint: "laboratory desktop", to: "/" },
 ];
 
 /* RULE 13: global ⌘K / Ctrl+K command search. Arrow keys + Enter, Escape closes. */
@@ -81,10 +83,10 @@ export function CommandPalette() {
         aria-label="Command search"
         style={{
           width: "min(560px, calc(100vw - 32px))",
-          background: "var(--surface)",
-          border: "1px solid var(--line-strong)",
-          borderRadius: 10,
-          boxShadow: "0 18px 60px rgba(23,33,38,0.25)",
+          background: "var(--nb-surface)",
+          border: "var(--nb-border-3)",
+          boxShadow: "var(--nb-shadow-lg)",
+          borderRadius: "var(--nb-radius-md)",
           overflow: "hidden",
         }}
       >
@@ -105,8 +107,8 @@ export function CommandPalette() {
           style={{
             width: "100%", border: "none", outline: "none",
             padding: "14px 18px", font: "inherit", fontSize: 15.5,
-            borderBottom: "1px solid var(--line)",
-            background: "var(--surface)", color: "var(--ink)",
+            borderBottom: "var(--nb-border-2)",
+            background: "var(--nb-surface)", color: "var(--nb-ink)",
           }}
         />
         <ul id="cmd-list" role="listbox" style={{ listStyle: "none", margin: 0, padding: "6px", maxHeight: 320, overflowY: "auto" }}>
@@ -117,12 +119,13 @@ export function CommandPalette() {
                 onMouseEnter={() => setActive(i)}
                 style={{
                   display: "flex", width: "100%", alignItems: "baseline", gap: 12,
-                  padding: "9px 12px", border: "none", cursor: "pointer",
-                  borderRadius: 6, textAlign: "left",
-                  background: i === active ? "var(--brand-soft)" : "transparent",
-                  color: i === active ? "var(--brand-dark)" : "var(--ink)",
+                  padding: "9px 12px", cursor: "pointer",
+                  border: i === active ? "var(--nb-border-2)" : "2px solid transparent",
+                  textAlign: "left",
+                  background: i === active ? "var(--nb-yellow)" : "transparent",
+                  color: "var(--nb-ink)",
                   font: "inherit", fontSize: 14,
-                  fontWeight: i === active ? 600 : 400,
+                  fontWeight: i === active ? 800 : 400,
                 }}
               >
                 {c.label}

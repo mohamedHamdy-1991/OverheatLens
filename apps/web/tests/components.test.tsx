@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { render, screen } from '@testing-library/react'
-import { StatusPill, Figure } from '../src/components'
+import { StatusPill, Figure, ResultVerdict, MarginBar, StandardBadge } from '../src/components'
 import { BrandMark, AppShell } from '../src/AppShell'
 import { MemoryRouter } from 'react-router-dom'
 
@@ -43,7 +43,7 @@ describe('BrandMark', () => {
 })
 
 describe('AppShell navigation (RULE 13 primary nav)', () => {
-  it('renders all eleven primary destinations', () => {
+  it('renders all primary destinations including archive and batch', () => {
     render(
       <MemoryRouter initialEntries={['/']}>
         <AppShell>
@@ -51,7 +51,8 @@ describe('AppShell navigation (RULE 13 primary nav)', () => {
         </AppShell>
       </MemoryRouter>,
     )
-    for (const label of ['Analyze', 'Compare', 'Archetype Atlas', 'Weather Lab',
+    for (const label of ['Analyze', 'Compare', 'Archetype Atlas', 'Run Archive',
+      'Scenario & Batch', 'Weather Lab',
       'Comfort Lab', 'Mitigation Lab', 'Validation', 'Methods', 'Docs', 'About']) {
       expect(screen.getAllByRole('link', { name: new RegExp(label) }).length).toBeGreaterThan(0)
     }
@@ -66,5 +67,38 @@ describe('AppShell navigation (RULE 13 primary nav)', () => {
       </MemoryRouter>,
     )
     expect(screen.getByText(/not a compliance certificate/i)).toBeInTheDocument()
+  })
+})
+
+describe('ResultVerdict', () => {
+  it('announces PASS as a status with label and icon', () => {
+    render(<ResultVerdict verdict="PASS" detail="all criteria pass" />)
+    expect(screen.getByRole('status', { name: /PASS/ })).toBeInTheDocument()
+  })
+
+  it('renders INCOMPLETE distinctly from failure', () => {
+    const { container } = render(<ResultVerdict verdict="INCOMPLETE" />)
+    expect(container.querySelector('.verdict.incomplete')).not.toBeNull()
+    expect(screen.getByText(/INCOMPLETE/)).toBeInTheDocument()
+  })
+})
+
+describe('MarginBar', () => {
+  it('shows value, limit and margin with an accessible label', () => {
+    render(<MarginBar label="Living A" value={2.1} limit={3.0} unit="%" higherIsWorse />)
+    expect(screen.getByRole('img', { name: /Living A/ })).toBeInTheDocument()
+    expect(screen.getByText(/2.1 \/ 3.0/)).toBeInTheDocument()
+  })
+})
+
+describe('StandardBadge', () => {
+  it('always shows the exact rule-pack edition', () => {
+    render(<StandardBadge packId="uk_tm59_2017" version="1.0.0" />)
+    expect(screen.getByText(/uk_tm59_2017 · v1.0.0/)).toBeInTheDocument()
+  })
+
+  it('tags the 2026 pack as research-only', () => {
+    render(<StandardBadge packId="uk_tm59_2026" version="1.0.0" />)
+    expect(screen.getByText('RESEARCH ONLY')).toBeInTheDocument()
   })
 })

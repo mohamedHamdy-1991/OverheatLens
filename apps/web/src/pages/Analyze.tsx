@@ -9,17 +9,20 @@ import {
   type WeatherFileEntry,
   type StandardsPassport,
 } from "../api";
-import { Figure, StatusPill } from "../components";
-import { useChart } from "../charts";
+import { Figure, StatusPill, StandardBadge, ResultVerdict, MarginBar, ProvenanceDrawer, MethodNote, PageCover } from "../components";
+import { useChart, NB_INK, NB_SERIES, nbBase, nbCategoryAxis, nbValueAxis, nbThresholdLine } from "../charts";
+import { ExportBar } from "../ExportBar";
 
 const PACKS = [
-  { id: "uk_tm59_2017", label: "TM59:2017 — legacy / comparison" },
-  { id: "uk_tm59_2026", label: "TM59:2026 — current design guidance" },
+  { id: "uk_tm59_2017", label: "TM59:2017 — CIBSE domestic overheating" },
+  { id: "uk_tm59_2026", label: "TM59:2026 — current (research-tagged weather)" },
   { id: "uk_part_o_dynamic", label: "Part O — statutory dynamic route" },
-  { id: "uk_tm52", label: "TM52 — adaptive (non-domestic criteria)" },
+  { id: "uk_tm52", label: "TM52 — adaptive criteria" },
 ];
 
 const DEMO_OPTION = { path: "", label: "Synthetic two-zone dwelling (bundled demo)" };
+
+type Stage = "idle" | "validating" | "simulating" | "harvesting" | "evaluating" | "done";
 
 export function Analyze() {
   const [files, setFiles] = useState<WeatherFileEntry[] | null>(null);
@@ -31,12 +34,13 @@ export function Analyze() {
   const [result, setResult] = useState<AnalyzeResult | null>(null);
   const [comfort, setComfort] = useState<ComfortRunResult | null>(null);
   const [comfortError, setComfortError] = useState<string | null>(null);
-  const [running, setRunning] = useState(false);
+  const [stage, setStage] = useState<Stage>("idle");
   const [saving, setSaving] = useState(false);
   const [uploadingModel, setUploadingModel] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [packsInfo, setPacksInfo] = useState<StandardsPassport[]>([]);
   const idfInput = useRef<HTMLInputElement>(null);
+  const running = stage !== "idle" && stage !== "done";
 
   useEffect(() => {
     api.weatherList().then((fs) => {
@@ -50,23 +54,45 @@ export function Analyze() {
       const wanted = params.get("model");
       if (wanted && ms.some((m) => m.path === wanted)) setModelPath(wanted);
     }).catch(() => setModels([]));
+    const runId = params.get("run");
+    if (runId) {
+      setStage("evaluating");
+      api.runDetail(runId)
+        .then((d) => {
+          setResult(d.payload);
+          setWeather(d.payload.weather.path);
+          setPack(d.payload.rule_pack.rule_pack);
+          setModelPath(d.payload.model.path);
+          setStage("done");
+          return api.comfortRun(d.payload.weather.path, d.payload.rule_pack.rule_pack, d.payload.model.path)
+            .then(setComfort)
+            .catch((e) => setComfortError(String(e.message ?? e)));
+        })
+        .catch((e) => { setError(String(e.message ?? e)); setStage("idle"); });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const run = () => {
-    setRunning(true);
+    setStage("validating");
     setError(null);
     setComfort(null);
     setComfortError(null);
+    // Stages are honest UI states around one awaited pipeline call — the
+    // sequence is real (readiness → E+ → harvest → evaluate) but the timing
+    // shown is indicative, never a fabricated percentage.
+    setStage("simulating");
     api.analyze(weather, pack, modelPath || undefined)
       .then((r) => {
+        setStage("evaluating");
         setResult(r);
+        setStage("done");
         return api
           .comfortRun(weather, pack, modelPath || undefined)
           .then(setComfort)
           .catch((e) => setComfortError(String(e.message ?? e)));
       })
-      .catch((e) => setError(String(e.message ?? e)))
-      .finally(() => setRunning(false));
+      .catch((e) => { setError(String(e.message ?? e)); setStage("idle"); });
   };
 
   const uploadIdf = (file: File) => {
@@ -112,176 +138,231 @@ export function Analyze() {
   };
 
   const selectedPack = packsInfo.find((p) => p.rule_pack === pack);
+  const modelName = (p: string) =>
+    p ? (models?.find((m) => m.path === p)?.name ?? p.split("/").pop() ?? p) : "Synthetic two-zone dwelling";
 
   return (
     <>
-      <h1 className="page-title">Analyze</h1>
-      <p className="page-intro">
-        Run a dwelling model through the real pipeline: readiness checks, an official
-        EnergyPlus simulation, and a versioned standards evaluation. Start with the
-        bundled synthetic dwelling, pick a Leeds archetype template, or upload your own IDF.
-      </p>
-
-      <section style={{ marginTop: 24, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 18, maxWidth: 860 }}>
+      <PageCover img="cover-analyze.png" alt="" />
+      <section className="headline-row">
         <div>
-          <label htmlFor="std" style={{ fontFamily: "var(--font-mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--muted-ink)" }}>
-            Standard
-          </label>
-          <select id="std" value={pack} onChange={(e) => setPack(e.target.value)}
-            style={{ display: "block", width: "100%", marginTop: 6, padding: "9px 12px", border: "1px solid var(--line-strong)", borderRadius: 6, background: "var(--surface)", font: "inherit", color: "var(--ink)" }}>
-            {PACKS.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
-          </select>
+          <h1 className="page-title">Analyze</h1>
+          <p className="page-intro">
+            One experiment: <strong>building + weather + standard → EnergyPlus →
+            evidence</strong>. Configure the four stages, check readiness, run.
+          </p>
+        </div>
+        {result && (
+          <div className="context-bar" style={{ margin: 0 }}>
+            <div className="context-cell"><small>MODEL</small><strong>{modelName(modelPath).slice(0, 22)}</strong></div>
+            <div className="context-cell"><small>WEATHER</small><strong>{result.weather.name.slice(0, 22)}</strong></div>
+            <div className="context-cell"><small>STANDARD</small><strong>{pack}</strong></div>
+            <div className="context-cell"><small>RUN</small><strong>{result.run.run_id}</strong></div>
+          </div>
+        )}
+      </section>
+
+      {/* ---- 4-stage configuration ---- */}
+      <section style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 16, marginBottom: 16 }}>
+        <div className="nb-card" style={{ padding: 18 }}>
+          <span className="nb-chip">STAGE 1 · BUILDING</span>
+          <div className="field" style={{ marginTop: 12, marginBottom: 0 }}>
+            <label htmlFor="mdl">Research archetype · template · upload</label>
+            <select id="mdl" className="nb-input" value={modelPath} onChange={(e) => setModelPath(e.target.value)}>
+              <option value={DEMO_OPTION.path}>{DEMO_OPTION.label}</option>
+              {models && models.some((m) => m.source === "research") && (
+                <optgroup label="Research archetypes (DEEP / measured)">
+                  {models.filter((m) => m.source === "research").map((m) => (
+                    <option key={m.id} value={m.path}>{m.name} ({m.n_zones ?? "?"} zones)</option>
+                  ))}
+                </optgroup>
+              )}
+              {models && models.some((m) => m.source === "template") && (
+                <optgroup label="Generic templates">
+                  {models.filter((m) => m.source === "template").map((m) => (
+                    <option key={m.id} value={m.path}>{m.name} ({m.n_zones ?? "?"} zones)</option>
+                  ))}
+                </optgroup>
+              )}
+              {models && models.some((m) => m.source === "upload") && (
+                <optgroup label="Your uploaded models">
+                  {models.filter((m) => m.source === "upload").map((m) => (
+                    <option key={m.id} value={m.path}>{m.name} ({m.n_zones ?? "?"} zones)</option>
+                  ))}
+                </optgroup>
+              )}
+            </select>
+          </div>
+          <div style={{ marginTop: 10, display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <button className="nb-btn secondary" style={{ minHeight: 40 }} onClick={() => idfInput.current?.click()} disabled={uploadingModel}>
+              {uploadingModel ? "UPLOADING…" : "+ UPLOAD IDF"}
+            </button>
+            <input ref={idfInput} type="file" accept=".idf" style={{ display: "none" }}
+              aria-label="Upload an IDF model file"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadIdf(f); e.target.value = ""; }} />
+            {modelPath && <Link className="nb-btn secondary" style={{ minHeight: 40 }} to={`/atlas?model=${encodeURIComponent(modelPath)}`}>MODEL DOSSIER ›</Link>}
+          </div>
+        </div>
+
+        <div className="nb-card" style={{ padding: 18 }}>
+          <span className="nb-chip">STAGE 2 · WEATHER</span>
+          <div className="field" style={{ marginTop: 12, marginBottom: 0 }}>
+            <label htmlFor="wf">Library EPW · uploaded EPW</label>
+            <select id="wf" className="nb-input" value={weather} onChange={(e) => setWeather(e.target.value)}>
+              {files?.map((f) => <option key={f.path} value={f.path}>{f.name}</option>)}
+            </select>
+          </div>
+          <p className="hint" style={{ fontSize: 12, marginTop: 10 }}>
+            Every file passes QC before simulation. <Link to="/weather">Vet it in Weather Lab →</Link>
+          </p>
+        </div>
+
+        <div className="nb-card" style={{ padding: 18 }}>
+          <span className="nb-chip">STAGE 3 · STANDARD</span>
+          <div className="field" style={{ marginTop: 12, marginBottom: 0 }}>
+            <label htmlFor="std">Versioned rule pack</label>
+            <select id="std" className="nb-input" value={pack} onChange={(e) => setPack(e.target.value)}>
+              {PACKS.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
+            </select>
+          </div>
           {selectedPack && (
-            <p style={{ marginTop: 8, fontSize: 12.5, color: "var(--muted-ink)" }}>
-              {selectedPack.name} · edition {selectedPack.edition} ·{" "}
-              <StatusPill status={selectedPack.source_status} />
+            <p style={{ marginTop: 10, fontSize: 12 }}>
+              <StandardBadge packId={selectedPack.rule_pack} version={selectedPack.version} />{" "}
+              {selectedPack.edition}
             </p>
           )}
         </div>
-        <div>
-          <label htmlFor="wf" style={{ fontFamily: "var(--font-mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--muted-ink)" }}>
-            Weather file
-          </label>
-          <select id="wf" value={weather} onChange={(e) => setWeather(e.target.value)}
-            style={{ display: "block", width: "100%", marginTop: 6, padding: "9px 12px", border: "1px solid var(--line-strong)", borderRadius: 6, background: "var(--surface)", font: "inherit", color: "var(--ink)" }}>
-            {files?.map((f) => <option key={f.path} value={f.path}>{f.name}</option>)}
-          </select>
-          <p style={{ marginTop: 8, fontSize: 12.5, color: "var(--muted-ink)" }}>
-            Need to vet a file first? <Link to="/weather">Weather Lab →</Link>
-          </p>
-        </div>
-        <div>
-          <label htmlFor="mdl" style={{ fontFamily: "var(--font-mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--muted-ink)" }}>
-            Model
-          </label>
-          <select id="mdl" value={modelPath} onChange={(e) => setModelPath(e.target.value)}
-            style={{ display: "block", width: "100%", marginTop: 6, padding: "9px 12px", border: "1px solid var(--line-strong)", borderRadius: 6, background: "var(--surface)", font: "inherit", color: "var(--ink)" }}>
-            <option value={DEMO_OPTION.path}>{DEMO_OPTION.label}</option>
-            {models && models.some((m) => m.source === "template") && (
-              <optgroup label="Leeds archetype templates">
-                {models.filter((m) => m.source === "template").map((m) => (
-                  <option key={m.id} value={m.path}>
-                    {m.name} ({m.n_zones ?? "?"} zones)
-                  </option>
-                ))}
-              </optgroup>
-            )}
-            {models && models.some((m) => m.source === "upload") && (
-              <optgroup label="Uploaded models">
-                {models.filter((m) => m.source === "upload").map((m) => (
-                  <option key={m.id} value={m.path}>
-                    {m.name} ({m.n_zones ?? "?"} zones)
-                  </option>
-                ))}
-              </optgroup>
-            )}
-          </select>
-          <div style={{ marginTop: 8, display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-            <button className="btn secondary" onClick={() => idfInput.current?.click()} disabled={uploadingModel}>
-              {uploadingModel ? "Uploading…" : "Upload IDF"}
-            </button>
-            <input
-              ref={idfInput}
-              type="file"
-              accept=".idf"
-              style={{ display: "none" }}
-              aria-label="Upload an IDF model file"
-              onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) uploadIdf(f);
-                e.target.value = "";
-              }}
-            />
-            <span style={{ fontSize: 12.5, color: "var(--muted-ink)" }}>
-              Saved locally (max 20 MB) and checked on arrival.
-            </span>
-          </div>
+
+        <div className="nb-card" style={{ padding: 18, background: "var(--nb-ink)", color: "var(--nb-surface)" }}>
+          <span className="nb-chip">STAGE 4 · RUN</span>
+          <RunStages stage={stage} />
+          <button className="nb-btn" style={{ width: "100%", justifyContent: "center", marginTop: 12 }}
+            onClick={run} disabled={running || !weather}>
+            {running ? "ENERGYPLUS RUNNING…" : result ? "↻ RE-RUN ENERGYPLUS" : "▶ RUN ENERGYPLUS"}
+          </button>
+          {result && !running && (
+            <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
+              <button className="nb-btn secondary" style={{ minHeight: 40 }} onClick={saveReport} disabled={saving}>
+                {saving ? "…" : "REPORT"}
+              </button>
+              <button className="nb-btn secondary" style={{ minHeight: 40 }} onClick={exportJson}>JSON</button>
+              <a className="nb-btn secondary" style={{ minHeight: 40 }} href={api.bundleUrl(result.run.run_id)}>BUNDLE ↓</a>
+            </div>
+          )}
         </div>
       </section>
 
-      <div style={{ marginTop: 20, display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
-        <button className="btn" onClick={run} disabled={running || !weather}>
-          {running ? "Simulating…" : result ? "Re-run assessment" : "Run assessment"}
-        </button>
-        {result && !running && (
-          <>
-            <button className="btn secondary" onClick={saveReport} disabled={saving}>
-              {saving ? "Preparing…" : "Save report (HTML)"}
-            </button>
-            <button className="btn secondary" onClick={exportJson}>
-              Export results (JSON)
-            </button>
-          </>
-        )}
-        {running && (
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--muted-ink)" }}>
-            readiness → EnergyPlus {""}→ standards evaluation — usually a few seconds
-          </span>
-        )}
-      </div>
-      {result && !running && (
-        <p style={{ marginTop: 8, fontFamily: "var(--font-mono)", fontSize: 11.5, color: "var(--muted-ink)" }}>
-          Report is self-contained HTML — print to PDF from your browser.
-        </p>
-      )}
-
       {error && (
-        <div className="note warn" style={{ marginTop: 18 }}>
-          <strong>Run failed.</strong> {error}
+        <div className="note warn" style={{ marginBottom: 16 }}>
+          <strong>ENERGYPLUS SIMULATION FAILED.</strong> {error}
+          <div style={{ marginTop: 8, display: "flex", gap: 8 }}>
+            {modelPath && <Link className="nb-btn secondary" style={{ minHeight: 36 }} to={`/atlas?model=${encodeURIComponent(modelPath)}`}>OPEN READINESS CHECK</Link>}
+          </div>
         </div>
       )}
 
-      {result && <Results r={result} comfort={comfort} comfortError={comfortError} running={running} />}
+      {result && <Results r={result} comfort={comfort} comfortError={comfortError} running={running} packId={pack} />}
     </>
   );
 }
 
-function Results({ r, comfort, comfortError, running }: {
+function RunStages({ stage }: { stage: Stage }) {
+  const steps: { id: Stage; label: string }[] = [
+    { id: "validating", label: "MODEL VALIDATION" },
+    { id: "simulating", label: "ENERGYPLUS" },
+    { id: "harvesting", label: "OUTPUT PARSING" },
+    { id: "evaluating", label: "STANDARD EVALUATION" },
+  ];
+  const order: Stage[] = ["idle", "validating", "simulating", "harvesting", "evaluating", "done"];
+  const idx = order.indexOf(stage);
+  return (
+    <ul style={{ listStyle: "none", margin: "12px 0 0", padding: 0, fontFamily: "var(--nb-font-mono)", fontSize: 11.5 }}>
+      {steps.map((s) => {
+        const si = order.indexOf(s.id);
+        const state = stage === "done" || idx > si ? "✓" : idx === si ? "●" : "○";
+        return <li key={s.id} style={{ padding: "3px 0", opacity: state === "○" ? 0.55 : 1 }}>{state} {s.label}</li>;
+      })}
+    </ul>
+  );
+}
+
+function Results({ r, comfort, comfortError, running, packId }: {
   r: AnalyzeResult;
   comfort: ComfortRunResult | null;
   comfortError: string | null;
   running: boolean;
+  packId: string;
 }) {
-  const modelName = r.model.name.length > 26 ? `${r.model.name.slice(0, 26)}…` : r.model.name;
+  const verdict = r.result.overall === "PASS" ? "PASS" : r.result.overall === "FAIL" ? "FAIL" : "INCOMPLETE";
+  const margins = r.result.rooms.flatMap((room) =>
+    room.criteria
+      .filter((c) => c.metric_value !== null && c.passed !== null)
+      .map((c) => ({ room: room.room_id, c })));
   return (
     <>
-      <section style={{ marginTop: 30 }}>
-        <div className="metrics" aria-label="Assessment summary">
-          <div className="metric" style={{ flex: "0 0 170px" }}>
-            <span className="m-val"><StatusPill status={r.result.overall} /></span>
-            <div className="m-label">dwelling overall</div>
-          </div>
-          <div className="metric">
-            <span className="m-val"><StatusPill status={r.readiness.status} /></span>
-            <div className="m-label">model readiness</div>
-          </div>
-          <div className="metric">
-            <span className="m-val mono" style={{ fontSize: 14 }}>{r.run.run_id}</span>
-            <div className="m-label">run id</div>
-          </div>
-          <div className="metric">
-            <span className="m-val" style={{ fontSize: 16 }}>E+ {r.run.energyplus_version}</span>
-            <div className="m-label">engine</div>
-          </div>
-          <div className="metric">
-            <span className="m-val" style={{ fontSize: 15 }} title={r.model.name}>{modelName}</span>
-            <div className="m-label">model</div>
-          </div>
-          <div className="metric">
-            <span className="m-val" style={{ fontSize: 16 }}>{r.weather.name.replace(/_/g, " ").slice(0, 18)}…</span>
-            <div className="m-label">weather</div>
-          </div>
-        </div>
-        <p style={{ marginTop: 8, fontFamily: "var(--font-mono)", fontSize: 11.5, color: "var(--muted-ink)" }}>
-          rule pack {r.rule_pack.rule_pack} v{r.rule_pack.version} · category {r.result.dwelling_category} ·
-          {" "}{r.cached ? "served from this session’s run cache" : "freshly simulated"} ·
-          {" "}errors: {r.run.err.fatal.length} fatal, {r.run.err.severe.length} severe, {r.run.err.warning_count} warnings
-        </p>
+      <section style={{ marginTop: 8 }}>
+        <ResultVerdict verdict={verdict}
+          detail={<>
+            <strong>{r.model.name}</strong> × <strong>{r.weather.name}</strong> · {packId} ·
+            dwelling category {r.result.dwelling_category}.{" "}
+            {r.cached ? "Served from this session's run cache." : "Freshly simulated with EnergyPlus " + r.run.energyplus_version + "."}{" "}
+            Errors: {r.run.err.fatal.length} fatal · {r.run.err.severe.length} severe · {r.run.err.warning_count} warnings.
+          </>} />
       </section>
+
+      {(r.standards_summary?.length ?? 0) > 0 && (
+        <section className="more-above">
+          <h2 className="section-h">Same run, every standard</h2>
+          <p className="subtle" style={{ margin: "2px 0 8px" }}>
+            One EnergyPlus simulation, judged by every compliance-allowed rule pack.
+          </p>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            {r.standards_summary!.map((s) => (
+              <span key={s.pack_id} className="nb-chip"
+                style={{ background: s.chosen ? "var(--nb-yellow)" : "var(--nb-bg)", border: "var(--nb-border-2)", padding: "6px 10px" }}>
+                <span className="mono">{s.pack_id}</span> ·{" "}
+                <StatusPill status={s.overall === "PASS" ? "PASS" : s.overall === "FAIL" ? "FAIL" : "INCOMPLETE"} />
+              </span>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {r.energy && Object.keys(r.energy).length > 0 && (
+        <section className="more-above">
+          <h2 className="section-h">Annual energy (from the model's own meters)</h2>
+          <div className="table-wrap" style={{ marginTop: 10, maxWidth: 560 }}>
+            <table className="data">
+              <tbody>
+                {Object.entries(r.energy).map(([meter, v]) => (
+                  <tr key={meter}>
+                    <td className="mono">{meter}</td>
+                    <td className="mono num">{v.annual_kwh != null ? `${v.annual_kwh.toLocaleString()} kWh` : "INCOMPLETE — no runperiod total"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
+      {margins.length > 0 && (
+        <section className="more-above">
+          <h2 className="section-h">Why — distance to each threshold</h2>
+          <div className="card" style={{ marginTop: 10 }}>
+            {margins.slice(0, 12).map(({ room, c }) => (
+              <MarginBar key={room + c.criterion_id} label={`${room} · ${c.criterion_id}`}
+                value={Number(c.metric_value)} limit={Number(c.threshold)}
+                unit={c.units || ""} higherIsWorse={c.operator === ">" || c.operator === ">="} />
+            ))}
+            {margins.length > 12 && <p className="subtle">+ {margins.length - 12} further criteria in the table below.</p>}
+          </div>
+        </section>
+      )}
 
       <section className="more-above">
         <h2 className="section-h">Criterion results</h2>
-        <div className="table-wrap">
+        <div className="table-wrap" style={{ marginTop: 10 }}>
           <table className="data">
             <thead>
               <tr>
@@ -290,8 +371,8 @@ function Results({ r, comfort, comfortError, running }: {
                 <th>Criterion</th>
                 <th>Rule reference</th>
                 <th>Result</th>
-                <th>Metric</th>
-                <th>Threshold</th>
+                <th className="num">Metric</th>
+                <th className="num">Threshold</th>
               </tr>
             </thead>
             <tbody>
@@ -301,49 +382,51 @@ function Results({ r, comfort, comfortError, running }: {
                     <td>{room.room_id}</td>
                     <td>{room.room_type}</td>
                     <td className="mono">{c.criterion_id}</td>
-                    <td style={{ color: "var(--muted-ink)", fontSize: 12.5 }}>{c.rule_ref}</td>
+                    <td style={{ fontSize: 12.5 }}>{c.rule_ref}</td>
                     <td><StatusPill status={c.status} /></td>
-                    <td className="mono">{c.metric_value ?? "—"} {c.units}</td>
-                    <td className="mono">
-                      {c.operator} {c.threshold} {c.units}
-                    </td>
+                    <td className="mono num">{c.metric_value ?? "—"} {c.units}</td>
+                    <td className="mono num">{c.operator} {c.threshold} {c.units}</td>
                   </tr>
                 )),
               )}
             </tbody>
           </table>
         </div>
-        <p style={{ marginTop: 8, fontSize: 12.5, color: "var(--muted-ink)", maxWidth: "90ch" }}>
-          Every result above is computed by the core package from the EnergyPlus run; the
-          rule reference names the clause each threshold was verified against. A dwelling
-          passes only when every applicable criterion passes — unevaluated criteria make
-          the result INCOMPLETE, never a pass.
-        </p>
+        <MethodNote>
+          A dwelling passes only when every applicable criterion passes. Unevaluated
+          criteria (missing outputs, unmapped rooms) make the result INCOMPLETE —
+          never a pass, never a fail. Each rule reference names the verified clause.
+        </MethodNote>
+      </section>
+
+      <section className="more-above">
+        <h2 className="section-h">Operative temperature + threshold</h2>
+        <div style={{ marginTop: 10 }}><RoomFigure r={r} /></div>
+      </section>
+
+      <section className="more-above">
+        <h2 className="section-h">Zone × time heatmap · hottest week</h2>
+        <div style={{ marginTop: 10 }}><ZoneHeatmap r={r} /></div>
       </section>
 
       <section className="more-above">
         <h2 className="section-h">Comfort from this run</h2>
-        {comfortError && (
-          <div className="note warn">
-            <strong>Comfort could not be computed for this run.</strong> {comfortError}
-          </div>
-        )}
-        {!comfort && !comfortError && !running && (
-          <p style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--muted-ink)" }}>
-            computing comfort from this run…
-          </p>
-        )}
-        {comfort && <ComfortTable c={comfort} />}
-      </section>
-
-      <section className="more-above">
-        <h2 className="section-h">Simulated temperatures</h2>
-        <RoomFigure r={r} />
+        <div style={{ marginTop: 10 }}>
+          {comfortError && (
+            <div className="note warn">
+              <strong>Comfort could not be computed for this run.</strong> {comfortError}
+            </div>
+          )}
+          {!comfort && !comfortError && running && (
+            <p className="mono subtle">computing comfort from this run…</p>
+          )}
+          {comfort && <ComfortTable c={comfort} />}
+        </div>
       </section>
 
       <section className="more-above">
         <h2 className="section-h">Model readiness — every finding explained</h2>
-        <div className="table-wrap">
+        <div className="table-wrap" style={{ marginTop: 10 }}>
           <table className="data">
             <thead>
               <tr>
@@ -360,8 +443,8 @@ function Results({ r, comfort, comfortError, running }: {
                   <td className="mono">{row.check_id}</td>
                   <td><StatusPill status={row.severity === "ok" ? "PASS" : row.severity} /></td>
                   <td style={{ maxWidth: 260 }}>{row.detected}</td>
-                  <td style={{ color: "var(--muted-ink)", maxWidth: 320 }}>{row.why_it_matters}</td>
-                  <td style={{ color: "var(--muted-ink)", fontSize: 12 }}>{row.source}</td>
+                  <td style={{ maxWidth: 320 }}>{row.why_it_matters}</td>
+                  <td style={{ fontSize: 12 }}>{row.source}</td>
                 </tr>
               ))}
             </tbody>
@@ -371,21 +454,15 @@ function Results({ r, comfort, comfortError, running }: {
 
       <section className="more-above">
         <h2 className="section-h">Provenance</h2>
-        <div className="table-wrap">
-          <table className="data">
-            <tbody>
-              <tr><td className="mono">model</td><td>{r.model.name}</td></tr>
-              <tr><td className="mono">weather</td><td>{r.weather.name}</td></tr>
-              <tr><td className="mono">energyplus</td><td className="mono">{r.run.energyplus_version}</td></tr>
-              <tr><td className="mono">rule pack</td><td className="mono">{r.rule_pack.rule_pack} v{r.rule_pack.version} — {r.rule_pack.name}</td></tr>
-              <tr>
-                <td className="mono">weather requirement</td>
-                <td style={{ fontSize: 12.5 }}>
-                  {String((r.rule_pack.weather_requirements as Record<string, unknown>)?.recommended_minimum ?? "—")}
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        <div style={{ marginTop: 10 }}>
+          <ProvenanceDrawer rows={[
+            { k: "model", v: `${r.model.name} (${r.model.path})` },
+            { k: "weather", v: `${r.weather.name} (${r.weather.path})` },
+            { k: "engine", v: `EnergyPlus ${r.run.energyplus_version}` },
+            { k: "rule pack", v: `${r.rule_pack.rule_pack} v${r.rule_pack.version} — ${r.rule_pack.name}` },
+            { k: "run id", v: r.run.run_id },
+            { k: "operative temp", v: "Top = 0.5 × (MAT + MRT), derived low-air-speed approximation" },
+          ]} />
         </div>
       </section>
     </>
@@ -400,12 +477,10 @@ function ComfortTable({ c }: { c: ComfortRunResult }) {
   return (
     <Figure
       figNo="TAB 1"
-      caption="comfort indices computed from this run’s simulated hourly temperatures"
+      caption="comfort indices computed from this run's simulated hourly temperatures"
       meta={<span>pythermalcomfort {String(a.library_version ?? "")}</span>}
     >
-      {c.note && (
-        <p style={{ margin: 0, fontSize: 13, color: "var(--muted-ink)" }}>{c.note}</p>
-      )}
+      {c.note && <p style={{ margin: 0, fontSize: 13 }}>{c.note}</p>}
       {c.zones.length > 0 && (
         <table className="data">
           <thead>
@@ -423,17 +498,13 @@ function ComfortTable({ c }: { c: ComfortRunResult }) {
                 <td className="mono">
                   {fmt(z.adaptive_acceptable_pct, "%")}
                   {z.adaptive_hours_excluded > 0 && (
-                    <span style={{ color: "var(--muted-ink)", fontSize: 11 }}>
-                      {" "}({z.adaptive_hours_excluded} h excluded)
-                    </span>
+                    <span className="subtle"> ({z.adaptive_hours_excluded} h excluded)</span>
                   )}
                 </td>
                 <td className="mono">
                   {fmt(z.mean_ppd, "%")}
                   {z.ppd_hours_excluded > 0 && (
-                    <span style={{ color: "var(--muted-ink)", fontSize: 11 }}>
-                      {" "}({z.ppd_hours_excluded} h excluded)
-                    </span>
+                    <span className="subtle"> ({z.ppd_hours_excluded} h excluded)</span>
                   )}
                 </td>
                 <td className="mono">{fmt(z.max_top, " °C")}</td>
@@ -442,19 +513,14 @@ function ComfortTable({ c }: { c: ComfortRunResult }) {
           </tbody>
         </table>
       )}
-      <p style={{ margin: "10px 0 0", fontSize: 12.5, color: "var(--muted-ink)", maxWidth: "96ch" }}>
+      <p style={{ margin: "10px 0 0", fontSize: 12.5, maxWidth: "96ch" }}>
         Stated assumptions: met {a.met} · clo {a.clo} (summer ensemble) · air speed{" "}
         {a.air_speed_m_s} m/s · occupied hours 9 am–10 pm (hour-ending 10–22) · window{" "}
         {String(a.assessment_window ?? "May–September")} · adaptive: {a.adaptive_standard}{" "}
         (Trm from EPW daily means) · PPD: {a.ppd_standard}.
       </p>
-      <p style={{ margin: "6px 0 0", fontSize: 12, color: "var(--muted-ink)", maxWidth: "96ch" }}>
-        {c.computed_from}. Comfort mathematics come from the wrapped library only — nothing
-        is recomputed here; hours it cannot evaluate are excluded and counted, never
-        extrapolated. Relative humidity: {String(a.rh ?? "harvested from the same run")}.
-      </p>
       {withReason.length > 0 && (
-        <p style={{ margin: "6px 0 0", fontSize: 12, color: "var(--muted-ink)" }}>
+        <p style={{ margin: "6px 0 0", fontSize: 12 }}>
           {withReason.map((z) => `${z.zone}: ${z.reason}`).join(" · ")}
         </p>
       )}
@@ -462,13 +528,14 @@ function ComfortTable({ c }: { c: ComfortRunResult }) {
   );
 }
 
+/* Hottest-week operative temperature lines with a 26 °C reference. */
 function RoomFigure({ r }: { r: AnalyzeResult }) {
   const ref = useRef<HTMLDivElement>(null);
+  const chartRef = useChart(ref, null, []);
   const zones = Object.keys(r.series);
   const outdoor = r.daily_mean_outdoor;
 
   const week = 24 * 7;
-  // centre the window on the hottest outdoor week (real data, RULE 28)
   const start = (() => {
     let best = 0, bestMean = -Infinity;
     for (let i = 0; i + week <= outdoor.length; i += 24) {
@@ -479,48 +546,125 @@ function RoomFigure({ r }: { r: AnalyzeResult }) {
   })();
 
   useChart(ref, {
-    grid: { left: 44, right: 12, top: 28, bottom: 26 },
+    ...nbBase(),
+    xAxis: nbCategoryAxis("hour", Array.from({ length: week }, (_, i) => {
+      const h = (start + i) % 24;
+      const d = Math.floor((start + i) / 24) + 1;
+      return h === 0 && d % 2 === 1 ? `day ${d}` : "";
+    })),
+    yAxis: nbValueAxis("°C"),
     legend: {
-      top: 0, left: 0, icon: "rect", itemWidth: 10, itemHeight: 3,
-      textStyle: { fontFamily: "IBM Plex Mono", fontSize: 10.5, color: "#5e686e" },
-    },
-    xAxis: {
-      type: "category",
-      data: Array.from({ length: week }, (_, i) => {
-        const h = (start + i) % 24;
-        const d = Math.floor((start + i) / 24) + 1;
-        return h === 0 && d % 2 === 1 ? `day ${d}` : "";
-      }),
-      axisLabel: { color: "#5e686e", fontFamily: "IBM Plex Mono", fontSize: 9.5 },
-      axisLine: { lineStyle: { color: "#b7b8b3" } }, axisTick: { show: false },
-    },
-    yAxis: {
-      type: "value", name: "°C", nameTextStyle: { fontFamily: "IBM Plex Mono", fontSize: 10, color: "#5e686e" },
-      axisLabel: { color: "#5e686e", fontFamily: "IBM Plex Mono", fontSize: 10 },
-      splitLine: { lineStyle: { color: "#eae8e2" } },
+      top: 0, left: 0, icon: "rect", itemWidth: 14, itemHeight: 10,
+      textStyle: { fontFamily: "IBM Plex Mono, monospace", fontSize: 10, color: NB_INK },
     },
     series: [
       {
-        name: "outdoor (daily mean)", type: "line" as const, symbol: "none" as const,
+        name: "outdoor (daily mean)", type: "line", symbol: "none",
         data: outdoor.slice(start, start + week),
-        lineStyle: { color: "#86a9b3", width: 1.4 },
+        lineStyle: { color: "#0a7a6e", width: 2, type: [6, 3] },
       },
-      ...zones.map((z, i) => ({
+      ...zones.slice(0, 8).map((z, i) => ({
         name: `${z} Top`,
         type: "line" as const, symbol: "none" as const, showSymbol: false,
         data: r.series[z].slice(start, start + week),
-        lineStyle: { color: ["#d4553d", "#e58a3a"][i % 2], width: 1.6 },
+        lineStyle: { color: NB_SERIES[i % NB_SERIES.length], width: 3 },
+        ...(nbThresholdLine(26, "26 °C ref") as object),
       })),
     ],
-    tooltip: { trigger: "axis", confine: true, valueFormatter: (v: unknown) => `${Number(v).toFixed(1)} °C` },
+    tooltip: {
+      trigger: "axis", confine: true, backgroundColor: "#FCDD28",
+      borderColor: NB_INK, borderWidth: 2,
+      textStyle: { color: NB_INK, fontFamily: "IBM Plex Mono, monospace", fontSize: 12 },
+      extraCssText: "box-shadow: 4px 4px 0 #161616; border-radius: 4px;",
+      valueFormatter: (v: unknown) => `${Number(v).toFixed(1)} °C`,
+    },
   }, [r]);
+
+  const csvRows: (string | number | null)[][] = [];
+  for (let i = 0; i < week; i++) {
+    const row: (string | number | null)[] = [start + i + 1];
+    for (const z of zones) row.push(r.series[z][start + i] ?? null);
+    csvRows.push(row);
+  }
 
   return (
     <Figure figNo="FIG 5"
-      caption="operative temperature during the hottest outdoor week (hourly, real run output)"
-      meta={<span>{zones.join(" · ")}</span>}>
-      <div ref={ref} style={{ height: 280 }} role="img"
+      caption={`operative temperature during the hottest outdoor week (hourly, real run output)${zones.length > 8 ? ` — first 8 of ${zones.length} zones plotted` : ""}`}
+      meta={<span>{zones.slice(0, 8).join(" · ")}</span>}>
+      <div ref={ref} style={{ height: 300 }} role="img"
         aria-label="Line chart of outdoor mean and room operative temperatures over the hottest week" />
+      <ExportBar chartRef={chartRef} figureName={`fig_room_temps_${r.run.run_id}`}
+        caption={`Hourly operative temperature per zone during the hottest outdoor week. Model ${r.model.name}, weather ${r.weather.name}, run ${r.run.run_id}.`}
+        csv={{ header: ["hour_index_1", ...zones], rows: csvRows }} />
+    </Figure>
+  );
+}
+
+/* Zone × hour heatmap of operative temperature over the hottest week. */
+function ZoneHeatmap({ r }: { r: AnalyzeResult }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const chartRef = useChart(ref, null, []);
+  const zones = Object.keys(r.series).slice(0, 12);
+  const outdoor = r.daily_mean_outdoor;
+  const week = 24 * 7;
+  const start = (() => {
+    let best = 0, bestMean = -Infinity;
+    for (let i = 0; i + week <= outdoor.length; i += 24) {
+      const mean = outdoor.slice(i, i + week).reduce((a, b) => a + b, 0) / week;
+      if (mean > bestMean) { bestMean = mean; best = i; }
+    }
+    return Math.max(0, best - 24 * 3);
+  })();
+
+  const data: [number, number, number][] = [];
+  zones.forEach((z, zi) => {
+    for (let i = 0; i < week; i++) {
+      const v = r.series[z][start + i];
+      if (v !== null && v !== undefined) data.push([i, zi, Math.round(v * 10) / 10]);
+    }
+  });
+  const all = data.map((d) => d[2]);
+  const lo = Math.min(...all), hi = Math.max(...all);
+
+  useChart(ref, {
+    ...nbBase(),
+    grid: { left: 150, right: 16, top: 12, bottom: 40 },
+    xAxis: nbCategoryAxis("hour of hottest week", Array.from({ length: week }, (_, i) => {
+      const h = (start + i) % 24;
+      const d = Math.floor((start + i) / 24) + 1;
+      return h === 12 ? `d${d}` : "";
+    })),
+    yAxis: {
+      type: "category", data: zones,
+      axisLine: { show: true, lineStyle: { color: NB_INK, width: 2 } },
+      axisTick: { show: false },
+      axisLabel: { color: NB_INK, fontFamily: "IBM Plex Mono, monospace", fontSize: 10 },
+    },
+    visualMap: {
+      show: false, min: lo, max: hi,
+      inRange: { color: ["#12C8B0", "#8FE3D4", "#FCDD28", "#F36D30", "#FF4F85", "#D63A2F"] },
+    },
+    series: [{ type: "heatmap", data, itemStyle: { borderWidth: 0 } }],
+    tooltip: {
+      confine: true, backgroundColor: "#FCDD28", borderColor: NB_INK, borderWidth: 2,
+      textStyle: { color: NB_INK, fontFamily: "IBM Plex Mono, monospace", fontSize: 12 },
+      extraCssText: "box-shadow: 4px 4px 0 #161616; border-radius: 4px;",
+      formatter: (p: unknown) => {
+        const v = (p as { value: [number, number, number] }).value;
+        return `${zones[v[1]]} · hour ${start + v[0] + 1} — ${v[2].toFixed(1)} °C`;
+      },
+    },
+  }, [r]);
+
+  return (
+    <Figure figNo="FIG 6"
+      caption={`zone × hour operative temperature, hottest week (${lo.toFixed(1)}–${hi.toFixed(1)} °C)`}
+      meta={<span>{zones.length} zones · hottest outdoor week</span>}>
+      <div ref={ref} style={{ height: Math.max(220, zones.length * 30 + 80) }} role="img"
+        aria-label={`Heatmap of operative temperature per zone over the hottest week, ${lo.toFixed(1)} to ${hi.toFixed(1)} degrees.`} />
+      <ExportBar chartRef={chartRef} figureName={`fig_zone_heatmap_${r.run.run_id}`}
+        caption={`Zone by hour operative temperature heatmap over the hottest week. Model ${r.model.name}, weather ${r.weather.name}, run ${r.run.run_id}.`}
+        csv={{ header: ["zone", "hour_index_1", "top_c"], rows: zones.flatMap((z, zi) => data.filter((d) => d[1] === zi).map((d) => [z, start + d[0] + 1, d[2]] as (string | number | null)[])) }} />
     </Figure>
   );
 }

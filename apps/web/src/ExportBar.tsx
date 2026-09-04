@@ -42,7 +42,7 @@ export function ExportBar({
   const exportPng = () => {
     const chart = chartRef.current;
     if (!chart) return;
-    const url = chart.getDataURL({ type: "png", pixelRatio: 3, backgroundColor: "#ffffff" });
+    const url = chart.getDataURL({ type: "png", pixelRatio: 3, backgroundColor: "#FBFAF6" });
     const a = document.createElement("a");
     a.href = url;
     a.download = `${figureName}.png`;
@@ -66,14 +66,15 @@ export function ExportBar({
   };
 
   const btn: React.CSSProperties = {
-    border: "1px solid var(--line)", background: "var(--surface)",
-    color: "var(--brand-dark)", borderRadius: 5, cursor: "pointer",
-    fontFamily: "var(--font-mono)", fontSize: 10.5, padding: "3px 8px",
+    border: "2px solid var(--nb-ink)", background: "var(--nb-surface)",
+    color: "var(--nb-ink)", borderRadius: 4, cursor: "pointer",
+    fontFamily: "var(--nb-font-mono)", fontSize: 10.5, fontWeight: 700,
+    padding: "3px 8px", boxShadow: "2px 2px 0 var(--nb-ink)",
   };
 
   return (
     <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>
-      {done && <span style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, color: "var(--pass)" }}>{done}</span>}
+      {done && <span style={{ fontFamily: "var(--nb-font-mono)", fontSize: 10.5, fontWeight: 700 }}>{done}</span>}
       <button style={btn} onClick={exportSvg}>SVG</button>
       <button style={btn} onClick={exportPng}>PNG</button>
       <button style={btn} onClick={exportCsv}>CSV</button>

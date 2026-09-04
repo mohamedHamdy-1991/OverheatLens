@@ -1,11 +1,12 @@
 # IMPLEMENTATION STATUS
 
-Last updated: **2026-08-29** (session 7 — EPW/IDF uploads, Leeds archetype templates, populated Archetype Atlas, comfort-from-run, overview dashboard redesign)
+Last updated: **2026-09-04 (session 2)** — debug launchers fixed + verified end-to-end, sticky sidebar repaired, full 45-file Chapter 6 IDF library stored with the app (15 bases + 30 scenario variants registered), public display names (no case-study codes in the UI), web suite now runnable locally (12/12), all suites re-confirmed: **core 145 / API 34 / web 12 passed**, live analyze smoke green, archetype regression re-run clean (15/15, 0 fatal/severe; TM59:2017 10 PASS / 5 FAIL — exactly the documented legitimate set).
 
-Overall stage: **Phases 0–3 complete for all rule packs.** Every bundled standards pack
-(uk_tm59_2026, uk_tm59_2017, uk_part_o_dynamic, uk_tm52) is now machine-verified against
-its official PDF and compliance-allowed. The standards engine implements all verified
-criteria. No source document is missing any more.
+Overall stage: **Phases 0–8 live.** Every bundled standards pack
+(uk_tm59_2026, uk_tm59_2017, uk_part_o_dynamic, uk_tm52) is machine-verified against
+its official PDF and compliance-allowed. All 15 bundled archetype IDFs run EnergyPlus
+25.1.0 clean and evaluate end to end. The interface is a Neo-Brutalist laboratory
+desktop (13 routes, no placeholders).
 Governing specs: `docs/specs/` · Sources: `SOURCE_REGISTER.md` · Decisions: `ARCHITECTURE_DECISIONS.md` · Validation: `VALIDATION_MATRIX.md`
 
 ## Phase tracker
@@ -18,9 +19,9 @@ Governing specs: `docs/specs/` · Sources: `SOURCE_REGISTER.md` · Decisions: `A
 | 3 — Standards engine | TM59:2026, TM59:2017, Part O, TM52 | **COMPLETE for implemented criteria** — TM59:2026 (a–d + stages), TM59:2017 (adaptive a, 32-h b, mv route, advisory corridors), TM52 (He/We/Tupp), Part O inheritance + ADO overrides. Standards diff viewer (UI) pending | |
 | 4 — Comfort engine | wrappers, applicability, PMV/PPD, adaptive, UTCI | **COMPLETE** | pythermalcomfort 4.4.2 wrapped unmodified (ISO 7730:2025 default), explicit applicability gates, provenance in every result (VAL-CMF-01..05) |
 | 5 — IDF readiness | generic + standards-specific checks, passport | **COMPLETE** | object-level parser; every check row explains itself (RULE 16); bedroom/living classification; ADO §2.6 / TM59 §3.3 conformance notes; runnable synthetic dwelling fixture |
-| 6 — EnergyPlus worker | run, isolation, harvest, manifest | **COMPLETE** | official-binary probe (25.1.0), isolated jobs, err interpreter, --readvars harvest, DERIVED Top = 0.5(MAT+MRT); first end-to-end chain demonstrated (VAL-XSIM-01..04) |
-| 7 — API | FastAPI service | **FIRST SLICE LIVE** — rule packs, weather check/series, analyze (real E+ run), validation matrix; serves the built web app | |
-| 8 — Design system & frontend | tokens, nav, chart primitives | **FIRST SLICE LIVE** — pinned plan-§6 world, 4 real pages (Home/Weather Lab/Analyze/Validation), honest placeholders elsewhere; ⌘K palette + remaining charts next | |
+| 6 — EnergyPlus worker | run, isolation, harvest, manifest | **COMPLETE + HARDENED 2026-09-04** | official-binary probe (25.1.0), isolated jobs, err interpreter, --readvars harvest, DERIVED Top = 0.5(MAT+MRT); **harvest corruption fixed (VAL-XSIM-05)**: full zone keys, Hourly-only, duplicates raise; 15-model regression green (VAL-XSIM-06) |
+| 7 — API | FastAPI service | **EXTENDED** — analyze/report/comfort/compare/validation/runs + archive, batch, model dossier, mitigation catalogue, reproducibility bundle | |
+| 8 — Design system & frontend | tokens, nav, chart primitives | **NEO-BRUTALIST LABORATORY LIVE** — guideline tokens verbatim, brutal shell, chart theme, component library, 13 routes (Overview, Analyze, Weather/Comfort/Compare/Atlas/Mitigation Labs, Run Archive, Scenario & Batch, Validation, Methods, Docs, About); ⌘K palette extended | |
 | 9–17 | Weather Lab … publication release | PENDING | |
 
 ## What exists now (sessions 1–2)

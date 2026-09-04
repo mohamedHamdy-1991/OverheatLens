@@ -1,70 +1,53 @@
-# DESIGN.md — OverheatLens visual world
+# DESIGN.md — OverheatLens Neo-Brutalist laboratory (v2.0)
 
-**Authority:** the governing build plan §6 ("scientific editorial + civic data product +
-architectural environmental-analysis studio") pins this world. It wins over any template
-default. The Laravel "Davur" template contributes **structural patterns only** (sidebar
-shell, responsive data tables, status pills, wizard stepper, stat strips) — every pixel
-of skin is OverheatLens.
+**Authority:** the Neo-Brutalist guideline (`neo_brutalism_tokens.css` + migration
+prompt + web design system) with the OverheatLens thermal usage. Palette tokens are
+verbatim from the guideline; meaning comes from usage: heat coral/red, solar
+yellow, cool cyan, violet = research-only. EPW Doctor stays weather-centric
+(climate blue/green); OverheatLens is building-centric (thermal coral / solar
+yellow / technical cyan).
 
-**Mode:** Operate (instrument panel), with a Persuade home.
-
-## Tokens (pinned — plan §6.2)
+## Tokens (single source: `apps/web/src/nb-tokens.css`)
 
 ```css
---paper: #F7F5F0;      /* page */
---surface: #FFFFFF;    /* analysis surfaces */
---ink: #172126;
---muted-ink: #5E686E;
---line: #D9D7D1;       /* hairlines */
---line-strong: #B7B8B3;
---brand: #1F5F70;      /* deep climate teal */
---brand-dark: #173F4A;
---brand-soft: #DCECEF;
---heat-1: #F4C95D;  --heat-2: #E58A3A;  --heat-3: #D4553D;  --heat-4: #8F2D3A;
---pass: #2F755B;  --warning: #B7791F;  --fail: #B43A4A;  --info: #356C95;
+--nb-bg: #F6E8D2;  --nb-surface: #FBFAF6;  --nb-ink: #161616;
+--nb-yellow: #FCDD28;  --nb-orange: #F36D30;  --nb-pink: #FF4F85;
+--nb-cyan: #12C8B0;  --nb-violet: #8167F5;  --nb-green: #4BD14A;
+--nb-muted: #D8CCB9;
+--nb-border-2: 2px solid var(--nb-ink);  --nb-border-3: 3px solid var(--nb-ink);
+--nb-shadow-sm/md/lg: 3/5/8px hard offset black;  radius 4/8px;
+--nb-font-display: Arial Black/Helvetica;  body: Inter;  data: IBM Plex Mono;
 ```
 
-Sequential scales use the heat ramp (perceptually ordered warm scale for temperature).
-Diverging scales need a labelled real midpoint. Never rainbow/jet. Status = colour +
-icon + text, always.
+Status = colour + icon + text, always. PASS green · FAIL pink/red · WARNING
+yellow · INCOMPLETE neutral · RESEARCH ONLY violet · SOURCE VERIFIED green pill.
+Threshold rules in charts: dashed fail-red with framed labels.
 
-## Typography
+## Shell & navigation
 
-- **Source Serif 4** — editorial headings and publication moments (display, restrained).
-- **Inter** — UI text, navigation, forms.
-- **IBM Plex Mono** — every number, unit, hash, timestamp, axis tick, status code.
-- Body 15–16px / 1.55; data labels ≥ 12px; tabular numerals via mono; no all-caps
-  paragraphs; no ultra-light weights. Self-hosted via @fontsource.
+- Left rail 248px, cream, 2px right border; framed rectangular nav items; active =
+  black fill, light text; focus-visible violet 3px outline.
+- Topbar with 2px bottom border; experiment context bar (MODEL × WEATHER ×
+  STANDARD × E+ × RUN-ID) in black on analytical pages.
+- Building models = case folders / dossiers; runs = stamped experiment records;
+  standards = rule-book badges with exact editions. Single click selects, double
+  click / Enter opens.
+- Footer on every screen: `OverheatLens · Mohamed Hamdy Ali · MIT` + the
+  non-certification notice. 44px minimum targets; rail → drawer under 620px.
 
-## Geometry & structure
+## Charts (`apps/web/src/charts.tsx` — one theme, no default ECharts)
 
-- 8px spacing system; content max-width 1440px; 12-col desktop grid.
-- Card radius 8px maximum; 1px hairline separators; charts often sit directly on the
-  page, framed by hairlines and a mono caption — like journal figures, not widgets.
-- Left rail (216px): the 11 primary nav items (RULE 13), grouped —
-  Assess (Analyze, Compare, Archetype Atlas), Labs (Weather, Comfort, Mitigation),
-  Trust (Validation, Methods), bottom (Docs, About). Brand mark on top, ⌘K search in
-  the topbar. Topbar: current surface + context (weather file / run id).
-- Responsive: rail collapses to a top drawer under 960px; grids stack.
+Paper background, 2px ink axes, dashed muted gridlines, flat black-outlined
+series (ink, orange, cyan, violet, pink, green), 3px lines, stepped heat bins
+(cyan → cream → yellow → orange → pink → red), framed yellow tooltips with hard
+shadow, direct/rect legends. Every figure: FIG number, factual caption, SVG +
+3× PNG + plotted-data CSV + copy-caption exports. Reduced motion honoured;
+each chart carries an accessible summary.
 
 ## Signature
 
-The **thermal year ribbon**: a 365×24 heat-ramp strip of the actual weather file,
-framed by hairlines with min/mean/max annotated in mono at the edges — an instrument
-readout, drawn from real data. It anchors the Home hero and recurs in Weather Lab.
-Everything else stays quiet so the ribbon is the one memorable thing.
-
-## Motion
-
-150–220 ms ease-out, state changes and chart transitions only;
-`prefers-reduced-motion` honoured; no decorative loops.
-
-## Structural vocabulary (from Davur, re-skinned)
-
-- App shell: fixed rail + slim topbar + content region (Davur nav-header pattern).
-- Data tables: full-width responsive tables inside hairline-framed surfaces with a
-  mono caption row (Davur dataTablesCard pattern, re-skinned; no Bootstrap).
-- Status pills: small icon + short text (PASS/FAIL/NOT EVALUATED) tinted surfaces.
-- Stat strips: 3–5 quiet metric blocks with mono numerals and muted labels.
-- Stepper: numbered step rail for the Analyze sequence (Davur form-wizard pattern);
-  numbers are honest — the sequence is real.
+The **thermal year ribbon** (365×24 stepped heat strip of the real weather file,
+min/max annotated) anchors Overview and Weather Lab. The landing hero layers the
+generated architectural collage (`public/img/hero-lab.png`, warm brutalist
+terraces + tower + sun path + heat plume) behind the OVERHEATLENS masthead.
+Empty states use the generated drawer illustrations with honest guidance text.

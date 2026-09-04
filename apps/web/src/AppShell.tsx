@@ -64,6 +64,20 @@ const I = {
       <path d="M8 7.2v3.6M8 4.9v.2" />
     </>
   ),
+  runs: (
+    <>
+      <rect x="2.5" y="2.5" width="11" height="4" />
+      <path d="M2.5 8.5h11M2.5 11h11M2.5 13.5h7" />
+    </>
+  ),
+  scenarios: (
+    <>
+      <rect x="2.5" y="2.5" width="4.5" height="4.5" />
+      <rect x="9" y="2.5" width="4.5" height="4.5" />
+      <rect x="2.5" y="9" width="4.5" height="4.5" />
+      <rect x="9" y="9" width="4.5" height="4.5" />
+    </>
+  ),
 } as const;
 
 function NavIcon({ d }: { d: ReactNode }) {
@@ -77,14 +91,14 @@ function NavIcon({ d }: { d: ReactNode }) {
   );
 }
 
-/* Brand mark: dwelling outline + lens circle + thermal contours (plan §6.6). */
+/* Brand mark: dwelling outline + lens circle + thermal contours. */
 export function BrandMark({ size = 24 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" fill="none" aria-hidden="true">
-      <path d="M5 27V13l11-8.5L27 13v14" stroke="#fff" strokeWidth="2.2" strokeLinejoin="round" />
-      <circle cx="16" cy="19" r="7" stroke="#182b42" strokeWidth="1.6" fill="#fdf4ea" />
+      <path d="M5 27V13l11-8.5L27 13v14" stroke="#161616" strokeWidth="2.4" strokeLinejoin="round" />
+      <circle cx="16" cy="19" r="7" stroke="#161616" strokeWidth="1.8" fill="#FBFAF6" />
       <path d="M12.2 21.5c1.3-1 2-2.2 3.8-2.2s2.5 1.2 3.8 2.2M11.5 18.6c1.5-1.2 2.5-2.6 4.5-2.6s3 1.4 4.5 2.6"
-        stroke="#ed7d2a" strokeWidth="1.3" strokeLinecap="round" />
+        stroke="#F36D30" strokeWidth="1.5" strokeLinecap="round" />
     </svg>
   );
 }
@@ -100,6 +114,8 @@ const NAV: { group: string; items: { to: string; label: string; icon: ReactNode;
       { to: "/analyze", label: "Analyze", icon: I.analyze },
       { to: "/compare", label: "Compare", icon: I.compare },
       { to: "/atlas", label: "Archetype Atlas", icon: I.atlas },
+      { to: "/runs", label: "Run Archive", icon: I.runs },
+      { to: "/scenarios", label: "Scenario & Batch", icon: I.scenarios },
     ],
   },
   {
@@ -124,6 +140,8 @@ const ROUTE_TITLES: Record<string, string> = {
   "/analyze": "Analyze",
   "/compare": "Compare",
   "/atlas": "Archetype Atlas",
+  "/runs": "Run Archive",
+  "/scenarios": "Scenario & Batch",
   "/weather": "Weather Lab",
   "/comfort": "Comfort Lab",
   "/mitigation": "Mitigation Lab",
@@ -144,7 +162,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="page-shell">
       <aside className={"sidebar" + (open ? " open" : "")}>
         <Link to="/" className="brand" aria-label="OverheatLens home" onClick={() => setOpen(false)}>
-          <span className="logo-mark"><BrandMark /></span>
+          <span className="logo-mark"><img src="img/logo-mark.svg" alt="" /></span>
           <span className="brand-copy">
             <strong>OVERHEATLENS</strong>
             <span>overheating evidence hub</span>
@@ -182,17 +200,17 @@ export function AppShell({ children }: { children: ReactNode }) {
           ))}
         </nav>
         <div className="guide-card">
-          <strong>Get started</strong>
-          Load an EPW, check its quality, then analyze a dwelling against a versioned
-          overheating standard.
+          <strong>HOW IT RUNS</strong>
+          Model + weather → EnergyPlus → versioned standard → evidence.
+          Every number traces to a run ID.
         </div>
       </aside>
 
       <main className="main">
         <header className="topbar">
           <div className="welcome">
-            <small>Hello, researcher</small>
-            <strong>OverheatLens workspace</strong>
+            <small>OverheatLens laboratory</small>
+            <strong>BUILDING × WEATHER × HEAT × EVIDENCE</strong>
           </div>
           <span className="topbar-spacer" />
           <span className="topbar-crumb">{title}</span>
@@ -224,13 +242,13 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div className="content">{children}</div>
         <footer className="footer">
           <div>
-            <strong>OverheatLens v0.6.0-dev — research software, not a compliance certificate.</strong>
+            <strong>OverheatLens — research software, not a compliance certificate.</strong>
             <br />
             Runs locally on your machine. Real weather files stay on this device and are
             never uploaded anywhere.
           </div>
           <div>
-            <strong>Mohamed Hamdy Mohamed Ali</strong>
+            <strong>OverheatLens · Mohamed Hamdy Ali · MIT</strong>
             <br />
             Leeds Sustainability Institute, Leeds Beckett University
           </div>

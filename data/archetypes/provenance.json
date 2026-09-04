@@ -1,0 +1,1075 @@
+{
+  "00CS_detached": {
+    "name": "Detached stone cottage",
+    "kind": "research",
+    "form": "detached stone cottage",
+    "era": "late-18thC",
+    "description": "Detached stone cottage (DEEP case study, measured U-values).",
+    "code": "00CS_detached",
+    "idf_filename": "00CS_detached.idf",
+    "sha256": "6c37da10ab02e861759e9c70ac5e74c712a1bbd58ec52a153cecb74750cba9c9",
+    "n_zones": 2,
+    "zone_names": [
+      "S1",
+      "S2"
+    ],
+    "energyplus_version": null,
+    "last_validation": {
+      "date": "2026-09-04",
+      "weather": "Leeds_DSY1_2020High50_.epw",
+      "energyplus": "25.1.0",
+      "run_status": "complete",
+      "tm59_2017_overall": "PASS",
+      "harvested_zones": 2
+    },
+    "research_status": "VERIFIED",
+    "derivation": "DEEP_DIRECT",
+    "source_code": "00CS",
+    "u_wall": 1.68,
+    "u_wall_source": "MEASURED",
+    "u_floor": 0.63,
+    "u_floor_source": "MEASURED",
+    "u_roof": 0.48,
+    "u_roof_source": "MEASURED",
+    "floor_area_m2": 139.0,
+    "storeys": 2,
+    "deep_citation": "2.06_DEEP_00CS.pdf Table 1-2 p12; Table 1-3 p13; Table 3-1 U-values p35; TM59 p57-60",
+    "notes": "Direct DEEP home (stone cottage), all U-values measured"
+  },
+  "01BA_end_terrace": {
+    "name": "End-terrace house (1930s)",
+    "kind": "research",
+    "form": "end-terrace",
+    "era": "1930s",
+    "description": "End-terrace house, 1930s semi-traditional (DEEP/Harehills, measured dwelling).",
+    "code": "01BA_end_terrace",
+    "idf_filename": "01BA_end_terrace.idf",
+    "sha256": "bd38a7c64cd1e7f0e4838dfa2ba7ea75885304e5c874c978e7771aee7636e895",
+    "n_zones": 12,
+    "zone_names": [
+      "00BAYWINDOWROOF:VOID",
+      "00GROUNDFLOOR:CHIMNEY",
+      "00GROUNDFLOOR:LOUNGE",
+      "00GROUNDFLOOR:STAIRS",
+      "00GROUNDFLOOR:CUPBOARD",
+      "00GROUNDFLOOR:KITCHEN",
+      "01FIRSTFLOOR:BEDROOM1",
+      "01FIRSTFLOOR:LANDING",
+      "01FIRSTFLOOR:BATHROOM",
+      "01FIRSTFLOOR:BEDROOM2",
+      "01FIRSTFLOOR:CHIMNEY",
+      "02ROOF:LOFT"
+    ],
+    "energyplus_version": "23.1.0.002",
+    "last_validation": {
+      "date": "2026-09-04",
+      "weather": "Leeds_DSY1_2020High50_.epw",
+      "energyplus": "25.1.0",
+      "run_status": "complete",
+      "tm59_2017_overall": "FAIL",
+      "harvested_zones": 12
+    },
+    "research_status": "VERIFIED"
+  },
+  "04KG_semi_detached_nofines": {
+    "name": "Semi-detached house (no-fines concrete)",
+    "kind": "research",
+    "form": "semi-detached, no-fines concrete",
+    "era": "mid-20thC",
+    "description": "Semi-detached no-fines construction house.",
+    "code": "04KG_semi_detached_nofines",
+    "idf_filename": "04KG_semi_detached_nofines.idf",
+    "sha256": "0479bc4b1e7c7ea09c33250e0fa2430d92e46359ca2ac19f6fc005a0b86bce02",
+    "n_zones": 2,
+    "zone_names": [
+      "S1",
+      "S2"
+    ],
+    "energyplus_version": null,
+    "last_validation": {
+      "date": "2026-09-04",
+      "weather": "Leeds_DSY1_2020High50_.epw",
+      "energyplus": "25.1.0",
+      "run_status": "complete",
+      "tm59_2017_overall": "PASS",
+      "harvested_zones": 2
+    },
+    "research_status": "VERIFIED"
+  },
+  "17BG_back_to_back_end": {
+    "name": "Back-to-back house (end)",
+    "kind": "research",
+    "form": "back-to-back end",
+    "era": "~1890",
+    "description": "Back-to-back END dwelling (DEEP/Harehills, measured dwelling).",
+    "code": "17BG_back_to_back_end",
+    "idf_filename": "17BG_back_to_back_end.idf",
+    "sha256": "6eb2a6aa3418813d2c0459e56d540f66f9c99b7a346eb1c371ab6fe7ce036d69",
+    "n_zones": 14,
+    "zone_names": [
+      "00GROUNDFLOOR:LOUNGE",
+      "00GROUNDFLOOR:KITCHEN",
+      "00GROUNDFLOOR:STAIRSUP",
+      "00GROUNDFLOOR:STAIRSDOWN",
+      "00GROUNDFLOOR:CHIMNEY",
+      "01FIRSTFLOOR:BEDROOM1",
+      "01FIRSTFLOOR:BATHROOM",
+      "01FIRSTFLOOR:STAIRSDOWN",
+      "01FIRSTFLOOR:STAIRSUP",
+      "01FIRSTFLOOR:CHIMNEY",
+      "03ROOF:VOID",
+      "02SECONDFLOOR:VOID",
+      "02SECONDFLOOR1:BEDROOM2",
+      "02SECONDFLOOR1:CHIMNEY"
+    ],
+    "energyplus_version": "23.1.0.002",
+    "last_validation": {
+      "date": "2026-09-04",
+      "weather": "Leeds_DSY1_2020High50_.epw",
+      "energyplus": "25.1.0",
+      "run_status": "complete",
+      "tm59_2017_overall": "FAIL",
+      "harvested_zones": 14
+    },
+    "research_status": "VERIFIED"
+  },
+  "19BA_mid_terrace": {
+    "name": "Mid-terrace house",
+    "kind": "research",
+    "form": "mid-terrace",
+    "era": "DEEP case",
+    "description": "Mid-terrace house (DEEP case study).",
+    "code": "19BA_mid_terrace",
+    "idf_filename": "19BA_mid_terrace.idf",
+    "sha256": "180a282d187f96173d81f98c88698eb692bde3b1c182de4f0048428d51cd6cf7",
+    "n_zones": 3,
+    "zone_names": [
+      "S1",
+      "S2",
+      "S3"
+    ],
+    "energyplus_version": null,
+    "last_validation": {
+      "date": "2026-09-04",
+      "weather": "Leeds_DSY1_2020High50_.epw",
+      "energyplus": "25.1.0",
+      "run_status": "complete",
+      "tm59_2017_overall": "PASS",
+      "harvested_zones": 3
+    },
+    "research_status": "VERIFIED"
+  },
+  "27BG_back_to_back_mid": {
+    "name": "Back-to-back house (mid)",
+    "kind": "research",
+    "form": "back-to-back mid",
+    "era": "~1890",
+    "description": "Back-to-back MID dwelling (DEEP/Harehills, measured dwelling).",
+    "code": "27BG_back_to_back_mid",
+    "idf_filename": "27BG_back_to_back_mid.idf",
+    "sha256": "63113233d8ff56a560a1b08b378a94c357ed3f1dda968dd914e297ab20c453f8",
+    "n_zones": 14,
+    "zone_names": [
+      "00GROUNDFLOOR:STAIRSUP",
+      "00GROUNDFLOOR:LOUNGE",
+      "00GROUNDFLOOR:KITCHEN",
+      "00GROUNDFLOOR:CHIMNEY",
+      "00GROUNDFLOOR:STAIRSDOWN",
+      "01FIRSTFLOOR:LANDING",
+      "01FIRSTFLOOR:BEDROOM1",
+      "01FIRSTFLOOR:BATHROOM",
+      "01FIRSTFLOOR:CHIMNEY",
+      "01FIRSTFLOOR:STAIRS",
+      "02SECONDFLOOR:ROOFVOID",
+      "02SECONDFLOOR:CHIMNEY",
+      "02SECONDFLOOR:BEDROOM2",
+      "ROOF:ROOFVOID"
+    ],
+    "energyplus_version": "23.1.0.002",
+    "last_validation": {
+      "date": "2026-09-04",
+      "weather": "Leeds_DSY1_2020High50_.epw",
+      "energyplus": "25.1.0",
+      "run_status": "complete",
+      "tm59_2017_overall": "FAIL",
+      "harvested_zones": 14
+    },
+    "research_status": "VERIFIED"
+  },
+  "52NP_mid_terrace_EWI": {
+    "name": "Mid-terrace house (external wall insulation)",
+    "kind": "research",
+    "form": "mid-terrace, retrofitted EWI",
+    "era": "retrofit",
+    "description": "Mid-terrace with external wall insulation (DEEP/Harehills, measured dwelling).",
+    "code": "52NP_mid_terrace_EWI",
+    "idf_filename": "52NP_mid_terrace_EWI.idf",
+    "sha256": "8a894c421166e0430777907185aa019c79218ecc1a41c8987cf1f366bac31d10",
+    "n_zones": 23,
+    "zone_names": [
+      "00GROUNDFLOOR:HALL",
+      "00GROUNDFLOOR:STAIRSUP",
+      "00GROUNDFLOOR:STAIRSDOWN",
+      "00GROUNDFLOOR:LOUNGE",
+      "00GROUNDFLOOR:CHIMNEYFRONT",
+      "00GROUNDFLOOR:KITCHEN",
+      "00GROUNDFLOOR:CHIMNEYREAR",
+      "01FIRSTFLOOR:STAIRSUP",
+      "01FIRSTFLOOR:LANDING",
+      "01FIRSTFLOOR:BEDROOM2",
+      "01FIRSTFLOOR:BATHROOM",
+      "01FIRSTFLOOR:BEDROOM1",
+      "01FIRSTFLOOR:CHIMNEYFRONT",
+      "01FIRSTFLOOR:CHIMNEYREAR",
+      "02SECONDFLOOR:REARLOFT",
+      "02SECONDFLOOR:CHIMNEYFRONT",
+      "02SECONDFLOOR:FRONTVOIDLEFT",
+      "02SECONDFLOOR:BEDROOM3",
+      "02SECONDFLOOR:FRONTVOIDRIGHT",
+      "02SECONDFLOOR:CHIMNEYREAR",
+      "02SECONDFLOOR:STAIRS",
+      "02SECONDFLOOR:BEDROOM4",
+      "03ROOF:LOFT"
+    ],
+    "energyplus_version": "23.1.0.002",
+    "last_validation": {
+      "date": "2026-09-04",
+      "weather": "Leeds_DSY1_2020High50_.epw",
+      "energyplus": "25.1.0",
+      "run_status": "complete",
+      "tm59_2017_overall": "FAIL",
+      "harvested_zones": 23
+    },
+    "research_status": "VERIFIED"
+  },
+  "55AD_semi_detached": {
+    "name": "Semi-detached house",
+    "kind": "research",
+    "form": "semi-detached",
+    "era": "DEEP case",
+    "description": "Semi-detached house (DEEP case study).",
+    "code": "55AD_semi_detached",
+    "idf_filename": "55AD_semi_detached.idf",
+    "sha256": "0a354d8418a478fd8072bee5037cd9751c59d2ad14a2326108a7482fa5713416",
+    "n_zones": 2,
+    "zone_names": [
+      "S1",
+      "S2"
+    ],
+    "energyplus_version": null,
+    "last_validation": {
+      "date": "2026-09-04",
+      "weather": "Leeds_DSY1_2020High50_.epw",
+      "energyplus": "25.1.0",
+      "run_status": "complete",
+      "tm59_2017_overall": "PASS",
+      "harvested_zones": 2
+    },
+    "research_status": "VERIFIED"
+  },
+  "56TR_end_terrace": {
+    "name": "End-terrace house",
+    "kind": "research",
+    "form": "end-terrace",
+    "era": "DEEP case",
+    "description": "End-terrace house (DEEP case study).",
+    "code": "56TR_end_terrace",
+    "idf_filename": "56TR_end_terrace.idf",
+    "sha256": "2d03d470cb1e1e3eeaf70fd57ebde1d08db52fcefa2bc50e20b62cacf197e3a9",
+    "n_zones": 2,
+    "zone_names": [
+      "S1",
+      "S2"
+    ],
+    "energyplus_version": null,
+    "last_validation": {
+      "date": "2026-09-04",
+      "weather": "Leeds_DSY1_2020High50_.epw",
+      "energyplus": "25.1.0",
+      "run_status": "complete",
+      "tm59_2017_overall": "PASS",
+      "harvested_zones": 2
+    },
+    "research_status": "VERIFIED"
+  },
+  "Bungalow_55AD_derived": {
+    "name": "Bungalow",
+    "kind": "template",
+    "form": "bungalow",
+    "era": "derived",
+    "description": "Bungalow form derived from a measured semi-detached archetype (generic template).",
+    "code": "Bungalow_55AD_derived",
+    "idf_filename": "Bungalow_55AD_derived.idf",
+    "sha256": "263394f4df7f4ad663d3429abd833a5678f79c7ec398fc79edb1a346261aa2dc",
+    "n_zones": 1,
+    "zone_names": [
+      "S1"
+    ],
+    "energyplus_version": null,
+    "last_validation": {
+      "date": "2026-09-04",
+      "weather": "Leeds_DSY1_2020High50_.epw",
+      "energyplus": "25.1.0",
+      "run_status": "complete",
+      "tm59_2017_overall": "PASS",
+      "harvested_zones": 1
+    },
+    "research_status": "VERIFIED"
+  },
+  "Flat_TM59Example4": {
+    "name": "CIBSE TM59 Example 4 flat",
+    "kind": "reference",
+    "form": "mid-floor 2-bed flat",
+    "era": "Part L 2021 reference",
+    "description": "CIBSE TM59 published standard reference flat (Example 4) \u2014 comparability case, not a measured dwelling.",
+    "code": "Flat_TM59Example4",
+    "idf_filename": "Flat_TM59Example4.idf",
+    "sha256": "7b6ea3a1510105c8f07cbdb4a8a95076c20ed9336c10462ce74530c1736138c3",
+    "n_zones": 4,
+    "zone_names": [
+      "LIVING",
+      "KITCHEN",
+      "BEDROOM1",
+      "BEDROOM2"
+    ],
+    "energyplus_version": null,
+    "last_validation": {
+      "date": "2026-09-04",
+      "weather": "Leeds_DSY1_2020High50_.epw",
+      "energyplus": "25.1.0",
+      "run_status": "complete",
+      "tm59_2017_overall": "FAIL",
+      "harvested_zones": 4
+    },
+    "research_status": "VERIFIED"
+  },
+  "GroundFloorFlat_27BG_derived": {
+    "name": "Ground-floor flat",
+    "kind": "template",
+    "form": "ground-floor flat",
+    "era": "derived",
+    "description": "Ground-floor flat derived from a measured back-to-back archetype (generic template).",
+    "code": "GroundFloorFlat_27BG_derived",
+    "idf_filename": "GroundFloorFlat_27BG_derived.idf",
+    "sha256": "36a401279137ebeedc3dfc260b4cd0ef9e8d4aa20e7d6207624617bf5afd53f2",
+    "n_zones": 1,
+    "zone_names": [
+      "S1"
+    ],
+    "energyplus_version": null,
+    "last_validation": {
+      "date": "2026-09-04",
+      "weather": "Leeds_DSY1_2020High50_.epw",
+      "energyplus": "25.1.0",
+      "run_status": "complete",
+      "tm59_2017_overall": "PASS",
+      "harvested_zones": 1
+    },
+    "research_status": "VERIFIED"
+  },
+  "HighRiseFlat_EHS_derived": {
+    "name": "High-rise flat",
+    "kind": "template",
+    "form": "high-rise flat",
+    "era": "derived",
+    "description": "High-rise flat derived from English Housing Survey stock (generic template).",
+    "code": "HighRiseFlat_EHS_derived",
+    "idf_filename": "HighRiseFlat_EHS_derived.idf",
+    "sha256": "14184a63985a41722c512e196b0b3135bad0fbcc8903d7b7df0ebb3a467c0710",
+    "n_zones": 1,
+    "zone_names": [
+      "S1"
+    ],
+    "energyplus_version": null,
+    "last_validation": {
+      "date": "2026-09-04",
+      "weather": "Leeds_DSY1_2020High50_.epw",
+      "energyplus": "25.1.0",
+      "run_status": "complete",
+      "tm59_2017_overall": "PASS",
+      "harvested_zones": 1
+    },
+    "research_status": "VERIFIED"
+  },
+  "ModernHouse_PartL2021_derived": {
+    "name": "Modern house (Part L 2021)",
+    "kind": "template",
+    "form": "detached new-build",
+    "era": "new-build",
+    "description": "Modern house to Part L 2021 fabric standards (generic template).",
+    "code": "ModernHouse_PartL2021_derived",
+    "idf_filename": "ModernHouse_PartL2021_derived.idf",
+    "sha256": "749d3dfbf08b8627f9f269186a835590784a38169bfae8ae4024ea1d43915fc7",
+    "n_zones": 2,
+    "zone_names": [
+      "S1",
+      "S2"
+    ],
+    "energyplus_version": null,
+    "last_validation": {
+      "date": "2026-09-04",
+      "weather": "Leeds_DSY1_2020High50_.epw",
+      "energyplus": "25.1.0",
+      "run_status": "complete",
+      "tm59_2017_overall": "PASS",
+      "harvested_zones": 2
+    },
+    "research_status": "VERIFIED"
+  },
+  "TopFloorFlat_17BG_derived": {
+    "name": "Top-floor flat",
+    "kind": "template",
+    "form": "top-floor flat",
+    "era": "derived",
+    "description": "Top-floor flat derived from a measured back-to-back archetype (generic template).",
+    "code": "TopFloorFlat_17BG_derived",
+    "idf_filename": "TopFloorFlat_17BG_derived.idf",
+    "sha256": "39155d00068bcbfae3b50d5082d5dc69c826332d11469d11db7bda39dbc70ba1",
+    "n_zones": 1,
+    "zone_names": [
+      "S1"
+    ],
+    "energyplus_version": null,
+    "last_validation": {
+      "date": "2026-09-04",
+      "weather": "Leeds_DSY1_2020High50_.epw",
+      "energyplus": "25.1.0",
+      "run_status": "complete",
+      "tm59_2017_overall": "PASS",
+      "harvested_zones": 1
+    },
+    "research_status": "VERIFIED"
+  },
+  "variants": {
+    "00CS_detached_S2_restricted": {
+      "code": "00CS_detached_S2_restricted",
+      "idf_filename": "00CS_detached_S2_restricted.idf",
+      "variant_of": "00CS_detached",
+      "base_name": "Detached stone cottage",
+      "scenario": "S2",
+      "scenario_label": "restricted window opening",
+      "name": "Detached stone cottage \u2014 S2 (restricted window opening)",
+      "sha256": "c655eec7b1073eeecd73ec327f2e08b0194331082ace9d49a68681abd9bf9e7a",
+      "n_zones": 2,
+      "energyplus_version": null,
+      "last_validation": {
+        "date": null,
+        "weather": null,
+        "energyplus": null,
+        "run_status": "NOT_RUN",
+        "tm59_2017_overall": null,
+        "harvested_zones": 0
+      },
+      "research_status": "NEEDS_REVIEW"
+    },
+    "00CS_detached_S3_nightpurge": {
+      "code": "00CS_detached_S3_nightpurge",
+      "idf_filename": "00CS_detached_S3_nightpurge.idf",
+      "variant_of": "00CS_detached",
+      "base_name": "Detached stone cottage",
+      "scenario": "S3",
+      "scenario_label": "night-purge ventilation",
+      "name": "Detached stone cottage \u2014 S3 (night-purge ventilation)",
+      "sha256": "4241052493f6fec73923c58c4dd020a76b843cda88151090509df8e1bbc25f4d",
+      "n_zones": 2,
+      "energyplus_version": null,
+      "last_validation": {
+        "date": null,
+        "weather": null,
+        "energyplus": null,
+        "run_status": "NOT_RUN",
+        "tm59_2017_overall": null,
+        "harvested_zones": 0
+      },
+      "research_status": "NEEDS_REVIEW"
+    },
+    "01BA_end_terrace_S2_restricted": {
+      "code": "01BA_end_terrace_S2_restricted",
+      "idf_filename": "01BA_end_terrace_S2_restricted.idf",
+      "variant_of": "01BA_end_terrace",
+      "base_name": "End-terrace house (1930s)",
+      "scenario": "S2",
+      "scenario_label": "restricted window opening",
+      "name": "End-terrace house (1930s) \u2014 S2 (restricted window opening)",
+      "sha256": "a47c5a1a13582b687549f223ec9a68ccda70a1cd36869df4610448b8cb4549ca",
+      "n_zones": 12,
+      "energyplus_version": "23.1.0.002",
+      "last_validation": {
+        "date": null,
+        "weather": null,
+        "energyplus": null,
+        "run_status": "NOT_RUN",
+        "tm59_2017_overall": null,
+        "harvested_zones": 0
+      },
+      "research_status": "NEEDS_REVIEW"
+    },
+    "01BA_end_terrace_S3_nightpurge": {
+      "code": "01BA_end_terrace_S3_nightpurge",
+      "idf_filename": "01BA_end_terrace_S3_nightpurge.idf",
+      "variant_of": "01BA_end_terrace",
+      "base_name": "End-terrace house (1930s)",
+      "scenario": "S3",
+      "scenario_label": "night-purge ventilation",
+      "name": "End-terrace house (1930s) \u2014 S3 (night-purge ventilation)",
+      "sha256": "c16adedf9412bd74e4f5e85238b81874048c7984991619b5fd036948f2c08f08",
+      "n_zones": 12,
+      "energyplus_version": "23.1.0.002",
+      "last_validation": {
+        "date": null,
+        "weather": null,
+        "energyplus": null,
+        "run_status": "NOT_RUN",
+        "tm59_2017_overall": null,
+        "harvested_zones": 0
+      },
+      "research_status": "NEEDS_REVIEW"
+    },
+    "04KG_semi_detached_nofines_S2_restricted": {
+      "code": "04KG_semi_detached_nofines_S2_restricted",
+      "idf_filename": "04KG_semi_detached_nofines_S2_restricted.idf",
+      "variant_of": "04KG_semi_detached_nofines",
+      "base_name": "Semi-detached house (no-fines concrete)",
+      "scenario": "S2",
+      "scenario_label": "restricted window opening",
+      "name": "Semi-detached house (no-fines concrete) \u2014 S2 (restricted window opening)",
+      "sha256": "85ebf32fd3979ce84cbd0e965ec9e0642952517702646e55e0e2030c55ae6c17",
+      "n_zones": 2,
+      "energyplus_version": null,
+      "last_validation": {
+        "date": null,
+        "weather": null,
+        "energyplus": null,
+        "run_status": "NOT_RUN",
+        "tm59_2017_overall": null,
+        "harvested_zones": 0
+      },
+      "research_status": "NEEDS_REVIEW"
+    },
+    "04KG_semi_detached_nofines_S3_nightpurge": {
+      "code": "04KG_semi_detached_nofines_S3_nightpurge",
+      "idf_filename": "04KG_semi_detached_nofines_S3_nightpurge.idf",
+      "variant_of": "04KG_semi_detached_nofines",
+      "base_name": "Semi-detached house (no-fines concrete)",
+      "scenario": "S3",
+      "scenario_label": "night-purge ventilation",
+      "name": "Semi-detached house (no-fines concrete) \u2014 S3 (night-purge ventilation)",
+      "sha256": "b0b6a6fb1c1932b9aee0ef8890035fcbdba2447791f77df990808be6cc61650f",
+      "n_zones": 2,
+      "energyplus_version": null,
+      "last_validation": {
+        "date": null,
+        "weather": null,
+        "energyplus": null,
+        "run_status": "NOT_RUN",
+        "tm59_2017_overall": null,
+        "harvested_zones": 0
+      },
+      "research_status": "NEEDS_REVIEW"
+    },
+    "17BG_back_to_back_end_S2_restricted": {
+      "code": "17BG_back_to_back_end_S2_restricted",
+      "idf_filename": "17BG_back_to_back_end_S2_restricted.idf",
+      "variant_of": "17BG_back_to_back_end",
+      "base_name": "Back-to-back house (end)",
+      "scenario": "S2",
+      "scenario_label": "restricted window opening",
+      "name": "Back-to-back house (end) \u2014 S2 (restricted window opening)",
+      "sha256": "8fafa20b4009561ce14a7f91e33d26758c113c0b9b4c4e65e931839f76c307bb",
+      "n_zones": 14,
+      "energyplus_version": "23.1.0.002",
+      "last_validation": {
+        "date": null,
+        "weather": null,
+        "energyplus": null,
+        "run_status": "NOT_RUN",
+        "tm59_2017_overall": null,
+        "harvested_zones": 0
+      },
+      "research_status": "NEEDS_REVIEW"
+    },
+    "17BG_back_to_back_end_S3_nightpurge": {
+      "code": "17BG_back_to_back_end_S3_nightpurge",
+      "idf_filename": "17BG_back_to_back_end_S3_nightpurge.idf",
+      "variant_of": "17BG_back_to_back_end",
+      "base_name": "Back-to-back house (end)",
+      "scenario": "S3",
+      "scenario_label": "night-purge ventilation",
+      "name": "Back-to-back house (end) \u2014 S3 (night-purge ventilation)",
+      "sha256": "962b91f5be9df4b2df043ce9cd5ee41e0d5ff7d905fc26e9ae871fa305f7a761",
+      "n_zones": 14,
+      "energyplus_version": "23.1.0.002",
+      "last_validation": {
+        "date": null,
+        "weather": null,
+        "energyplus": null,
+        "run_status": "NOT_RUN",
+        "tm59_2017_overall": null,
+        "harvested_zones": 0
+      },
+      "research_status": "NEEDS_REVIEW"
+    },
+    "19BA_mid_terrace_S2_restricted": {
+      "code": "19BA_mid_terrace_S2_restricted",
+      "idf_filename": "19BA_mid_terrace_S2_restricted.idf",
+      "variant_of": "19BA_mid_terrace",
+      "base_name": "Mid-terrace house",
+      "scenario": "S2",
+      "scenario_label": "restricted window opening",
+      "name": "Mid-terrace house \u2014 S2 (restricted window opening)",
+      "sha256": "475d74784419c0919a45ed7cf961006f057e5f8dab8a5fd029c025325e054052",
+      "n_zones": 3,
+      "energyplus_version": null,
+      "last_validation": {
+        "date": null,
+        "weather": null,
+        "energyplus": null,
+        "run_status": "NOT_RUN",
+        "tm59_2017_overall": null,
+        "harvested_zones": 0
+      },
+      "research_status": "NEEDS_REVIEW"
+    },
+    "19BA_mid_terrace_S3_nightpurge": {
+      "code": "19BA_mid_terrace_S3_nightpurge",
+      "idf_filename": "19BA_mid_terrace_S3_nightpurge.idf",
+      "variant_of": "19BA_mid_terrace",
+      "base_name": "Mid-terrace house",
+      "scenario": "S3",
+      "scenario_label": "night-purge ventilation",
+      "name": "Mid-terrace house \u2014 S3 (night-purge ventilation)",
+      "sha256": "a255862f5abe93f6bb2ecdd80e672f8f9ebe8fa76023bd032b6f57eaac04bd35",
+      "n_zones": 3,
+      "energyplus_version": null,
+      "last_validation": {
+        "date": null,
+        "weather": null,
+        "energyplus": null,
+        "run_status": "NOT_RUN",
+        "tm59_2017_overall": null,
+        "harvested_zones": 0
+      },
+      "research_status": "NEEDS_REVIEW"
+    },
+    "27BG_back_to_back_mid_S2_restricted": {
+      "code": "27BG_back_to_back_mid_S2_restricted",
+      "idf_filename": "27BG_back_to_back_mid_S2_restricted.idf",
+      "variant_of": "27BG_back_to_back_mid",
+      "base_name": "Back-to-back house (mid)",
+      "scenario": "S2",
+      "scenario_label": "restricted window opening",
+      "name": "Back-to-back house (mid) \u2014 S2 (restricted window opening)",
+      "sha256": "492e76712c3c253f11e5ae19a82a9ae1b4a014be1b85ff23a5f2e13bd393ac0b",
+      "n_zones": 14,
+      "energyplus_version": "23.1.0.002",
+      "last_validation": {
+        "date": null,
+        "weather": null,
+        "energyplus": null,
+        "run_status": "NOT_RUN",
+        "tm59_2017_overall": null,
+        "harvested_zones": 0
+      },
+      "research_status": "NEEDS_REVIEW"
+    },
+    "27BG_back_to_back_mid_S3_nightpurge": {
+      "code": "27BG_back_to_back_mid_S3_nightpurge",
+      "idf_filename": "27BG_back_to_back_mid_S3_nightpurge.idf",
+      "variant_of": "27BG_back_to_back_mid",
+      "base_name": "Back-to-back house (mid)",
+      "scenario": "S3",
+      "scenario_label": "night-purge ventilation",
+      "name": "Back-to-back house (mid) \u2014 S3 (night-purge ventilation)",
+      "sha256": "d6bf7f6ef5dcaf54e84b015895079911de909eadcd8255906be258af7bb3b3b0",
+      "n_zones": 14,
+      "energyplus_version": "23.1.0.002",
+      "last_validation": {
+        "date": null,
+        "weather": null,
+        "energyplus": null,
+        "run_status": "NOT_RUN",
+        "tm59_2017_overall": null,
+        "harvested_zones": 0
+      },
+      "research_status": "NEEDS_REVIEW"
+    },
+    "52NP_mid_terrace_EWI_S2_restricted": {
+      "code": "52NP_mid_terrace_EWI_S2_restricted",
+      "idf_filename": "52NP_mid_terrace_EWI_S2_restricted.idf",
+      "variant_of": "52NP_mid_terrace_EWI",
+      "base_name": "Mid-terrace house (external wall insulation)",
+      "scenario": "S2",
+      "scenario_label": "restricted window opening",
+      "name": "Mid-terrace house (external wall insulation) \u2014 S2 (restricted window opening)",
+      "sha256": "f17790c9d730a2a5b1ae8ff70ff793456cf9e2315eee733aad00cffc4430f41b",
+      "n_zones": 23,
+      "energyplus_version": "23.1.0.002",
+      "last_validation": {
+        "date": null,
+        "weather": null,
+        "energyplus": null,
+        "run_status": "NOT_RUN",
+        "tm59_2017_overall": null,
+        "harvested_zones": 0
+      },
+      "research_status": "NEEDS_REVIEW"
+    },
+    "52NP_mid_terrace_EWI_S3_nightpurge": {
+      "code": "52NP_mid_terrace_EWI_S3_nightpurge",
+      "idf_filename": "52NP_mid_terrace_EWI_S3_nightpurge.idf",
+      "variant_of": "52NP_mid_terrace_EWI",
+      "base_name": "Mid-terrace house (external wall insulation)",
+      "scenario": "S3",
+      "scenario_label": "night-purge ventilation",
+      "name": "Mid-terrace house (external wall insulation) \u2014 S3 (night-purge ventilation)",
+      "sha256": "40b162b65e702da8c99b9a7e6dea7a823fff77c040c4ea3b53aaa46981c9f530",
+      "n_zones": 23,
+      "energyplus_version": "23.1.0.002",
+      "last_validation": {
+        "date": null,
+        "weather": null,
+        "energyplus": null,
+        "run_status": "NOT_RUN",
+        "tm59_2017_overall": null,
+        "harvested_zones": 0
+      },
+      "research_status": "NEEDS_REVIEW"
+    },
+    "55AD_semi_detached_S2_restricted": {
+      "code": "55AD_semi_detached_S2_restricted",
+      "idf_filename": "55AD_semi_detached_S2_restricted.idf",
+      "variant_of": "55AD_semi_detached",
+      "base_name": "Semi-detached house",
+      "scenario": "S2",
+      "scenario_label": "restricted window opening",
+      "name": "Semi-detached house \u2014 S2 (restricted window opening)",
+      "sha256": "24acecfcd8c0d0fec87d37b34d15235f221542152cd03821edcb8a78b325cba4",
+      "n_zones": 2,
+      "energyplus_version": null,
+      "last_validation": {
+        "date": null,
+        "weather": null,
+        "energyplus": null,
+        "run_status": "NOT_RUN",
+        "tm59_2017_overall": null,
+        "harvested_zones": 0
+      },
+      "research_status": "NEEDS_REVIEW"
+    },
+    "55AD_semi_detached_S3_nightpurge": {
+      "code": "55AD_semi_detached_S3_nightpurge",
+      "idf_filename": "55AD_semi_detached_S3_nightpurge.idf",
+      "variant_of": "55AD_semi_detached",
+      "base_name": "Semi-detached house",
+      "scenario": "S3",
+      "scenario_label": "night-purge ventilation",
+      "name": "Semi-detached house \u2014 S3 (night-purge ventilation)",
+      "sha256": "1d2073fdaa7e2e980411ff6f1a9b596bfcc046aa7fc256531f1da6b811a8c36d",
+      "n_zones": 2,
+      "energyplus_version": null,
+      "last_validation": {
+        "date": null,
+        "weather": null,
+        "energyplus": null,
+        "run_status": "NOT_RUN",
+        "tm59_2017_overall": null,
+        "harvested_zones": 0
+      },
+      "research_status": "NEEDS_REVIEW"
+    },
+    "56TR_end_terrace_S2_restricted": {
+      "code": "56TR_end_terrace_S2_restricted",
+      "idf_filename": "56TR_end_terrace_S2_restricted.idf",
+      "variant_of": "56TR_end_terrace",
+      "base_name": "End-terrace house",
+      "scenario": "S2",
+      "scenario_label": "restricted window opening",
+      "name": "End-terrace house \u2014 S2 (restricted window opening)",
+      "sha256": "6a8c277db79f15676cb17ab1d39d5cbc63778b5197d992736523cb499fc171f2",
+      "n_zones": 2,
+      "energyplus_version": null,
+      "last_validation": {
+        "date": null,
+        "weather": null,
+        "energyplus": null,
+        "run_status": "NOT_RUN",
+        "tm59_2017_overall": null,
+        "harvested_zones": 0
+      },
+      "research_status": "NEEDS_REVIEW"
+    },
+    "56TR_end_terrace_S3_nightpurge": {
+      "code": "56TR_end_terrace_S3_nightpurge",
+      "idf_filename": "56TR_end_terrace_S3_nightpurge.idf",
+      "variant_of": "56TR_end_terrace",
+      "base_name": "End-terrace house",
+      "scenario": "S3",
+      "scenario_label": "night-purge ventilation",
+      "name": "End-terrace house \u2014 S3 (night-purge ventilation)",
+      "sha256": "132fe6116dc6cbfa5e34805fbdf46a65b677624c2acdc7c20219bb5fc0a770fe",
+      "n_zones": 2,
+      "energyplus_version": null,
+      "last_validation": {
+        "date": null,
+        "weather": null,
+        "energyplus": null,
+        "run_status": "NOT_RUN",
+        "tm59_2017_overall": null,
+        "harvested_zones": 0
+      },
+      "research_status": "NEEDS_REVIEW"
+    },
+    "Bungalow_55AD_derived_S2_restricted": {
+      "code": "Bungalow_55AD_derived_S2_restricted",
+      "idf_filename": "Bungalow_55AD_derived_S2_restricted.idf",
+      "variant_of": "Bungalow_55AD_derived",
+      "base_name": "Bungalow",
+      "scenario": "S2",
+      "scenario_label": "restricted window opening",
+      "name": "Bungalow \u2014 S2 (restricted window opening)",
+      "sha256": "ffd2bc21ce145b3a73caaf40d1a6c15af53eefb69bc20632a70eb18a15a3b975",
+      "n_zones": 1,
+      "energyplus_version": null,
+      "last_validation": {
+        "date": null,
+        "weather": null,
+        "energyplus": null,
+        "run_status": "NOT_RUN",
+        "tm59_2017_overall": null,
+        "harvested_zones": 0
+      },
+      "research_status": "NEEDS_REVIEW"
+    },
+    "Bungalow_55AD_derived_S3_nightpurge": {
+      "code": "Bungalow_55AD_derived_S3_nightpurge",
+      "idf_filename": "Bungalow_55AD_derived_S3_nightpurge.idf",
+      "variant_of": "Bungalow_55AD_derived",
+      "base_name": "Bungalow",
+      "scenario": "S3",
+      "scenario_label": "night-purge ventilation",
+      "name": "Bungalow \u2014 S3 (night-purge ventilation)",
+      "sha256": "73c8b7ac3d59316fb69d192c705ec37f36ccf5c9abb8f3f46205625ba80030db",
+      "n_zones": 1,
+      "energyplus_version": null,
+      "last_validation": {
+        "date": null,
+        "weather": null,
+        "energyplus": null,
+        "run_status": "NOT_RUN",
+        "tm59_2017_overall": null,
+        "harvested_zones": 0
+      },
+      "research_status": "NEEDS_REVIEW"
+    },
+    "Flat_TM59Example4_S2_restricted": {
+      "code": "Flat_TM59Example4_S2_restricted",
+      "idf_filename": "Flat_TM59Example4_S2_restricted.idf",
+      "variant_of": "Flat_TM59Example4",
+      "base_name": "CIBSE TM59 Example 4 flat",
+      "scenario": "S2",
+      "scenario_label": "restricted window opening",
+      "name": "CIBSE TM59 Example 4 flat \u2014 S2 (restricted window opening)",
+      "sha256": "87795f494b52eb032c9cea1d9358f4252937c51287df2192d3aae684505587a4",
+      "n_zones": 4,
+      "energyplus_version": null,
+      "last_validation": {
+        "date": null,
+        "weather": null,
+        "energyplus": null,
+        "run_status": "NOT_RUN",
+        "tm59_2017_overall": null,
+        "harvested_zones": 0
+      },
+      "research_status": "NEEDS_REVIEW"
+    },
+    "Flat_TM59Example4_S3_nightpurge": {
+      "code": "Flat_TM59Example4_S3_nightpurge",
+      "idf_filename": "Flat_TM59Example4_S3_nightpurge.idf",
+      "variant_of": "Flat_TM59Example4",
+      "base_name": "CIBSE TM59 Example 4 flat",
+      "scenario": "S3",
+      "scenario_label": "night-purge ventilation",
+      "name": "CIBSE TM59 Example 4 flat \u2014 S3 (night-purge ventilation)",
+      "sha256": "8b313d9dd58dad8429c6918ffaf26fc0517137f351c41b8de270b2f0b7d968a9",
+      "n_zones": 4,
+      "energyplus_version": null,
+      "last_validation": {
+        "date": null,
+        "weather": null,
+        "energyplus": null,
+        "run_status": "NOT_RUN",
+        "tm59_2017_overall": null,
+        "harvested_zones": 0
+      },
+      "research_status": "NEEDS_REVIEW"
+    },
+    "GroundFloorFlat_27BG_derived_S2_restricted": {
+      "code": "GroundFloorFlat_27BG_derived_S2_restricted",
+      "idf_filename": "GroundFloorFlat_27BG_derived_S2_restricted.idf",
+      "variant_of": "GroundFloorFlat_27BG_derived",
+      "base_name": "Ground-floor flat",
+      "scenario": "S2",
+      "scenario_label": "restricted window opening",
+      "name": "Ground-floor flat \u2014 S2 (restricted window opening)",
+      "sha256": "8fe61ba7245e38c2674f28d1de69689a5ff0870c6650b1afc8cb4daf57d1159d",
+      "n_zones": 1,
+      "energyplus_version": null,
+      "last_validation": {
+        "date": null,
+        "weather": null,
+        "energyplus": null,
+        "run_status": "NOT_RUN",
+        "tm59_2017_overall": null,
+        "harvested_zones": 0
+      },
+      "research_status": "NEEDS_REVIEW"
+    },
+    "GroundFloorFlat_27BG_derived_S3_nightpurge": {
+      "code": "GroundFloorFlat_27BG_derived_S3_nightpurge",
+      "idf_filename": "GroundFloorFlat_27BG_derived_S3_nightpurge.idf",
+      "variant_of": "GroundFloorFlat_27BG_derived",
+      "base_name": "Ground-floor flat",
+      "scenario": "S3",
+      "scenario_label": "night-purge ventilation",
+      "name": "Ground-floor flat \u2014 S3 (night-purge ventilation)",
+      "sha256": "a381d9ee40fcd51889bdae3771da6d1179ca8004b8854767a35cc0a9e39cd18e",
+      "n_zones": 1,
+      "energyplus_version": null,
+      "last_validation": {
+        "date": null,
+        "weather": null,
+        "energyplus": null,
+        "run_status": "NOT_RUN",
+        "tm59_2017_overall": null,
+        "harvested_zones": 0
+      },
+      "research_status": "NEEDS_REVIEW"
+    },
+    "HighRiseFlat_EHS_derived_S2_restricted": {
+      "code": "HighRiseFlat_EHS_derived_S2_restricted",
+      "idf_filename": "HighRiseFlat_EHS_derived_S2_restricted.idf",
+      "variant_of": "HighRiseFlat_EHS_derived",
+      "base_name": "High-rise flat",
+      "scenario": "S2",
+      "scenario_label": "restricted window opening",
+      "name": "High-rise flat \u2014 S2 (restricted window opening)",
+      "sha256": "6820bbb85ee0edb88bc97631458b7f487e94d5fec4bc8a396d280c9fdf34e461",
+      "n_zones": 1,
+      "energyplus_version": null,
+      "last_validation": {
+        "date": null,
+        "weather": null,
+        "energyplus": null,
+        "run_status": "NOT_RUN",
+        "tm59_2017_overall": null,
+        "harvested_zones": 0
+      },
+      "research_status": "NEEDS_REVIEW"
+    },
+    "HighRiseFlat_EHS_derived_S3_nightpurge": {
+      "code": "HighRiseFlat_EHS_derived_S3_nightpurge",
+      "idf_filename": "HighRiseFlat_EHS_derived_S3_nightpurge.idf",
+      "variant_of": "HighRiseFlat_EHS_derived",
+      "base_name": "High-rise flat",
+      "scenario": "S3",
+      "scenario_label": "night-purge ventilation",
+      "name": "High-rise flat \u2014 S3 (night-purge ventilation)",
+      "sha256": "4f6d769ea3fcb466615bf9776f25eb910e4ce35c295eb31bbaf349e6c338ee8b",
+      "n_zones": 1,
+      "energyplus_version": null,
+      "last_validation": {
+        "date": null,
+        "weather": null,
+        "energyplus": null,
+        "run_status": "NOT_RUN",
+        "tm59_2017_overall": null,
+        "harvested_zones": 0
+      },
+      "research_status": "NEEDS_REVIEW"
+    },
+    "ModernHouse_PartL2021_derived_S2_restricted": {
+      "code": "ModernHouse_PartL2021_derived_S2_restricted",
+      "idf_filename": "ModernHouse_PartL2021_derived_S2_restricted.idf",
+      "variant_of": "ModernHouse_PartL2021_derived",
+      "base_name": "Modern house (Part L 2021)",
+      "scenario": "S2",
+      "scenario_label": "restricted window opening",
+      "name": "Modern house (Part L 2021) \u2014 S2 (restricted window opening)",
+      "sha256": "8871a1940be0bb4c92aee8c6d0cab898317be99ce55df44aac7978b208651982",
+      "n_zones": 2,
+      "energyplus_version": null,
+      "last_validation": {
+        "date": null,
+        "weather": null,
+        "energyplus": null,
+        "run_status": "NOT_RUN",
+        "tm59_2017_overall": null,
+        "harvested_zones": 0
+      },
+      "research_status": "NEEDS_REVIEW"
+    },
+    "ModernHouse_PartL2021_derived_S3_nightpurge": {
+      "code": "ModernHouse_PartL2021_derived_S3_nightpurge",
+      "idf_filename": "ModernHouse_PartL2021_derived_S3_nightpurge.idf",
+      "variant_of": "ModernHouse_PartL2021_derived",
+      "base_name": "Modern house (Part L 2021)",
+      "scenario": "S3",
+      "scenario_label": "night-purge ventilation",
+      "name": "Modern house (Part L 2021) \u2014 S3 (night-purge ventilation)",
+      "sha256": "c8d17fe94abb816abcdf685e4a4c54f9201c33e34bc4e045da4128269b0798b5",
+      "n_zones": 2,
+      "energyplus_version": null,
+      "last_validation": {
+        "date": null,
+        "weather": null,
+        "energyplus": null,
+        "run_status": "NOT_RUN",
+        "tm59_2017_overall": null,
+        "harvested_zones": 0
+      },
+      "research_status": "NEEDS_REVIEW"
+    },
+    "TopFloorFlat_17BG_derived_S2_restricted": {
+      "code": "TopFloorFlat_17BG_derived_S2_restricted",
+      "idf_filename": "TopFloorFlat_17BG_derived_S2_restricted.idf",
+      "variant_of": "TopFloorFlat_17BG_derived",
+      "base_name": "Top-floor flat",
+      "scenario": "S2",
+      "scenario_label": "restricted window opening",
+      "name": "Top-floor flat \u2014 S2 (restricted window opening)",
+      "sha256": "638c31e6e0706d70704be18f95d6417373410ec42fa899ccffcfa98d432e2cbe",
+      "n_zones": 1,
+      "energyplus_version": null,
+      "last_validation": {
+        "date": null,
+        "weather": null,
+        "energyplus": null,
+        "run_status": "NOT_RUN",
+        "tm59_2017_overall": null,
+        "harvested_zones": 0
+      },
+      "research_status": "NEEDS_REVIEW"
+    },
+    "TopFloorFlat_17BG_derived_S3_nightpurge": {
+      "code": "TopFloorFlat_17BG_derived_S3_nightpurge",
+      "idf_filename": "TopFloorFlat_17BG_derived_S3_nightpurge.idf",
+      "variant_of": "TopFloorFlat_17BG_derived",
+      "base_name": "Top-floor flat",
+      "scenario": "S3",
+      "scenario_label": "night-purge ventilation",
+      "name": "Top-floor flat \u2014 S3 (night-purge ventilation)",
+      "sha256": "74fe995788b3156f3aadd6cdd60695c6ac24890710fb65bdd61dbdb4719cbe3c",
+      "n_zones": 1,
+      "energyplus_version": null,
+      "last_validation": {
+        "date": null,
+        "weather": null,
+        "energyplus": null,
+        "run_status": "NOT_RUN",
+        "tm59_2017_overall": null,
+        "harvested_zones": 0
+      },
+      "research_status": "NEEDS_REVIEW"
+    }
+  }
+}

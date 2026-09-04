@@ -10,22 +10,26 @@ commands; the EnergyPlus run writes only into its own temp directory.
 
 from __future__ import annotations
 
+import hashlib
+import io
 import json
 import os
 import re
 import threading
+import zipfile
+from datetime import datetime, timezone
 from pathlib import Path
 
 import numpy as np
 from fastapi import FastAPI, HTTPException, Query, Request
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
 from .report import render_html_report
 from overheatlens import CORE_VERSION
 from overheatlens.epw import check_epw, parse_epw, weather_summary, monthly_mean_dry_bulb
 from overheatlens.idf import check_idf, parse_idf
-from overheatlens.schemas import load_bundled_pack
+from overheatlens.schemas import available_pack_ids, load_bundled_pack
 from overheatlens.standards import StandardsEngine
 from overheatlens.worker import run_energyplus
 
@@ -40,7 +44,10 @@ LEEDS_IDF_DIR = REPO_ROOT / "fixtures" / "idf" / "leeds"
 LEEDS_META = REPO_ROOT / "data" / "archetypes" / "leeds.json"
 UPLOAD_EPW_DIR = REPO_ROOT / "data" / "uploads" / "epw"
 UPLOAD_IDF_DIR = REPO_ROOT / "data" / "uploads" / "idf"
+RUNS_DIR = REPO_ROOT / "data" / "runs"
+MITIGATION_SUMMARY = REPO_ROOT / "data" / "mitigation" / "summary.json"
 MAX_UPLOAD_BYTES = 20 * 1024 * 1024  # plan §26.2: maximum upload, enforced first
+MAX_BATCH_RUNS = 96  # a full archetype × weather matrix fits; larger needs chunking
 
 app = FastAPI(title="OverheatLens API", version=CORE_VERSION)
 
@@ -73,7 +80,8 @@ def _safe_idf(path: str) -> Path:
     p = Path(path).resolve()
     if p.suffix.lower() != ".idf":
         raise HTTPException(400, "Only .idf model files can be read.")
-    allowed = [(REPO_ROOT / "fixtures" / "idf").resolve(), UPLOAD_IDF_DIR.resolve()]
+    allowed = [(REPO_ROOT / "fixtures" / "idf").resolve(),
+               RESEARCH_IDF_DIR.resolve(), UPLOAD_IDF_DIR.resolve()]
     if not any(p == root or root in p.parents for root in allowed):
         raise HTTPException(403, "Model file is outside the permitted directories.")
     if not p.is_file():
@@ -205,6 +213,55 @@ async def weather_upload(request: Request, name: str = Query(...)):
     return out
 
 
+RESEARCH_IDF_DIR = REPO_ROOT / "data" / "archetypes" / "idf"
+
+# Real dwelling archetypes from the author's DEEP / Sensor-Calibrated research
+# (see data/archetypes/PROVENANCE.md). Display names are PUBLIC typology names —
+# never the internal case-study codes; those live only in file stems/ids.
+RESEARCH_META: dict[str, dict] = {
+    "00CS_detached": {"name": "Detached stone cottage", "era": "late-18thC",
+        "description": "Detached stone cottage (DEEP case study, measured U-values)."},
+    "01BA_end_terrace": {"name": "End-terrace house (1930s)", "era": "1930s",
+        "description": "End-terrace house, 1930s semi-traditional (DEEP/Harehills, measured dwelling)."},
+    "17BG_back_to_back_end": {"name": "Back-to-back house (end)", "era": "~1890",
+        "description": "Back-to-back END dwelling (DEEP/Harehills, measured dwelling)."},
+    "27BG_back_to_back_mid": {"name": "Back-to-back house (mid)", "era": "~1890",
+        "description": "Back-to-back MID dwelling (DEEP/Harehills, measured dwelling)."},
+    "52NP_mid_terrace_EWI": {"name": "Mid-terrace house (external wall insulation)", "era": "retrofit",
+        "description": "Mid-terrace with external wall insulation (DEEP/Harehills, measured dwelling)."},
+    "55AD_semi_detached": {"name": "Semi-detached house", "era": "DEEP case",
+        "description": "Semi-detached house (DEEP case study)."},
+    "56TR_end_terrace": {"name": "End-terrace house", "era": "DEEP case",
+        "description": "End-terrace house (DEEP case study)."},
+    "04KG_semi_detached_nofines": {"name": "Semi-detached house (no-fines concrete)", "era": "mid-20thC",
+        "description": "Semi-detached no-fines construction house."},
+    "19BA_mid_terrace": {"name": "Mid-terrace house", "era": "DEEP case",
+        "description": "Mid-terrace house (DEEP case study)."},
+    "Flat_TM59Example4": {"name": "CIBSE TM59 Example 4 flat", "era": "Part L 2021 reference",
+        "description": "CIBSE TM59 published standard reference flat (mid-floor 2-bed, Example 4) — included for comparability with the TM59 literature."},
+    "GroundFloorFlat_27BG_derived": {"name": "Ground-floor flat", "era": "derived",
+        "description": "Ground-floor flat derived from a measured back-to-back archetype (generic template)."},
+    "TopFloorFlat_17BG_derived": {"name": "Top-floor flat", "era": "derived",
+        "description": "Top-floor flat derived from a measured back-to-back archetype (generic template)."},
+    "HighRiseFlat_EHS_derived": {"name": "High-rise flat", "era": "derived",
+        "description": "High-rise flat derived from the English Housing Survey stock (generic template)."},
+    "Bungalow_55AD_derived": {"name": "Bungalow", "era": "derived",
+        "description": "Bungalow form derived from a measured semi-detached archetype (generic template)."},
+    "ModernHouse_PartL2021_derived": {"name": "Modern house (Part L 2021)", "era": "new-build",
+        "description": "Modern house to Part L 2021 fabric standards (generic template)."},
+}
+
+
+def _archetype_register() -> dict[str, dict]:
+    """Machine-readable archetype register (built by
+    scripts/build_archetype_provenance.py): kind, era, form, validation."""
+    try:
+        raw = json.loads((REPO_ROOT / "data" / "archetypes" / "provenance.json").read_text())
+        return raw if isinstance(raw, dict) else {}
+    except (OSError, ValueError):
+        return {}
+
+
 def _leeds_metadata() -> dict[str, dict]:
     """Merge archetype metadata for Leeds templates when the (concurrently owned)
     data/archetypes/leeds.json is present. Tolerant to list- or dict-shaped files."""
@@ -259,10 +316,26 @@ def _model_passport(p: Path, source: str, city_fallback: str | None,
 
 @app.get("/api/models")
 def models_list():
-    """Dwelling models available for assessment: bundled Leeds archetype templates
-    (metadata merged when present) plus user-uploaded IDFs."""
+    """Dwelling models available for assessment: the author's real DEEP research
+    archetypes first, then bundled synthetic templates, then user-uploaded IDFs."""
     meta = _leeds_metadata()
+    register = _archetype_register()
     out = []
+    if RESEARCH_IDF_DIR.is_dir():
+        for p in sorted(RESEARCH_IDF_DIR.glob("*.idf")):
+            m = dict(RESEARCH_META.get(p.stem, {}))
+            m.setdefault("city", "Leeds")
+            reg = register.get(p.stem, {})
+            for k in ("kind", "form", "era", "research_status", "sha256",
+                      "energyplus_version", "last_validation"):
+                if reg.get(k) is not None and m.get(k) is None:
+                    m[k] = reg[k]
+            if reg.get("era"):
+                m["era"] = reg["era"]
+            passport = _model_passport(p, "research", "Leeds", m)
+            passport["kind"] = reg.get("kind", "research")
+            passport["research_status"] = reg.get("research_status")
+            out.append(passport)
     if LEEDS_IDF_DIR.is_dir():
         for p in sorted(LEEDS_IDF_DIR.glob("*.idf")):
             out.append(_model_passport(p, "template", "Leeds", meta.get(p.stem.lower())))
@@ -408,7 +481,7 @@ def _run_analysis(p: Path, pack_id: str, model: Path | None = None) -> dict:
                 "message": "EnergyPlus run failed",
                 "err": run.err.to_dict(),
             })
-        from overheatlens.worker import harvest_hourly
+        from overheatlens.worker import harvest_hourly, harvest_meters
 
         zones = harvest_hourly(run.csv_path)
         epw = parse_epw(p)
@@ -424,6 +497,30 @@ def _run_analysis(p: Path, pack_id: str, model: Path | None = None) -> dict:
         # harvested relative humidity (rounded, real data; None when not output)
         rh = {z: ([round(x, 2) for x in v["rh"]] if v.get("rh") else None)
               for z, v in zones.items()}
+        # annual facility energy from the author's Output:Meter requests
+        # (real meters, never estimated; None when the model carries none)
+        energy = (harvest_meters(run.meter_path)
+                  if run.meter_path else {})
+        # full-standards summary: the SAME simulation judged by every
+        # compliance-allowed pack — no extra EnergyPlus runs
+        standards_summary = []
+        for other in available_pack_ids():
+            try:
+                other_engine = StandardsEngine.load(other)
+                if not other_engine.compliance_allowed():
+                    continue
+                other_result = other_engine.evaluate_dwelling(
+                    rooms, category="II", daily_mean_outdoor=daily,
+                    mode="compliance")
+                standards_summary.append({
+                    "pack_id": other,
+                    "overall": other_result.get("overall"),
+                    "pack_version": other_result.get("pack_version"),
+                    "chosen": other == pack_id,
+                })
+            except Exception:  # noqa: BLE001 — one pack failing must not kill the run
+                standards_summary.append({"pack_id": other, "overall": "INCOMPLETE",
+                                          "chosen": other == pack_id})
     except HTTPException:
         raise
     except Exception as e:  # noqa: BLE001
@@ -438,14 +535,104 @@ def _run_analysis(p: Path, pack_id: str, model: Path | None = None) -> dict:
         "readiness": readiness,
         "run": run.to_dict(),
         "result": result,
+        "standards_summary": standards_summary,
         "series": series,
         "rh": rh,
+        "energy": energy,
         "daily_mean_outdoor": [round(float(x), 3) for x in daily],
         "cached": False,
     }
+    # thermal comfort on the actual simulated temperatures (PMV + adaptive EN,
+    # library-only mathematics); a comfort failure must not kill the analysis
+    try:
+        payload["comfort"] = _comfort_from_run(payload, p)
+    except Exception as e:  # noqa: BLE001
+        payload["comfort"] = {"assumptions": None, "zones": [],
+                              "note": f"comfort evaluation failed: {e}"}
     with _cache_lock:
         _run_cache[key] = {**payload, "cached": True}
+    _persist_run(key, payload)
     return payload
+
+
+def _persist_run(key: tuple[str, str, str], payload: dict) -> Path | None:
+    """Persist a fresh run payload to the on-disk archive (data/runs).
+
+    The archive survives server restarts; uploads stay local by design. Any
+    persistence failure is swallowed — the in-memory result still stands."""
+    try:
+        RUNS_DIR.mkdir(parents=True, exist_ok=True)
+        run_id = payload.get("run", {}).get("run_id") or "run-unknown"
+        safe_id = re.sub(r"[^A-Za-z0-9._-]", "_", run_id)
+        record = {
+            "run_id": run_id,
+            "created_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            "weather_path": key[0],
+            "model_path": key[1],
+            "pack_id": key[2],
+            "payload": payload,
+        }
+        dest = RUNS_DIR / f"{safe_id}.json"
+        if not dest.exists():
+            dest.write_text(json.dumps(record, default=str))
+        return dest
+    except Exception:  # noqa: BLE001 — persistence must never fail a run
+        return None
+
+
+def _archive_records() -> list[dict]:
+    """Session cache + on-disk archive merged newest-first (disk wins ties)."""
+    seen: dict[str, dict] = {}
+    if RUNS_DIR.is_dir():
+        for p in sorted(RUNS_DIR.glob("*.json"), reverse=True):
+            try:
+                rec = json.loads(p.read_text())
+            except (OSError, ValueError):
+                continue
+            payload = rec.get("payload", {}) if isinstance(rec, dict) else {}
+            rid = rec.get("run_id") if isinstance(rec, dict) else None
+            if not rid:
+                continue
+            seen[rid] = {
+                "run_id": rid,
+                "created_utc": rec.get("created_utc"),
+                "weather": Path(rec.get("weather_path", "")).name,
+                "model": Path(rec.get("model_path", "")).name or None,
+                "pack_id": rec.get("pack_id"),
+                "overall": (payload.get("result", {}) or {}).get("overall"),
+                "source": "archive",
+            }
+    with _cache_lock:
+        for (wp, mp, pk), payload in _run_cache.items():
+            rid = (payload.get("run", {}) or {}).get("run_id")
+            if not rid or rid in seen:
+                continue
+            seen[rid] = {
+                "run_id": rid,
+                "created_utc": None,
+                "weather": Path(wp).name,
+                "model": Path(mp).name if mp else None,
+                "pack_id": pk,
+                "overall": (payload.get("result", {}) or {}).get("overall"),
+                "source": "session",
+            }
+    return list(seen.values())
+
+
+def _load_archived_run(run_id: str) -> dict:
+    safe_id = re.sub(r"[^A-Za-z0-9._-]", "_", run_id)
+    p = RUNS_DIR / f"{safe_id}.json"
+    if not p.is_file():
+        # fall back to the session cache for runs not yet flushed
+        with _cache_lock:
+            for payload in _run_cache.values():
+                if (payload.get("run", {}) or {}).get("run_id") == run_id:
+                    return {"run_id": run_id, "payload": payload, "source": "session"}
+        raise HTTPException(404, f"Run not found in the archive: {run_id}")
+    try:
+        return {**json.loads(p.read_text()), "source": "archive"}
+    except (OSError, ValueError) as e:
+        raise HTTPException(500, f"Cannot read archived run: {e}") from e
 
 
 @app.post("/api/analyze")
@@ -691,17 +878,322 @@ def compare(paths: str):
 
 @app.get("/api/runs")
 def runs_list():
-    """Analyses completed in this server session (real runs only)."""
-    out = []
-    for (wp, mp, pk), payload in _run_cache.items():
-        out.append({
-            "run_id": payload.get("run", {}).get("run_id"),
-            "weather": Path(wp).name,
-            "model": Path(mp).name if mp else None,
-            "pack_id": pk,
-            "overall": payload.get("result", {}).get("overall"),
-        })
-    return {"runs": out}
+    """Every analysis: this session plus the persistent on-disk archive."""
+    return {"runs": _archive_records()}
+
+
+@app.get("/api/runs/{run_id}")
+def run_detail(run_id: str):
+    """Full payload of one archived run (criteria, series, provenance)."""
+    return _load_archived_run(run_id)
+
+
+@app.delete("/api/runs/{run_id}")
+def run_delete(run_id: str):
+    """Delete a local archived run (file + session cache entry)."""
+    safe_id = re.sub(r"[^A-Za-z0-9._-]", "_", run_id)
+    p = RUNS_DIR / f"{safe_id}.json"
+    removed = False
+    if p.is_file():
+        p.unlink()
+        removed = True
+    with _cache_lock:
+        for key, payload in list(_run_cache.items()):
+            if (payload.get("run", {}) or {}).get("run_id") == run_id:
+                del _run_cache[key]
+                removed = True
+    if not removed:
+        raise HTTPException(404, f"Run not found: {run_id}")
+    return {"deleted": run_id}
+
+
+@app.post("/api/batch")
+def batch_run(body: dict):
+    """Controlled batch: one building × many weather files, one weather × many
+    buildings, or a full matrix. Sequential execution (bounded E+ load); each
+    entry reuses the cached pipeline so repeats are free. Body:
+    {"runs": [{"weather_path, "model_path"?, "pack_id"?}], "pack_id"?}."""
+    req = body.get("runs") if isinstance(body, dict) else None
+    if not isinstance(req, list) or not req:
+        raise HTTPException(400, "Body needs a non-empty 'runs' list.")
+    if len(req) > MAX_BATCH_RUNS:
+        raise HTTPException(400, f"Batch capped at {MAX_BATCH_RUNS} runs — split it.")
+    default_pack = body.get("pack_id", "uk_tm59_2017") if isinstance(body, dict) else "uk_tm59_2017"
+    results: list[dict] = []
+    for entry in req:
+        if not isinstance(entry, dict) or "weather_path" not in entry:
+            results.append({"error": "each entry needs 'weather_path'", "entry": entry})
+            continue
+        pack_id = entry.get("pack_id") or default_pack
+        try:
+            p = _safe_epw(entry["weather_path"])
+            m = _safe_idf(entry["model_path"]) if entry.get("model_path") else None
+            payload = _run_analysis(p, pack_id, m)
+            results.append({
+                "run_id": (payload.get("run", {}) or {}).get("run_id"),
+                "weather": Path(entry["weather_path"]).name,
+                "model": Path(entry["model_path"]).name if entry.get("model_path") else None,
+                "pack_id": pack_id,
+                "overall": (payload.get("result", {}) or {}).get("overall"),
+                "cached": payload.get("cached", False),
+            })
+        except HTTPException as e:
+            detail = e.detail
+            results.append({
+                "weather": Path(str(entry.get("weather_path"))).name,
+                "model": entry.get("model_path"),
+                "pack_id": pack_id,
+                "error": detail if isinstance(detail, str) else "run failed",
+            })
+        except Exception as e:  # noqa: BLE001
+            results.append({"weather": entry.get("weather_path"), "error": str(e)})
+    return {"runs": results, "count": len(results)}
+
+
+@app.get("/api/models/detail")
+def model_detail(path: str = Query(...)):
+    """Full model dossier: passport, readiness, provenance hash, object census."""
+    from overheatlens.idf import build_passport
+
+    p = _safe_idf(path)
+    idf = parse_idf(p)
+    readiness = check_idf(idf).to_dict()
+    try:
+        built = build_passport(idf)
+        passport = built.to_dict() if hasattr(built, "to_dict") else built
+    except Exception:  # noqa: BLE001 — passport is supplementary
+        passport = {}
+    sha = hashlib.sha256(p.read_bytes()).hexdigest()
+    census: dict[str, int] = {}
+    try:
+        for t in idf.types():
+            census[t] = len(idf.of_type(t))
+    except Exception:  # noqa: BLE001
+        pass
+    version = None
+    try:
+        for obj in idf.of_type("Version"):
+            version = ",".join(f.strip() for f in obj.fields if f.strip())
+    except Exception:  # noqa: BLE001
+        pass
+    return {
+        "path": str(p),
+        "name": p.stem,
+        "sha256": sha,
+        "size_kb": round(p.stat().st_size / 1024),
+        "energyplus_version": version,
+        "zone_names": idf.zone_names(),
+        "n_zones": len(idf.zone_names()),
+        "object_census": census,
+        "passport": passport,
+        "readiness": readiness,
+    }
+
+
+@app.get("/api/mitigation/catalogue")
+def mitigation_catalogue():
+    """Safer_Heat_Harehills parametric catalogue (01BA/17BG/27BG × strategies).
+
+    Real DesignBuilder TM59 exports parsed by scripts/build_mitigation_catalogue.py.
+    Honest empty state until the builder has been run against the research folder.
+    House codes stay as machine keys in the payload; `house_names` maps each code
+    to its public typology name for display (never show case-study codes)."""
+    if not MITIGATION_SUMMARY.is_file():
+        return {"status": "not_generated",
+                "detail": "Run scripts/build_mitigation_catalogue.py against the "
+                          "Safer_Heat_Harehills research folder to generate "
+                          "data/mitigation/summary.json (kept local, never committed)."}
+    try:
+        catalogue = json.loads(MITIGATION_SUMMARY.read_text())
+    except (OSError, ValueError) as e:
+        raise HTTPException(500, f"Cannot read mitigation catalogue: {e}") from e
+    prefix_to_name = {}
+    for stem, meta in RESEARCH_META.items():
+        code = stem.split("_")[0]
+        if code and meta.get("name"):
+            prefix_to_name[code] = meta["name"]
+    house_names = {code: prefix_to_name.get(code, code)
+                   for code in (catalogue.get("houses") or {})}
+    return {"status": "ready", "house_names": house_names, "catalogue": catalogue}
+
+
+VALIDATION_RESULTS = REPO_ROOT / "validation" / "results.json"
+VARIANT_IDF_DIR = REPO_ROOT / "data" / "archetypes" / "idf" / "variants"
+VARIANTS = {"S2_restricted": "S2 — restricted window opening",
+            "S3_nightpurge": "S3 — night-purge ventilation"}
+
+
+@app.get("/api/validation/campaign")
+def validation_campaign():
+    """Independent scientific validation campaign (validation/run_campaign.py).
+
+    Returns the latest machine-written results; INCOMPLETE when the campaign
+    has not been run on this machine yet."""
+    if not VALIDATION_RESULTS.is_file():
+        return {"status": "not_run",
+                "detail": "Run ./.venv/bin/python validation/run_campaign.py to "
+                          "produce validation/results.json (see validation/METHOD.md)."}
+    try:
+        raw = json.loads(VALIDATION_RESULTS.read_text())
+    except (OSError, ValueError) as e:
+        raise HTTPException(500, f"Cannot read validation results: {e}") from e
+    return {"status": "ready", "results": raw,
+            "method": "validation/METHOD.md"}
+
+
+ENERGY_METERS = {"Electricity:Facility": "electricity_kwh",
+                 "NATURALGAS:Facility": "gas_kwh",
+                 "DistrictHeatingWater:Facility": "district_heating_kwh",
+                 "DistrictCooling:Facility": "district_cooling_kwh"}
+
+
+def _energy_row(payload: dict) -> dict:
+    """Facility energy breakdown + total for one analysed run (kWh/yr)."""
+    energy = payload.get("energy") or {}
+    row = {field: (energy.get(meter) or {}).get("annual_kwh")
+           for meter, field in ENERGY_METERS.items()}
+    known = [v for v in row.values() if v is not None]
+    row["total_kwh"] = round(sum(known), 1) if known else None
+    row["energy_reported"] = bool(known)
+    return row
+
+
+def _variant_is_stub(variant_path: Path) -> bool:
+    """True when the stored variant IDF defines its scenario schedule but no
+    model object references it (schedule named exactly once — its definition).
+    Such exports carry no active variant physics: identical results to the
+    baseline are the correct outcome, and energy savings must not be claimed."""
+    try:
+        text = variant_path.read_text(errors="replace").lower()
+    except OSError:
+        return True
+    sched = "s2_restrictedvent" if "_s2_" in variant_path.name.lower() \
+        else "s3_nightpurgevent"
+    return text.count(sched) <= 1
+
+
+@app.post("/api/mitigation/energy_experiment")
+def mitigation_energy_experiment(model_id: str = Query(...),
+                                 weather_path: str = Query(...)):
+    """Real paired EnergyPlus experiment: baseline vs the author's stored
+    strategy variants (S2/S3) on the chosen weather, reporting annual facility
+    energy and TM59 verdicts from the SAME validated pipeline.
+
+    Only the author's own research models are allowed. Every row is an actual
+    simulation; variants without stored IDFs are listed as unavailable —
+    nothing is extrapolated."""
+    if model_id not in RESEARCH_META:
+        raise HTTPException(400, f"Unknown research model: {model_id}")
+    p = _safe_epw(weather_path)
+    base_idf = RESEARCH_IDF_DIR / f"{model_id}.idf"
+    if not base_idf.is_file():
+        raise HTTPException(404, f"Base IDF missing: {model_id}")
+
+    def _row_for(payload: dict, strategy: str, stem: str) -> dict:
+        row = {"strategy": strategy, "status": "complete", "model_id": stem,
+               "run_id": (payload.get("run") or {}).get("run_id"),
+               "tm59_overall": (payload.get("result") or {}).get("overall"),
+               "standards_summary": payload.get("standards_summary") or [],
+               "comfort": payload.get("comfort") or {}}
+        row.update(_energy_row(payload))
+        return row
+
+    rows = []
+    for suffix, label in VARIANTS.items():
+        variant_path = VARIANT_IDF_DIR / f"{model_id}_{suffix}.idf"
+        if not variant_path.is_file():
+            rows.append({"strategy": label, "status": "INCOMPLETE",
+                         "total_saved_kwh": None, "total_saved_pct": None,
+                         "note": "no stored variant IDF for this model"})
+            continue
+        payload = _run_analysis(p, "uk_tm59_2017", variant_path)
+        row = _row_for(payload, label, f"{model_id}_{suffix}")
+        if _variant_is_stub(variant_path):
+            # the export defines the scenario schedule but nothing references it:
+            # identical-to-baseline results are physically correct, and no saving
+            # may be claimed from a variant with no active physics
+            row["status"] = "INCOMPLETE"
+            row["total_saved_kwh"] = None
+            row["total_saved_pct"] = None
+            row["note"] = ("stored IDF export defines the scenario schedule but no "
+                           "model object references it — the active variant physics "
+                           "lives in the DesignBuilder study, so no saving can be "
+                           "computed from this export")
+        rows.append(row)
+
+    baseline = _row_for(_run_analysis(p, "uk_tm59_2017", base_idf),
+                        "Baseline (as measured)", model_id)
+
+    for row in rows:
+        row.setdefault("total_saved_kwh", None)
+        row.setdefault("total_saved_pct", None)
+        if row.get("status") == "complete" and baseline.get("total_kwh") is not None \
+                and row.get("total_kwh") is not None:
+            saved = baseline["total_kwh"] - row["total_kwh"]
+            row["total_saved_kwh"] = round(saved, 1)
+            row["total_saved_pct"] = (round(100.0 * saved / baseline["total_kwh"], 1)
+                                      if baseline["total_kwh"] else None)
+        elif row.get("status") == "complete":
+            row["note"] = ("model carries no facility energy meters — saving "
+                           "cannot be computed (INCOMPLETE, not estimated)")
+
+    return {"status": "ready",
+            "model": {"id": model_id, "name": RESEARCH_META[model_id]["name"]},
+            "weather": {"path": str(p), "name": p.name},
+            "baseline": baseline, "strategies": rows}
+
+
+@app.get("/api/bundle")
+def reproducibility_bundle(run_id: str = Query(...)):
+    """Reproducibility ZIP for one archived run: inputs, manifest, results,
+    criteria CSV, report HTML, provenance. Everything stays local."""
+    rec = _load_archived_run(run_id)
+    payload = rec.get("payload", {})
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
+        z.writestr("manifest.json", json.dumps({
+            "run_id": run_id,
+            "exported_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            "app": "OverheatLens",
+            "core_version": CORE_VERSION,
+            "weather_path": rec.get("weather_path"),
+            "model_path": rec.get("model_path"),
+            "pack_id": rec.get("pack_id"),
+            "run_manifest": payload.get("run"),
+        }, indent=2, default=str))
+        z.writestr("results.json", json.dumps(payload.get("result"), indent=2, default=str))
+        # criteria CSV: room × criterion evidence table
+        lines = ["room,room_type,criterion,rule_ref,result,metric,threshold,units"]
+        for room in (payload.get("result", {}) or {}).get("rooms", []) or []:
+            for c in room.get("criteria", []) or []:
+                metric = c.get("metric_value")
+                cells = [str(room.get("room_id", "")), str(room.get("room_type", "")),
+                         str(c.get("criterion_id", "")), str(c.get("rule_ref", "")),
+                         str(c.get("status", "")), "" if metric is None else str(metric),
+                         str(c.get("threshold", "")), str(c.get("units", ""))]
+                lines.append(",".join('"' + x.replace('"', '""') + '"' for x in cells))
+        z.writestr("criteria.csv", "\n".join(lines))
+        try:
+            z.writestr("report.html", render_html_report(payload))
+        except Exception as e:  # noqa: BLE001 — report is supplementary
+            z.writestr("report_error.txt", f"Report render failed: {e}")
+        # input files by bytes (local-only bundle; capped at 50 MB each)
+        for label, key in (("input_model.idf", rec.get("model_path")),
+                           ("input_weather.epw", rec.get("weather_path"))):
+            try:
+                if key and Path(key).is_file() and Path(key).stat().st_size < 50_000_000:
+                    z.write(key, label)
+            except Exception:  # noqa: BLE001
+                pass
+        prov = payload.get("run", {}) or {}
+        manifest = prov.get("manifest", {}) or {}
+        z.writestr("provenance.txt",
+                   f"run_id: {run_id}\nengine: EnergyPlus {prov.get('energyplus_version')}\n"
+                   f"idf_sha256: {manifest.get('idf_sha256')}\nepw_sha256: {manifest.get('epw_sha256')}\n"
+                   f"rule_pack: {rec.get('pack_id')}\n")
+    buf.seek(0)
+    return StreamingResponse(buf, media_type="application/zip",
+                             headers={"Content-Disposition": f'attachment; filename="{run_id}.zip"'})
 
 
 # --- static web (built by the launcher; absent in dev) -------------------------

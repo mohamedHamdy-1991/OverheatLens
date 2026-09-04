@@ -6,11 +6,12 @@ from .runner import (
     RunResult,
     find_energyplus,
     harvest_hourly,
+    harvest_meters,
     parse_err,
     run_energyplus,
 )
 
 __all__ = [
     "EnergyPlusError", "ErrSummary", "RunResult", "find_energyplus",
-    "harvest_hourly", "parse_err", "run_energyplus",
+    "harvest_hourly", "harvest_meters", "parse_err", "run_energyplus",
 ]

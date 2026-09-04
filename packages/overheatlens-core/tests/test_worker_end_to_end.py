@@ -1,7 +1,8 @@
 """EnergyPlus worker + end-to-end pipeline tests (Phase 6).
 
 Skipped automatically when no official EnergyPlus binary is installed locally.
-Backs VALIDATION_MATRIX rows VAL-XSIM-01..03 (first real end-to-end evidence).
+Backs VALIDATION_MATRIX rows VAL-XSIM-01..03 (first real end-to-end evidence)
+and VAL-XSIM-05 (harvest never merges zones or stacks reporting frequencies).
 """
 
 from __future__ import annotations
@@ -66,7 +67,9 @@ def test_run_rejects_missing_inputs(tmp_path):
 
 def test_harvest_produces_8760_operative_hours(run):
     zones = harvest_hourly(run.csv_path)
-    assert set(zones) == {"living room", "bedroom 1"}
+    # keys preserve the model's true zone identity as EnergyPlus reports it
+    # (E+ 25.1 uppercases keys; VAL-XSIM-05 forbids lowercasing/merging)
+    assert set(zones) == {"LIVING ROOM", "BEDROOM 1"}
     for name, series in zones.items():
         assert len(series["top"]) == 8760
         top = np.asarray(series["top"])

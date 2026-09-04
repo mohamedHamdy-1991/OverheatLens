@@ -36,7 +36,7 @@ export interface ModelInfo {
   n_zones: number | null;
   zone_names: string[];
   floor_area_m2: number | null;
-  source: "template" | "upload";
+  source: "research" | "template" | "upload";
 }
 
 export interface ModelUploadResult {
@@ -83,6 +83,104 @@ export interface RunEntry {
   model: string | null;
   pack_id: string;
   overall: string | null;
+  created_utc?: string | null;
+  source?: string;
+}
+
+export interface BatchEntry {
+  weather_path: string;
+  model_path?: string;
+  pack_id?: string;
+}
+
+export interface BatchResultItem {
+  run_id?: string;
+  weather?: string;
+  model?: string | null;
+  pack_id?: string;
+  overall?: string | null;
+  cached?: boolean;
+  error?: string;
+  entry?: unknown;
+}
+
+export interface ModelDetail {
+  path: string;
+  name: string;
+  sha256: string;
+  size_kb: number;
+  energyplus_version: string | null;
+  zone_names: string[];
+  n_zones: number;
+  object_census: Record<string, number>;
+  passport: Record<string, unknown>;
+  readiness: ModelUploadResult["readiness"];
+}
+
+export interface MitigationCatalogue {
+  status: string;
+  detail?: string;
+  /** house code → public typology name (display only; codes stay as keys) */
+  house_names?: Record<string, string>;
+  catalogue?: {
+    houses?: Record<string, {
+      baseline?: Record<string, unknown> | null;
+      strategies?: Record<string, Record<string, unknown>>;
+    }>;
+  } & Record<string, unknown>;
+}
+
+export interface ValidationCampaignCase {
+  id: string;
+  title: string;
+  layer: string;
+  verdict: string;
+  detail: Record<string, unknown>;
+  reference: string;
+}
+
+export interface ValidationCampaign {
+  status: string;
+  detail?: string;
+  method?: string;
+  results?: {
+    campaign_verdict: string;
+    started_utc: string;
+    finished_utc: string;
+    summary: { cases: number; fail: number; incomplete: number; pass_or_confirmed: number };
+    cases: ValidationCampaignCase[];
+  };
+}
+
+export interface EnergyExperimentRow {
+  strategy: string;
+  status: string;
+  model_id?: string;
+  run_id?: string;
+  tm59_overall?: string | null;
+  standards_summary?: { pack_id: string; overall: string; pack_version?: string; chosen?: boolean }[];
+  comfort?: {
+    assumptions?: Record<string, unknown> | null;
+    zones?: { zone: string; adaptive_acceptable_pct?: number | null; mean_ppd?: number | null; reason?: string | null }[];
+    note?: string;
+  };
+  electricity_kwh?: number | null;
+  gas_kwh?: number | null;
+  district_heating_kwh?: number | null;
+  district_cooling_kwh?: number | null;
+  total_kwh?: number | null;
+  total_saved_kwh?: number | null;
+  total_saved_pct?: number | null;
+  energy_reported?: boolean;
+  note?: string;
+}
+
+export interface EnergyExperiment {
+  status: string;
+  model: { id: string; name: string };
+  weather: { path: string; name: string };
+  baseline: EnergyExperimentRow;
+  strategies: EnergyExperimentRow[];
 }
 
 export interface WeatherSeries {
@@ -149,6 +247,8 @@ export interface AnalyzeResult {
     dwelling_category: string;
     rooms: RoomResult[];
   };
+  standards_summary?: { pack_id: string; overall: string; pack_version?: string; chosen?: boolean }[];
+  energy?: Record<string, { annual_kwh?: number | null; monthly_kwh?: number[] }>;
   series: Record<string, number[]>;
   rh: Record<string, number[] | null>;
   daily_mean_outdoor: number[];
@@ -273,6 +373,29 @@ export const api = {
     }),
   validation: () => get<{ rows: ValidationRow[] }>("/api/validation").then((d) => d.rows),
   runs: () => get<{ runs: RunEntry[] }>("/api/runs").then((d) => d.runs),
+  runDetail: (runId: string) =>
+    get<{ run_id: string; payload: AnalyzeResult; source: string }>(
+      `/api/runs/${encodeURIComponent(runId)}`),
+  runDelete: (runId: string) =>
+    fetch(`/api/runs/${encodeURIComponent(runId)}`, { method: "DELETE" }).then(async (r) => {
+      if (!r.ok) throw new Error(`delete failed (${r.status})`);
+      return r.json();
+    }),
+  batch: (runs: BatchEntry[], pack_id?: string) =>
+    post<{ runs: BatchResultItem[]; count: number }>("/api/batch", {
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ runs, pack_id }),
+    }),
+  modelDetail: (path: string) =>
+    get<ModelDetail>(`/api/models/detail?path=${encodeURIComponent(path)}`),
+  mitigation: () => get<MitigationCatalogue>("/api/mitigation/catalogue"),
+  validationCampaign: () => get<ValidationCampaign>("/api/validation/campaign"),
+  energyExperiment: (modelId: string, weatherPath: string) =>
+    post<EnergyExperiment>(
+      `/api/mitigation/energy_experiment?model_id=${encodeURIComponent(modelId)}` +
+      `&weather_path=${encodeURIComponent(weatherPath)}`,
+    ),
+  bundleUrl: (runId: string) => `/api/bundle?run_id=${encodeURIComponent(runId)}`,
   comfortPmv: (q: { tdb: number; tr: number; vr: number; rh: number; met: number; clo: number }) =>
     get<ComfortPayload>(`/api/comfort/pmv?${new URLSearchParams(Object.entries(q).map(([k, v]) => [k, String(v)]))}`),
   comfortAdaptive: (q: { tdb: number; tr: number; trm: number; v: number }) =>

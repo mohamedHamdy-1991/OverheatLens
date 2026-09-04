@@ -1,0 +1,2447 @@
+[
+  {
+    "file": "00CS_detached.idf",
+    "sha256": "6c37da10ab02e861759e9c70ac5e74c712a1bbd58ec52a153cecb74750cba9c9",
+    "parse": "OK",
+    "n_zones": 2,
+    "zone_names": [
+      "S1",
+      "S2"
+    ],
+    "readiness": {
+      "path": "/Users/mohamedali/Library/CloudStorage/OneDrive-LeedsBeckettUniversity/Work/GITHUB REPO/OverheatLens/data/archetypes/idf/00CS_detached.idf",
+      "sha256": "6c37da10ab02e861759e9c70ac5e74c712a1bbd58ec52a153cecb74750cba9c9",
+      "status": "FAIL",
+      "rows": [
+        {
+          "check_id": "IDF-VER-01",
+          "title": "EnergyPlus version object",
+          "severity": "error",
+          "detected": "missing",
+          "required": "a Version object matching the pinned engine",
+          "why_it_matters": "The engine must know which IDD the input targets; a missing version object risks silent misinterpretation of fields.",
+          "how_to_fix": "Add e.g. 'Version, 25.1;'",
+          "source": "EnergyPlus IDD / plan \u00a711.1",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-TSP-01",
+          "title": "Simulation timestep",
+          "severity": "ok",
+          "detected": "6/hour",
+          "required": ">= 6/h recommended for overheating assessment",
+          "why_it_matters": "Coarse timesteps can miss peak temperatures and distort exceedance hour counts.",
+          "how_to_fix": "Increase to 6+/hour if computationally feasible.",
+          "source": "TM59 methodology practice (plan \u00a711.1)",
+          "source_object": "6"
+        },
+        {
+          "check_id": "IDF-RUN-01",
+          "title": "Run period",
+          "severity": "ok",
+          "detected": "1/1 to /12",
+          "required": "full-year weather-file run",
+          "why_it_matters": "Criteria are assessed over the year/summer.",
+          "how_to_fix": "\u2014",
+          "source": "TM59:2017 \u00a74 / TM59:2026 \u00a72.4",
+          "source_object": "Annual"
+        },
+        {
+          "check_id": "IDF-ZON-01",
+          "title": "Zones",
+          "severity": "ok",
+          "detected": "2 zones: S1, S2",
+          "required": ">= 1 zone per habitable room",
+          "why_it_matters": "Every assessed space must be a zone.",
+          "how_to_fix": "\u2014",
+          "source": "plan \u00a711.1",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-ZON-03",
+          "title": "Bedroom detection",
+          "severity": "warning",
+          "detected": "no zone classified as bedroom",
+          "required": "at least one bedroom for TM59 criteria (b)/(2026 b)",
+          "why_it_matters": "The sleep-related criteria cannot be assessed without a bedroom.",
+          "how_to_fix": "Check zone naming.",
+          "source": "TM59:2017 \u00a74.2(b)",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-OCC-01",
+          "title": "Occupancy",
+          "severity": "ok",
+          "detected": "2 People objects",
+          "required": "People objects in every assessed zone",
+          "why_it_matters": "\u2014",
+          "how_to_fix": "\u2014",
+          "source": "TM59:2017 \u00a75 / TM59:2026 \u00a75",
+          "source_object": "S1_P"
+        },
+        {
+          "check_id": "IDF-SCH-01",
+          "title": "Schedule references",
+          "severity": "ok",
+          "detected": "1 reference(s) resolved",
+          "required": "every referenced schedule exists",
+          "why_it_matters": "\u2014",
+          "how_to_fix": "\u2014",
+          "source": "plan \u00a711.1",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-INF-01",
+          "title": "Infiltration",
+          "severity": "ok",
+          "detected": "2 object(s)",
+          "required": "infiltration per zone",
+          "why_it_matters": "\u2014",
+          "how_to_fix": "\u2014",
+          "source": "TM59:2017 \u00a73",
+          "source_object": "S1_I"
+        },
+        {
+          "check_id": "IDF-WIN-01",
+          "title": "Operable window openings",
+          "severity": "warning",
+          "detected": "none found",
+          "required": "opening objects for the natural-ventilation route",
+          "why_it_matters": "Without operable openings the home is effectively the mechanical route (fixed-temperature criteria apply).",
+          "how_to_fix": "Add AirflowNetwork or ZoneVentilation objects, or assess via the mechanical route.",
+          "source": "TM59:2017 \u00a74.1/\u00a74.3",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-OUT-01",
+          "title": "Output:Variable 'zone mean radiant temperature'",
+          "severity": "warning",
+          "detected": "missing",
+          "required": "hourly output for the harvest",
+          "why_it_matters": "Required: MRT for operative-temperature derivation. OverheatLens derives operative temperature as 0.5*(MAT+MRT) (low air speed), labelled as a derived metric.",
+          "how_to_fix": "Add 'Output:Variable, *, Zone Mean Air Temperature, hourly;' (and MRT).",
+          "source": "RULE 6 provenance; CIBSE operative-temperature practice",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-OUT-02",
+          "title": "Output variables",
+          "severity": "ok",
+          "detected": "3 object(s)",
+          "required": "hourly MAT + MRT at minimum",
+          "why_it_matters": "\u2014",
+          "how_to_fix": "\u2014",
+          "source": "plan \u00a712.4",
+          "source_object": "*"
+        }
+      ]
+    },
+    "energyplus": {
+      "status": "complete",
+      "fatal": [],
+      "severe": [],
+      "warnings": 0
+    },
+    "harvested_zones": [
+      "S1",
+      "S2"
+    ],
+    "rh_zones": [],
+    "tm59_2017_overall": "PASS",
+    "tm59_2017_rooms": 2
+  },
+  {
+    "file": "01BA_end_terrace.idf",
+    "sha256": "bd38a7c64cd1e7f0e4838dfa2ba7ea75885304e5c874c978e7771aee7636e895",
+    "parse": "OK",
+    "n_zones": 12,
+    "zone_names": [
+      "00BAYWINDOWROOF:VOID",
+      "00GROUNDFLOOR:CHIMNEY",
+      "00GROUNDFLOOR:LOUNGE",
+      "00GROUNDFLOOR:STAIRS",
+      "00GROUNDFLOOR:CUPBOARD",
+      "00GROUNDFLOOR:KITCHEN",
+      "01FIRSTFLOOR:BEDROOM1",
+      "01FIRSTFLOOR:LANDING",
+      "01FIRSTFLOOR:BATHROOM",
+      "01FIRSTFLOOR:BEDROOM2",
+      "01FIRSTFLOOR:CHIMNEY",
+      "02ROOF:LOFT"
+    ],
+    "readiness": {
+      "path": "/Users/mohamedali/Library/CloudStorage/OneDrive-LeedsBeckettUniversity/Work/GITHUB REPO/OverheatLens/data/archetypes/idf/01BA_end_terrace.idf",
+      "sha256": "bd38a7c64cd1e7f0e4838dfa2ba7ea75885304e5c874c978e7771aee7636e895",
+      "status": "PASS_WITH_WARNINGS",
+      "rows": [
+        {
+          "check_id": "IDF-VER-01",
+          "title": "EnergyPlus version object",
+          "severity": "warning",
+          "detected": "23.1.0.002",
+          "required": "compatible with the pinned engine (25.1.0)",
+          "why_it_matters": "A version mismatch may require transitioning the file before use.",
+          "how_to_fix": "Run the EnergyPlus Preprocessor 'IDFVersionUpdater' if needed.",
+          "source": "EnergyPlus transition tools",
+          "source_object": "23.1.0.002"
+        },
+        {
+          "check_id": "IDF-TSP-01",
+          "title": "Simulation timestep",
+          "severity": "ok",
+          "detected": "6/hour",
+          "required": ">= 6/h recommended for overheating assessment",
+          "why_it_matters": "Coarse timesteps can miss peak temperatures and distort exceedance hour counts.",
+          "how_to_fix": "Increase to 6+/hour if computationally feasible.",
+          "source": "TM59 methodology practice (plan \u00a711.1)",
+          "source_object": "6"
+        },
+        {
+          "check_id": "IDF-RUN-01",
+          "title": "Run period",
+          "severity": "ok",
+          "detected": "1/1 to 2020/12",
+          "required": "full-year weather-file run",
+          "why_it_matters": "Criteria are assessed over the year/summer.",
+          "how_to_fix": "\u2014",
+          "source": "TM59:2017 \u00a74 / TM59:2026 \u00a72.4",
+          "source_object": "Untitled (01-01:31-12)"
+        },
+        {
+          "check_id": "IDF-ZON-01",
+          "title": "Zones",
+          "severity": "ok",
+          "detected": "12 zones: 00BAYWINDOWROOF:VOID, 00GROUNDFLOOR:CHIMNEY, 00GROUNDFLOOR:LOUNGE, 00GROUNDFLOOR:STAIRS, 00GROUNDFLOOR:CUPBOARD, 00GROUNDFLOOR:KITCHEN\u2026",
+          "required": ">= 1 zone per habitable room",
+          "why_it_matters": "Every assessed space must be a zone.",
+          "how_to_fix": "\u2014",
+          "source": "plan \u00a711.1",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-OCC-01",
+          "title": "Occupancy",
+          "severity": "ok",
+          "detected": "4 People objects",
+          "required": "People objects in every assessed zone",
+          "why_it_matters": "\u2014",
+          "how_to_fix": "\u2014",
+          "source": "TM59:2017 \u00a75 / TM59:2026 \u00a75",
+          "source_object": "People 00GROUNDFLOOR:LOUNGE"
+        },
+        {
+          "check_id": "IDF-SCH-01",
+          "title": "Schedule references",
+          "severity": "ok",
+          "detected": "5 reference(s) resolved",
+          "required": "every referenced schedule exists",
+          "why_it_matters": "\u2014",
+          "how_to_fix": "\u2014",
+          "source": "plan \u00a711.1",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-INF-01",
+          "title": "Infiltration",
+          "severity": "warning",
+          "detected": "no infiltration objects",
+          "required": "infiltration per zone (TM59 default 0.3\u20130.5 ach as applicable)",
+          "why_it_matters": "Infiltration materially affects night cooling and exceedance hours.",
+          "how_to_fix": "Add ZoneInfiltration:* objects per the methodology defaults.",
+          "source": "TM59:2017 \u00a73 / ADO \u00a72.6 modelling limits",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-WIN-01",
+          "title": "Operable window openings",
+          "severity": "ok",
+          "detected": "111 opening object(s)",
+          "required": "opening objects enabling the required window-control strategy",
+          "why_it_matters": "Overheating criteria assume occupant window control.",
+          "how_to_fix": "\u2014",
+          "source": "TM59:2017 \u00a73.3 / ADO \u00a72.6",
+          "source_object": "DefaultCrack"
+        },
+        {
+          "check_id": "IDF-WIN-02",
+          "title": "Window-control strategy conformance",
+          "severity": "info",
+          "detected": "window control found \u2014 verify against the applicable rule",
+          "required": "TM59:2017 \u00a73.3: open when internal dry bulb > 22 \u00b0C and room occupied",
+          "why_it_matters": "The criteria assume specific opening behaviour; non-conforming control invalidates the assessment.",
+          "how_to_fix": "Configure AFN/ZoneVentilation control accordingly.",
+          "source": "ADO \u00a72.6 (S-01, machine-verified) / TM59:2017 \u00a73.3 (S-02)",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-CLG-01",
+          "title": "Mechanical cooling",
+          "severity": "info",
+          "detected": "8 object(s)",
+          "required": "n/a \u2014 detection only",
+          "why_it_matters": "Cooling changes the applicable criteria (TM59:2026 criterion c; TM59:2017 \u00a74.3 fixed method).",
+          "how_to_fix": "Select the mechanical route for assessment.",
+          "source": "TM59:2017 \u00a74.3",
+          "source_object": "00GROUNDFLOOR:LOUNGE Ideal Loads Air"
+        },
+        {
+          "check_id": "IDF-OUT-02",
+          "title": "Output variables",
+          "severity": "ok",
+          "detected": "190 object(s)",
+          "required": "hourly MAT + MRT at minimum",
+          "why_it_matters": "\u2014",
+          "how_to_fix": "\u2014",
+          "source": "plan \u00a712.4",
+          "source_object": "*"
+        }
+      ]
+    },
+    "energyplus": {
+      "status": "complete",
+      "fatal": [],
+      "severe": [],
+      "warnings": 0
+    },
+    "harvested_zones": [
+      "00BAYWINDOWROOF:VOID",
+      "00GROUNDFLOOR:CHIMNEY",
+      "00GROUNDFLOOR:CUPBOARD",
+      "00GROUNDFLOOR:KITCHEN",
+      "00GROUNDFLOOR:LOUNGE",
+      "00GROUNDFLOOR:STAIRS",
+      "01FIRSTFLOOR:BATHROOM",
+      "01FIRSTFLOOR:BEDROOM1",
+      "01FIRSTFLOOR:BEDROOM2",
+      "01FIRSTFLOOR:CHIMNEY",
+      "01FIRSTFLOOR:LANDING",
+      "02ROOF:LOFT"
+    ],
+    "rh_zones": [
+      "00BAYWINDOWROOF:VOID",
+      "00GROUNDFLOOR:CHIMNEY",
+      "00GROUNDFLOOR:CUPBOARD",
+      "00GROUNDFLOOR:KITCHEN",
+      "00GROUNDFLOOR:LOUNGE",
+      "00GROUNDFLOOR:STAIRS",
+      "01FIRSTFLOOR:BATHROOM",
+      "01FIRSTFLOOR:BEDROOM1",
+      "01FIRSTFLOOR:BEDROOM2",
+      "01FIRSTFLOOR:CHIMNEY",
+      "01FIRSTFLOOR:LANDING",
+      "02ROOF:LOFT"
+    ],
+    "tm59_2017_overall": "FAIL",
+    "tm59_2017_rooms": 12
+  },
+  {
+    "file": "04KG_semi_detached_nofines.idf",
+    "sha256": "0479bc4b1e7c7ea09c33250e0fa2430d92e46359ca2ac19f6fc005a0b86bce02",
+    "parse": "OK",
+    "n_zones": 2,
+    "zone_names": [
+      "S1",
+      "S2"
+    ],
+    "readiness": {
+      "path": "/Users/mohamedali/Library/CloudStorage/OneDrive-LeedsBeckettUniversity/Work/GITHUB REPO/OverheatLens/data/archetypes/idf/04KG_semi_detached_nofines.idf",
+      "sha256": "0479bc4b1e7c7ea09c33250e0fa2430d92e46359ca2ac19f6fc005a0b86bce02",
+      "status": "FAIL",
+      "rows": [
+        {
+          "check_id": "IDF-VER-01",
+          "title": "EnergyPlus version object",
+          "severity": "error",
+          "detected": "missing",
+          "required": "a Version object matching the pinned engine",
+          "why_it_matters": "The engine must know which IDD the input targets; a missing version object risks silent misinterpretation of fields.",
+          "how_to_fix": "Add e.g. 'Version, 25.1;'",
+          "source": "EnergyPlus IDD / plan \u00a711.1",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-TSP-01",
+          "title": "Simulation timestep",
+          "severity": "ok",
+          "detected": "6/hour",
+          "required": ">= 6/h recommended for overheating assessment",
+          "why_it_matters": "Coarse timesteps can miss peak temperatures and distort exceedance hour counts.",
+          "how_to_fix": "Increase to 6+/hour if computationally feasible.",
+          "source": "TM59 methodology practice (plan \u00a711.1)",
+          "source_object": "6"
+        },
+        {
+          "check_id": "IDF-RUN-01",
+          "title": "Run period",
+          "severity": "ok",
+          "detected": "1/1 to /12",
+          "required": "full-year weather-file run",
+          "why_it_matters": "Criteria are assessed over the year/summer.",
+          "how_to_fix": "\u2014",
+          "source": "TM59:2017 \u00a74 / TM59:2026 \u00a72.4",
+          "source_object": "Annual"
+        },
+        {
+          "check_id": "IDF-ZON-01",
+          "title": "Zones",
+          "severity": "ok",
+          "detected": "2 zones: S1, S2",
+          "required": ">= 1 zone per habitable room",
+          "why_it_matters": "Every assessed space must be a zone.",
+          "how_to_fix": "\u2014",
+          "source": "plan \u00a711.1",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-ZON-03",
+          "title": "Bedroom detection",
+          "severity": "warning",
+          "detected": "no zone classified as bedroom",
+          "required": "at least one bedroom for TM59 criteria (b)/(2026 b)",
+          "why_it_matters": "The sleep-related criteria cannot be assessed without a bedroom.",
+          "how_to_fix": "Check zone naming.",
+          "source": "TM59:2017 \u00a74.2(b)",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-OCC-01",
+          "title": "Occupancy",
+          "severity": "ok",
+          "detected": "2 People objects",
+          "required": "People objects in every assessed zone",
+          "why_it_matters": "\u2014",
+          "how_to_fix": "\u2014",
+          "source": "TM59:2017 \u00a75 / TM59:2026 \u00a75",
+          "source_object": "S1_P"
+        },
+        {
+          "check_id": "IDF-SCH-01",
+          "title": "Schedule references",
+          "severity": "ok",
+          "detected": "1 reference(s) resolved",
+          "required": "every referenced schedule exists",
+          "why_it_matters": "\u2014",
+          "how_to_fix": "\u2014",
+          "source": "plan \u00a711.1",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-INF-01",
+          "title": "Infiltration",
+          "severity": "ok",
+          "detected": "2 object(s)",
+          "required": "infiltration per zone",
+          "why_it_matters": "\u2014",
+          "how_to_fix": "\u2014",
+          "source": "TM59:2017 \u00a73",
+          "source_object": "S1_I"
+        },
+        {
+          "check_id": "IDF-WIN-01",
+          "title": "Operable window openings",
+          "severity": "warning",
+          "detected": "none found",
+          "required": "opening objects for the natural-ventilation route",
+          "why_it_matters": "Without operable openings the home is effectively the mechanical route (fixed-temperature criteria apply).",
+          "how_to_fix": "Add AirflowNetwork or ZoneVentilation objects, or assess via the mechanical route.",
+          "source": "TM59:2017 \u00a74.1/\u00a74.3",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-OUT-01",
+          "title": "Output:Variable 'zone mean radiant temperature'",
+          "severity": "warning",
+          "detected": "missing",
+          "required": "hourly output for the harvest",
+          "why_it_matters": "Required: MRT for operative-temperature derivation. OverheatLens derives operative temperature as 0.5*(MAT+MRT) (low air speed), labelled as a derived metric.",
+          "how_to_fix": "Add 'Output:Variable, *, Zone Mean Air Temperature, hourly;' (and MRT).",
+          "source": "RULE 6 provenance; CIBSE operative-temperature practice",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-OUT-02",
+          "title": "Output variables",
+          "severity": "ok",
+          "detected": "3 object(s)",
+          "required": "hourly MAT + MRT at minimum",
+          "why_it_matters": "\u2014",
+          "how_to_fix": "\u2014",
+          "source": "plan \u00a712.4",
+          "source_object": "*"
+        }
+      ]
+    },
+    "energyplus": {
+      "status": "complete",
+      "fatal": [],
+      "severe": [],
+      "warnings": 0
+    },
+    "harvested_zones": [
+      "S1",
+      "S2"
+    ],
+    "rh_zones": [],
+    "tm59_2017_overall": "PASS",
+    "tm59_2017_rooms": 2
+  },
+  {
+    "file": "17BG_back_to_back_end.idf",
+    "sha256": "6eb2a6aa3418813d2c0459e56d540f66f9c99b7a346eb1c371ab6fe7ce036d69",
+    "parse": "OK",
+    "n_zones": 14,
+    "zone_names": [
+      "00GROUNDFLOOR:LOUNGE",
+      "00GROUNDFLOOR:KITCHEN",
+      "00GROUNDFLOOR:STAIRSUP",
+      "00GROUNDFLOOR:STAIRSDOWN",
+      "00GROUNDFLOOR:CHIMNEY",
+      "01FIRSTFLOOR:BEDROOM1",
+      "01FIRSTFLOOR:BATHROOM",
+      "01FIRSTFLOOR:STAIRSDOWN",
+      "01FIRSTFLOOR:STAIRSUP",
+      "01FIRSTFLOOR:CHIMNEY",
+      "03ROOF:VOID",
+      "02SECONDFLOOR:VOID",
+      "02SECONDFLOOR1:BEDROOM2",
+      "02SECONDFLOOR1:CHIMNEY"
+    ],
+    "readiness": {
+      "path": "/Users/mohamedali/Library/CloudStorage/OneDrive-LeedsBeckettUniversity/Work/GITHUB REPO/OverheatLens/data/archetypes/idf/17BG_back_to_back_end.idf",
+      "sha256": "6eb2a6aa3418813d2c0459e56d540f66f9c99b7a346eb1c371ab6fe7ce036d69",
+      "status": "PASS_WITH_WARNINGS",
+      "rows": [
+        {
+          "check_id": "IDF-VER-01",
+          "title": "EnergyPlus version object",
+          "severity": "warning",
+          "detected": "23.1.0.002",
+          "required": "compatible with the pinned engine (25.1.0)",
+          "why_it_matters": "A version mismatch may require transitioning the file before use.",
+          "how_to_fix": "Run the EnergyPlus Preprocessor 'IDFVersionUpdater' if needed.",
+          "source": "EnergyPlus transition tools",
+          "source_object": "23.1.0.002"
+        },
+        {
+          "check_id": "IDF-TSP-01",
+          "title": "Simulation timestep",
+          "severity": "ok",
+          "detected": "6/hour",
+          "required": ">= 6/h recommended for overheating assessment",
+          "why_it_matters": "Coarse timesteps can miss peak temperatures and distort exceedance hour counts.",
+          "how_to_fix": "Increase to 6+/hour if computationally feasible.",
+          "source": "TM59 methodology practice (plan \u00a711.1)",
+          "source_object": "6"
+        },
+        {
+          "check_id": "IDF-RUN-01",
+          "title": "Run period",
+          "severity": "ok",
+          "detected": "1/1 to 2020/12",
+          "required": "full-year weather-file run",
+          "why_it_matters": "Criteria are assessed over the year/summer.",
+          "how_to_fix": "\u2014",
+          "source": "TM59:2017 \u00a74 / TM59:2026 \u00a72.4",
+          "source_object": "17BG (01-01:31-12)"
+        },
+        {
+          "check_id": "IDF-ZON-01",
+          "title": "Zones",
+          "severity": "ok",
+          "detected": "14 zones: 00GROUNDFLOOR:LOUNGE, 00GROUNDFLOOR:KITCHEN, 00GROUNDFLOOR:STAIRSUP, 00GROUNDFLOOR:STAIRSDOWN, 00GROUNDFLOOR:CHIMNEY, 01FIRSTFLOOR:BEDROOM1\u2026",
+          "required": ">= 1 zone per habitable room",
+          "why_it_matters": "Every assessed space must be a zone.",
+          "how_to_fix": "\u2014",
+          "source": "plan \u00a711.1",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-OCC-01",
+          "title": "Occupancy",
+          "severity": "ok",
+          "detected": "4 People objects",
+          "required": "People objects in every assessed zone",
+          "why_it_matters": "\u2014",
+          "how_to_fix": "\u2014",
+          "source": "TM59:2017 \u00a75 / TM59:2026 \u00a75",
+          "source_object": "People 00GROUNDFLOOR:LOUNGE"
+        },
+        {
+          "check_id": "IDF-SCH-01",
+          "title": "Schedule references",
+          "severity": "ok",
+          "detected": "5 reference(s) resolved",
+          "required": "every referenced schedule exists",
+          "why_it_matters": "\u2014",
+          "how_to_fix": "\u2014",
+          "source": "plan \u00a711.1",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-INF-01",
+          "title": "Infiltration",
+          "severity": "warning",
+          "detected": "no infiltration objects",
+          "required": "infiltration per zone (TM59 default 0.3\u20130.5 ach as applicable)",
+          "why_it_matters": "Infiltration materially affects night cooling and exceedance hours.",
+          "how_to_fix": "Add ZoneInfiltration:* objects per the methodology defaults.",
+          "source": "TM59:2017 \u00a73 / ADO \u00a72.6 modelling limits",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-WIN-01",
+          "title": "Operable window openings",
+          "severity": "ok",
+          "detected": "106 opening object(s)",
+          "required": "opening objects enabling the required window-control strategy",
+          "why_it_matters": "Overheating criteria assume occupant window control.",
+          "how_to_fix": "\u2014",
+          "source": "TM59:2017 \u00a73.3 / ADO \u00a72.6",
+          "source_object": "DefaultCrack"
+        },
+        {
+          "check_id": "IDF-WIN-02",
+          "title": "Window-control strategy conformance",
+          "severity": "info",
+          "detected": "window control found \u2014 verify against the applicable rule",
+          "required": "TM59:2017 \u00a73.3: open when internal dry bulb > 22 \u00b0C and room occupied",
+          "why_it_matters": "The criteria assume specific opening behaviour; non-conforming control invalidates the assessment.",
+          "how_to_fix": "Configure AFN/ZoneVentilation control accordingly.",
+          "source": "ADO \u00a72.6 (S-01, machine-verified) / TM59:2017 \u00a73.3 (S-02)",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-CLG-01",
+          "title": "Mechanical cooling",
+          "severity": "info",
+          "detected": "9 object(s)",
+          "required": "n/a \u2014 detection only",
+          "why_it_matters": "Cooling changes the applicable criteria (TM59:2026 criterion c; TM59:2017 \u00a74.3 fixed method).",
+          "how_to_fix": "Select the mechanical route for assessment.",
+          "source": "TM59:2017 \u00a74.3",
+          "source_object": "00GROUNDFLOOR:LOUNGE Ideal Loads Air"
+        },
+        {
+          "check_id": "IDF-OUT-02",
+          "title": "Output variables",
+          "severity": "ok",
+          "detected": "106 object(s)",
+          "required": "hourly MAT + MRT at minimum",
+          "why_it_matters": "\u2014",
+          "how_to_fix": "\u2014",
+          "source": "plan \u00a712.4",
+          "source_object": "*"
+        }
+      ]
+    },
+    "energyplus": {
+      "status": "complete",
+      "fatal": [],
+      "severe": [],
+      "warnings": 0
+    },
+    "harvested_zones": [
+      "00GROUNDFLOOR:CHIMNEY",
+      "00GROUNDFLOOR:KITCHEN",
+      "00GROUNDFLOOR:LOUNGE",
+      "00GROUNDFLOOR:STAIRSDOWN",
+      "00GROUNDFLOOR:STAIRSUP",
+      "01FIRSTFLOOR:BATHROOM",
+      "01FIRSTFLOOR:BEDROOM1",
+      "01FIRSTFLOOR:CHIMNEY",
+      "01FIRSTFLOOR:STAIRSDOWN",
+      "01FIRSTFLOOR:STAIRSUP",
+      "02SECONDFLOOR1:BEDROOM2",
+      "02SECONDFLOOR1:CHIMNEY",
+      "02SECONDFLOOR:VOID",
+      "03ROOF:VOID"
+    ],
+    "rh_zones": [
+      "00GROUNDFLOOR:CHIMNEY",
+      "00GROUNDFLOOR:KITCHEN",
+      "00GROUNDFLOOR:LOUNGE",
+      "00GROUNDFLOOR:STAIRSDOWN",
+      "00GROUNDFLOOR:STAIRSUP",
+      "01FIRSTFLOOR:BATHROOM",
+      "01FIRSTFLOOR:BEDROOM1",
+      "01FIRSTFLOOR:CHIMNEY",
+      "01FIRSTFLOOR:STAIRSDOWN",
+      "01FIRSTFLOOR:STAIRSUP",
+      "02SECONDFLOOR1:BEDROOM2",
+      "02SECONDFLOOR1:CHIMNEY",
+      "02SECONDFLOOR:VOID",
+      "03ROOF:VOID"
+    ],
+    "tm59_2017_overall": "FAIL",
+    "tm59_2017_rooms": 14
+  },
+  {
+    "file": "19BA_mid_terrace.idf",
+    "sha256": "180a282d187f96173d81f98c88698eb692bde3b1c182de4f0048428d51cd6cf7",
+    "parse": "OK",
+    "n_zones": 3,
+    "zone_names": [
+      "S1",
+      "S2",
+      "S3"
+    ],
+    "readiness": {
+      "path": "/Users/mohamedali/Library/CloudStorage/OneDrive-LeedsBeckettUniversity/Work/GITHUB REPO/OverheatLens/data/archetypes/idf/19BA_mid_terrace.idf",
+      "sha256": "180a282d187f96173d81f98c88698eb692bde3b1c182de4f0048428d51cd6cf7",
+      "status": "FAIL",
+      "rows": [
+        {
+          "check_id": "IDF-VER-01",
+          "title": "EnergyPlus version object",
+          "severity": "error",
+          "detected": "missing",
+          "required": "a Version object matching the pinned engine",
+          "why_it_matters": "The engine must know which IDD the input targets; a missing version object risks silent misinterpretation of fields.",
+          "how_to_fix": "Add e.g. 'Version, 25.1;'",
+          "source": "EnergyPlus IDD / plan \u00a711.1",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-TSP-01",
+          "title": "Simulation timestep",
+          "severity": "ok",
+          "detected": "6/hour",
+          "required": ">= 6/h recommended for overheating assessment",
+          "why_it_matters": "Coarse timesteps can miss peak temperatures and distort exceedance hour counts.",
+          "how_to_fix": "Increase to 6+/hour if computationally feasible.",
+          "source": "TM59 methodology practice (plan \u00a711.1)",
+          "source_object": "6"
+        },
+        {
+          "check_id": "IDF-RUN-01",
+          "title": "Run period",
+          "severity": "ok",
+          "detected": "1/1 to /12",
+          "required": "full-year weather-file run",
+          "why_it_matters": "Criteria are assessed over the year/summer.",
+          "how_to_fix": "\u2014",
+          "source": "TM59:2017 \u00a74 / TM59:2026 \u00a72.4",
+          "source_object": "Annual"
+        },
+        {
+          "check_id": "IDF-ZON-01",
+          "title": "Zones",
+          "severity": "ok",
+          "detected": "3 zones: S1, S2, S3",
+          "required": ">= 1 zone per habitable room",
+          "why_it_matters": "Every assessed space must be a zone.",
+          "how_to_fix": "\u2014",
+          "source": "plan \u00a711.1",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-ZON-03",
+          "title": "Bedroom detection",
+          "severity": "warning",
+          "detected": "no zone classified as bedroom",
+          "required": "at least one bedroom for TM59 criteria (b)/(2026 b)",
+          "why_it_matters": "The sleep-related criteria cannot be assessed without a bedroom.",
+          "how_to_fix": "Check zone naming.",
+          "source": "TM59:2017 \u00a74.2(b)",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-OCC-01",
+          "title": "Occupancy",
+          "severity": "ok",
+          "detected": "3 People objects",
+          "required": "People objects in every assessed zone",
+          "why_it_matters": "\u2014",
+          "how_to_fix": "\u2014",
+          "source": "TM59:2017 \u00a75 / TM59:2026 \u00a75",
+          "source_object": "S1_P"
+        },
+        {
+          "check_id": "IDF-SCH-01",
+          "title": "Schedule references",
+          "severity": "ok",
+          "detected": "1 reference(s) resolved",
+          "required": "every referenced schedule exists",
+          "why_it_matters": "\u2014",
+          "how_to_fix": "\u2014",
+          "source": "plan \u00a711.1",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-INF-01",
+          "title": "Infiltration",
+          "severity": "ok",
+          "detected": "3 object(s)",
+          "required": "infiltration per zone",
+          "why_it_matters": "\u2014",
+          "how_to_fix": "\u2014",
+          "source": "TM59:2017 \u00a73",
+          "source_object": "S1_I"
+        },
+        {
+          "check_id": "IDF-WIN-01",
+          "title": "Operable window openings",
+          "severity": "warning",
+          "detected": "none found",
+          "required": "opening objects for the natural-ventilation route",
+          "why_it_matters": "Without operable openings the home is effectively the mechanical route (fixed-temperature criteria apply).",
+          "how_to_fix": "Add AirflowNetwork or ZoneVentilation objects, or assess via the mechanical route.",
+          "source": "TM59:2017 \u00a74.1/\u00a74.3",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-OUT-01",
+          "title": "Output:Variable 'zone mean radiant temperature'",
+          "severity": "warning",
+          "detected": "missing",
+          "required": "hourly output for the harvest",
+          "why_it_matters": "Required: MRT for operative-temperature derivation. OverheatLens derives operative temperature as 0.5*(MAT+MRT) (low air speed), labelled as a derived metric.",
+          "how_to_fix": "Add 'Output:Variable, *, Zone Mean Air Temperature, hourly;' (and MRT).",
+          "source": "RULE 6 provenance; CIBSE operative-temperature practice",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-OUT-02",
+          "title": "Output variables",
+          "severity": "ok",
+          "detected": "3 object(s)",
+          "required": "hourly MAT + MRT at minimum",
+          "why_it_matters": "\u2014",
+          "how_to_fix": "\u2014",
+          "source": "plan \u00a712.4",
+          "source_object": "*"
+        }
+      ]
+    },
+    "energyplus": {
+      "status": "complete",
+      "fatal": [],
+      "severe": [],
+      "warnings": 0
+    },
+    "harvested_zones": [
+      "S1",
+      "S2",
+      "S3"
+    ],
+    "rh_zones": [],
+    "tm59_2017_overall": "PASS",
+    "tm59_2017_rooms": 3
+  },
+  {
+    "file": "27BG_back_to_back_mid.idf",
+    "sha256": "63113233d8ff56a560a1b08b378a94c357ed3f1dda968dd914e297ab20c453f8",
+    "parse": "OK",
+    "n_zones": 14,
+    "zone_names": [
+      "00GROUNDFLOOR:STAIRSUP",
+      "00GROUNDFLOOR:LOUNGE",
+      "00GROUNDFLOOR:KITCHEN",
+      "00GROUNDFLOOR:CHIMNEY",
+      "00GROUNDFLOOR:STAIRSDOWN",
+      "01FIRSTFLOOR:LANDING",
+      "01FIRSTFLOOR:BEDROOM1",
+      "01FIRSTFLOOR:BATHROOM",
+      "01FIRSTFLOOR:CHIMNEY",
+      "01FIRSTFLOOR:STAIRS",
+      "02SECONDFLOOR:ROOFVOID",
+      "02SECONDFLOOR:CHIMNEY",
+      "02SECONDFLOOR:BEDROOM2",
+      "ROOF:ROOFVOID"
+    ],
+    "readiness": {
+      "path": "/Users/mohamedali/Library/CloudStorage/OneDrive-LeedsBeckettUniversity/Work/GITHUB REPO/OverheatLens/data/archetypes/idf/27BG_back_to_back_mid.idf",
+      "sha256": "63113233d8ff56a560a1b08b378a94c357ed3f1dda968dd914e297ab20c453f8",
+      "status": "PASS_WITH_WARNINGS",
+      "rows": [
+        {
+          "check_id": "IDF-VER-01",
+          "title": "EnergyPlus version object",
+          "severity": "warning",
+          "detected": "23.1.0.002",
+          "required": "compatible with the pinned engine (25.1.0)",
+          "why_it_matters": "A version mismatch may require transitioning the file before use.",
+          "how_to_fix": "Run the EnergyPlus Preprocessor 'IDFVersionUpdater' if needed.",
+          "source": "EnergyPlus transition tools",
+          "source_object": "23.1.0.002"
+        },
+        {
+          "check_id": "IDF-TSP-01",
+          "title": "Simulation timestep",
+          "severity": "ok",
+          "detected": "6/hour",
+          "required": ">= 6/h recommended for overheating assessment",
+          "why_it_matters": "Coarse timesteps can miss peak temperatures and distort exceedance hour counts.",
+          "how_to_fix": "Increase to 6+/hour if computationally feasible.",
+          "source": "TM59 methodology practice (plan \u00a711.1)",
+          "source_object": "6"
+        },
+        {
+          "check_id": "IDF-RUN-01",
+          "title": "Run period",
+          "severity": "ok",
+          "detected": "1/1 to 2020/12",
+          "required": "full-year weather-file run",
+          "why_it_matters": "Criteria are assessed over the year/summer.",
+          "how_to_fix": "\u2014",
+          "source": "TM59:2017 \u00a74 / TM59:2026 \u00a72.4",
+          "source_object": "27BG (01-01:31-12)"
+        },
+        {
+          "check_id": "IDF-ZON-01",
+          "title": "Zones",
+          "severity": "ok",
+          "detected": "14 zones: 00GROUNDFLOOR:STAIRSUP, 00GROUNDFLOOR:LOUNGE, 00GROUNDFLOOR:KITCHEN, 00GROUNDFLOOR:CHIMNEY, 00GROUNDFLOOR:STAIRSDOWN, 01FIRSTFLOOR:LANDING\u2026",
+          "required": ">= 1 zone per habitable room",
+          "why_it_matters": "Every assessed space must be a zone.",
+          "how_to_fix": "\u2014",
+          "source": "plan \u00a711.1",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-OCC-01",
+          "title": "Occupancy",
+          "severity": "ok",
+          "detected": "4 People objects",
+          "required": "People objects in every assessed zone",
+          "why_it_matters": "\u2014",
+          "how_to_fix": "\u2014",
+          "source": "TM59:2017 \u00a75 / TM59:2026 \u00a75",
+          "source_object": "People 00GROUNDFLOOR:LOUNGE"
+        },
+        {
+          "check_id": "IDF-SCH-01",
+          "title": "Schedule references",
+          "severity": "ok",
+          "detected": "5 reference(s) resolved",
+          "required": "every referenced schedule exists",
+          "why_it_matters": "\u2014",
+          "how_to_fix": "\u2014",
+          "source": "plan \u00a711.1",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-INF-01",
+          "title": "Infiltration",
+          "severity": "warning",
+          "detected": "no infiltration objects",
+          "required": "infiltration per zone (TM59 default 0.3\u20130.5 ach as applicable)",
+          "why_it_matters": "Infiltration materially affects night cooling and exceedance hours.",
+          "how_to_fix": "Add ZoneInfiltration:* objects per the methodology defaults.",
+          "source": "TM59:2017 \u00a73 / ADO \u00a72.6 modelling limits",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-WIN-01",
+          "title": "Operable window openings",
+          "severity": "ok",
+          "detected": "103 opening object(s)",
+          "required": "opening objects enabling the required window-control strategy",
+          "why_it_matters": "Overheating criteria assume occupant window control.",
+          "how_to_fix": "\u2014",
+          "source": "TM59:2017 \u00a73.3 / ADO \u00a72.6",
+          "source_object": "DefaultCrack"
+        },
+        {
+          "check_id": "IDF-WIN-02",
+          "title": "Window-control strategy conformance",
+          "severity": "info",
+          "detected": "window control found \u2014 verify against the applicable rule",
+          "required": "TM59:2017 \u00a73.3: open when internal dry bulb > 22 \u00b0C and room occupied",
+          "why_it_matters": "The criteria assume specific opening behaviour; non-conforming control invalidates the assessment.",
+          "how_to_fix": "Configure AFN/ZoneVentilation control accordingly.",
+          "source": "ADO \u00a72.6 (S-01, machine-verified) / TM59:2017 \u00a73.3 (S-02)",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-CLG-01",
+          "title": "Mechanical cooling",
+          "severity": "info",
+          "detected": "9 object(s)",
+          "required": "n/a \u2014 detection only",
+          "why_it_matters": "Cooling changes the applicable criteria (TM59:2026 criterion c; TM59:2017 \u00a74.3 fixed method).",
+          "how_to_fix": "Select the mechanical route for assessment.",
+          "source": "TM59:2017 \u00a74.3",
+          "source_object": "00GROUNDFLOOR:STAIRSUP Ideal Loads Air"
+        },
+        {
+          "check_id": "IDF-OUT-02",
+          "title": "Output variables",
+          "severity": "ok",
+          "detected": "271 object(s)",
+          "required": "hourly MAT + MRT at minimum",
+          "why_it_matters": "\u2014",
+          "how_to_fix": "\u2014",
+          "source": "plan \u00a712.4",
+          "source_object": "00GROUNDFLOOR:LOUNGE_Linear Bridge"
+        }
+      ]
+    },
+    "energyplus": {
+      "status": "complete",
+      "fatal": [],
+      "severe": [],
+      "warnings": 0
+    },
+    "harvested_zones": [
+      "00GROUNDFLOOR:CHIMNEY",
+      "00GROUNDFLOOR:KITCHEN",
+      "00GROUNDFLOOR:LOUNGE",
+      "00GROUNDFLOOR:STAIRSDOWN",
+      "00GROUNDFLOOR:STAIRSUP",
+      "01FIRSTFLOOR:BATHROOM",
+      "01FIRSTFLOOR:BEDROOM1",
+      "01FIRSTFLOOR:CHIMNEY",
+      "01FIRSTFLOOR:LANDING",
+      "01FIRSTFLOOR:STAIRS",
+      "02SECONDFLOOR:BEDROOM2",
+      "02SECONDFLOOR:CHIMNEY",
+      "02SECONDFLOOR:ROOFVOID",
+      "ROOF:ROOFVOID"
+    ],
+    "rh_zones": [
+      "00GROUNDFLOOR:CHIMNEY",
+      "00GROUNDFLOOR:KITCHEN",
+      "00GROUNDFLOOR:LOUNGE",
+      "00GROUNDFLOOR:STAIRSDOWN",
+      "00GROUNDFLOOR:STAIRSUP",
+      "01FIRSTFLOOR:BATHROOM",
+      "01FIRSTFLOOR:BEDROOM1",
+      "01FIRSTFLOOR:CHIMNEY",
+      "01FIRSTFLOOR:LANDING",
+      "01FIRSTFLOOR:STAIRS",
+      "02SECONDFLOOR:BEDROOM2",
+      "02SECONDFLOOR:CHIMNEY",
+      "02SECONDFLOOR:ROOFVOID",
+      "ROOF:ROOFVOID"
+    ],
+    "tm59_2017_overall": "FAIL",
+    "tm59_2017_rooms": 14
+  },
+  {
+    "file": "52NP_mid_terrace_EWI.idf",
+    "sha256": "8a894c421166e0430777907185aa019c79218ecc1a41c8987cf1f366bac31d10",
+    "parse": "OK",
+    "n_zones": 23,
+    "zone_names": [
+      "00GROUNDFLOOR:HALL",
+      "00GROUNDFLOOR:STAIRSUP",
+      "00GROUNDFLOOR:STAIRSDOWN",
+      "00GROUNDFLOOR:LOUNGE",
+      "00GROUNDFLOOR:CHIMNEYFRONT",
+      "00GROUNDFLOOR:KITCHEN",
+      "00GROUNDFLOOR:CHIMNEYREAR",
+      "01FIRSTFLOOR:STAIRSUP",
+      "01FIRSTFLOOR:LANDING",
+      "01FIRSTFLOOR:BEDROOM2",
+      "01FIRSTFLOOR:BATHROOM",
+      "01FIRSTFLOOR:BEDROOM1",
+      "01FIRSTFLOOR:CHIMNEYFRONT",
+      "01FIRSTFLOOR:CHIMNEYREAR",
+      "02SECONDFLOOR:REARLOFT",
+      "02SECONDFLOOR:CHIMNEYFRONT",
+      "02SECONDFLOOR:FRONTVOIDLEFT",
+      "02SECONDFLOOR:BEDROOM3",
+      "02SECONDFLOOR:FRONTVOIDRIGHT",
+      "02SECONDFLOOR:CHIMNEYREAR",
+      "02SECONDFLOOR:STAIRS",
+      "02SECONDFLOOR:BEDROOM4",
+      "03ROOF:LOFT"
+    ],
+    "readiness": {
+      "path": "/Users/mohamedali/Library/CloudStorage/OneDrive-LeedsBeckettUniversity/Work/GITHUB REPO/OverheatLens/data/archetypes/idf/52NP_mid_terrace_EWI.idf",
+      "sha256": "8a894c421166e0430777907185aa019c79218ecc1a41c8987cf1f366bac31d10",
+      "status": "PASS_WITH_WARNINGS",
+      "rows": [
+        {
+          "check_id": "IDF-VER-01",
+          "title": "EnergyPlus version object",
+          "severity": "warning",
+          "detected": "23.1.0.002",
+          "required": "compatible with the pinned engine (25.1.0)",
+          "why_it_matters": "A version mismatch may require transitioning the file before use.",
+          "how_to_fix": "Run the EnergyPlus Preprocessor 'IDFVersionUpdater' if needed.",
+          "source": "EnergyPlus transition tools",
+          "source_object": "23.1.0.002"
+        },
+        {
+          "check_id": "IDF-TSP-01",
+          "title": "Simulation timestep",
+          "severity": "ok",
+          "detected": "6/hour",
+          "required": ">= 6/h recommended for overheating assessment",
+          "why_it_matters": "Coarse timesteps can miss peak temperatures and distort exceedance hour counts.",
+          "how_to_fix": "Increase to 6+/hour if computationally feasible.",
+          "source": "TM59 methodology practice (plan \u00a711.1)",
+          "source_object": "6"
+        },
+        {
+          "check_id": "IDF-RUN-01",
+          "title": "Run period",
+          "severity": "ok",
+          "detected": "1/1 to 2020/12",
+          "required": "full-year weather-file run",
+          "why_it_matters": "Criteria are assessed over the year/summer.",
+          "how_to_fix": "\u2014",
+          "source": "TM59:2017 \u00a74 / TM59:2026 \u00a72.4",
+          "source_object": "Untitled (01-01:31-12)"
+        },
+        {
+          "check_id": "IDF-ZON-01",
+          "title": "Zones",
+          "severity": "ok",
+          "detected": "23 zones: 00GROUNDFLOOR:HALL, 00GROUNDFLOOR:STAIRSUP, 00GROUNDFLOOR:STAIRSDOWN, 00GROUNDFLOOR:LOUNGE, 00GROUNDFLOOR:CHIMNEYFRONT, 00GROUNDFLOOR:KITCHEN\u2026",
+          "required": ">= 1 zone per habitable room",
+          "why_it_matters": "Every assessed space must be a zone.",
+          "how_to_fix": "\u2014",
+          "source": "plan \u00a711.1",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-OCC-01",
+          "title": "Occupancy",
+          "severity": "ok",
+          "detected": "6 People objects",
+          "required": "People objects in every assessed zone",
+          "why_it_matters": "\u2014",
+          "how_to_fix": "\u2014",
+          "source": "TM59:2017 \u00a75 / TM59:2026 \u00a75",
+          "source_object": "People 00GROUNDFLOOR:LOUNGE"
+        },
+        {
+          "check_id": "IDF-SCH-01",
+          "title": "Schedule references",
+          "severity": "ok",
+          "detected": "5 reference(s) resolved",
+          "required": "every referenced schedule exists",
+          "why_it_matters": "\u2014",
+          "how_to_fix": "\u2014",
+          "source": "plan \u00a711.1",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-INF-01",
+          "title": "Infiltration",
+          "severity": "warning",
+          "detected": "no infiltration objects",
+          "required": "infiltration per zone (TM59 default 0.3\u20130.5 ach as applicable)",
+          "why_it_matters": "Infiltration materially affects night cooling and exceedance hours.",
+          "how_to_fix": "Add ZoneInfiltration:* objects per the methodology defaults.",
+          "source": "TM59:2017 \u00a73 / ADO \u00a72.6 modelling limits",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-WIN-01",
+          "title": "Operable window openings",
+          "severity": "ok",
+          "detected": "193 opening object(s)",
+          "required": "opening objects enabling the required window-control strategy",
+          "why_it_matters": "Overheating criteria assume occupant window control.",
+          "how_to_fix": "\u2014",
+          "source": "TM59:2017 \u00a73.3 / ADO \u00a72.6",
+          "source_object": "DefaultCrack"
+        },
+        {
+          "check_id": "IDF-WIN-02",
+          "title": "Window-control strategy conformance",
+          "severity": "info",
+          "detected": "window control found \u2014 verify against the applicable rule",
+          "required": "TM59:2017 \u00a73.3: open when internal dry bulb > 22 \u00b0C and room occupied",
+          "why_it_matters": "The criteria assume specific opening behaviour; non-conforming control invalidates the assessment.",
+          "how_to_fix": "Configure AFN/ZoneVentilation control accordingly.",
+          "source": "ADO \u00a72.6 (S-01, machine-verified) / TM59:2017 \u00a73.3 (S-02)",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-CLG-01",
+          "title": "Mechanical cooling",
+          "severity": "info",
+          "detected": "13 object(s)",
+          "required": "n/a \u2014 detection only",
+          "why_it_matters": "Cooling changes the applicable criteria (TM59:2026 criterion c; TM59:2017 \u00a74.3 fixed method).",
+          "how_to_fix": "Select the mechanical route for assessment.",
+          "source": "TM59:2017 \u00a74.3",
+          "source_object": "00GROUNDFLOOR:HALL Ideal Loads Air"
+        },
+        {
+          "check_id": "IDF-OUT-02",
+          "title": "Output variables",
+          "severity": "ok",
+          "detected": "252 object(s)",
+          "required": "hourly MAT + MRT at minimum",
+          "why_it_matters": "\u2014",
+          "how_to_fix": "\u2014",
+          "source": "plan \u00a712.4",
+          "source_object": "*"
+        }
+      ]
+    },
+    "energyplus": {
+      "status": "complete",
+      "fatal": [],
+      "severe": [],
+      "warnings": 0
+    },
+    "harvested_zones": [
+      "00GROUNDFLOOR:CHIMNEYFRONT",
+      "00GROUNDFLOOR:CHIMNEYREAR",
+      "00GROUNDFLOOR:HALL",
+      "00GROUNDFLOOR:KITCHEN",
+      "00GROUNDFLOOR:LOUNGE",
+      "00GROUNDFLOOR:STAIRSDOWN",
+      "00GROUNDFLOOR:STAIRSUP",
+      "01FIRSTFLOOR:BATHROOM",
+      "01FIRSTFLOOR:BEDROOM1",
+      "01FIRSTFLOOR:BEDROOM2",
+      "01FIRSTFLOOR:CHIMNEYFRONT",
+      "01FIRSTFLOOR:CHIMNEYREAR",
+      "01FIRSTFLOOR:LANDING",
+      "01FIRSTFLOOR:STAIRSUP",
+      "02SECONDFLOOR:BEDROOM3",
+      "02SECONDFLOOR:BEDROOM4",
+      "02SECONDFLOOR:CHIMNEYFRONT",
+      "02SECONDFLOOR:CHIMNEYREAR",
+      "02SECONDFLOOR:FRONTVOIDLEFT",
+      "02SECONDFLOOR:FRONTVOIDRIGHT",
+      "02SECONDFLOOR:REARLOFT",
+      "02SECONDFLOOR:STAIRS",
+      "03ROOF:LOFT"
+    ],
+    "rh_zones": [
+      "00GROUNDFLOOR:CHIMNEYFRONT",
+      "00GROUNDFLOOR:CHIMNEYREAR",
+      "00GROUNDFLOOR:HALL",
+      "00GROUNDFLOOR:KITCHEN",
+      "00GROUNDFLOOR:LOUNGE",
+      "00GROUNDFLOOR:STAIRSDOWN",
+      "00GROUNDFLOOR:STAIRSUP",
+      "01FIRSTFLOOR:BATHROOM",
+      "01FIRSTFLOOR:BEDROOM1",
+      "01FIRSTFLOOR:BEDROOM2",
+      "01FIRSTFLOOR:CHIMNEYFRONT",
+      "01FIRSTFLOOR:CHIMNEYREAR",
+      "01FIRSTFLOOR:LANDING",
+      "01FIRSTFLOOR:STAIRSUP",
+      "02SECONDFLOOR:BEDROOM3",
+      "02SECONDFLOOR:BEDROOM4",
+      "02SECONDFLOOR:CHIMNEYFRONT",
+      "02SECONDFLOOR:CHIMNEYREAR",
+      "02SECONDFLOOR:FRONTVOIDLEFT",
+      "02SECONDFLOOR:FRONTVOIDRIGHT",
+      "02SECONDFLOOR:REARLOFT",
+      "02SECONDFLOOR:STAIRS",
+      "03ROOF:LOFT"
+    ],
+    "tm59_2017_overall": "FAIL",
+    "tm59_2017_rooms": 23
+  },
+  {
+    "file": "55AD_semi_detached.idf",
+    "sha256": "0a354d8418a478fd8072bee5037cd9751c59d2ad14a2326108a7482fa5713416",
+    "parse": "OK",
+    "n_zones": 2,
+    "zone_names": [
+      "S1",
+      "S2"
+    ],
+    "readiness": {
+      "path": "/Users/mohamedali/Library/CloudStorage/OneDrive-LeedsBeckettUniversity/Work/GITHUB REPO/OverheatLens/data/archetypes/idf/55AD_semi_detached.idf",
+      "sha256": "0a354d8418a478fd8072bee5037cd9751c59d2ad14a2326108a7482fa5713416",
+      "status": "FAIL",
+      "rows": [
+        {
+          "check_id": "IDF-VER-01",
+          "title": "EnergyPlus version object",
+          "severity": "error",
+          "detected": "missing",
+          "required": "a Version object matching the pinned engine",
+          "why_it_matters": "The engine must know which IDD the input targets; a missing version object risks silent misinterpretation of fields.",
+          "how_to_fix": "Add e.g. 'Version, 25.1;'",
+          "source": "EnergyPlus IDD / plan \u00a711.1",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-TSP-01",
+          "title": "Simulation timestep",
+          "severity": "ok",
+          "detected": "6/hour",
+          "required": ">= 6/h recommended for overheating assessment",
+          "why_it_matters": "Coarse timesteps can miss peak temperatures and distort exceedance hour counts.",
+          "how_to_fix": "Increase to 6+/hour if computationally feasible.",
+          "source": "TM59 methodology practice (plan \u00a711.1)",
+          "source_object": "6"
+        },
+        {
+          "check_id": "IDF-RUN-01",
+          "title": "Run period",
+          "severity": "ok",
+          "detected": "1/1 to /12",
+          "required": "full-year weather-file run",
+          "why_it_matters": "Criteria are assessed over the year/summer.",
+          "how_to_fix": "\u2014",
+          "source": "TM59:2017 \u00a74 / TM59:2026 \u00a72.4",
+          "source_object": "Annual"
+        },
+        {
+          "check_id": "IDF-ZON-01",
+          "title": "Zones",
+          "severity": "ok",
+          "detected": "2 zones: S1, S2",
+          "required": ">= 1 zone per habitable room",
+          "why_it_matters": "Every assessed space must be a zone.",
+          "how_to_fix": "\u2014",
+          "source": "plan \u00a711.1",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-ZON-03",
+          "title": "Bedroom detection",
+          "severity": "warning",
+          "detected": "no zone classified as bedroom",
+          "required": "at least one bedroom for TM59 criteria (b)/(2026 b)",
+          "why_it_matters": "The sleep-related criteria cannot be assessed without a bedroom.",
+          "how_to_fix": "Check zone naming.",
+          "source": "TM59:2017 \u00a74.2(b)",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-OCC-01",
+          "title": "Occupancy",
+          "severity": "ok",
+          "detected": "2 People objects",
+          "required": "People objects in every assessed zone",
+          "why_it_matters": "\u2014",
+          "how_to_fix": "\u2014",
+          "source": "TM59:2017 \u00a75 / TM59:2026 \u00a75",
+          "source_object": "S1_P"
+        },
+        {
+          "check_id": "IDF-SCH-01",
+          "title": "Schedule references",
+          "severity": "ok",
+          "detected": "1 reference(s) resolved",
+          "required": "every referenced schedule exists",
+          "why_it_matters": "\u2014",
+          "how_to_fix": "\u2014",
+          "source": "plan \u00a711.1",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-INF-01",
+          "title": "Infiltration",
+          "severity": "ok",
+          "detected": "2 object(s)",
+          "required": "infiltration per zone",
+          "why_it_matters": "\u2014",
+          "how_to_fix": "\u2014",
+          "source": "TM59:2017 \u00a73",
+          "source_object": "S1_I"
+        },
+        {
+          "check_id": "IDF-WIN-01",
+          "title": "Operable window openings",
+          "severity": "warning",
+          "detected": "none found",
+          "required": "opening objects for the natural-ventilation route",
+          "why_it_matters": "Without operable openings the home is effectively the mechanical route (fixed-temperature criteria apply).",
+          "how_to_fix": "Add AirflowNetwork or ZoneVentilation objects, or assess via the mechanical route.",
+          "source": "TM59:2017 \u00a74.1/\u00a74.3",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-OUT-01",
+          "title": "Output:Variable 'zone mean radiant temperature'",
+          "severity": "warning",
+          "detected": "missing",
+          "required": "hourly output for the harvest",
+          "why_it_matters": "Required: MRT for operative-temperature derivation. OverheatLens derives operative temperature as 0.5*(MAT+MRT) (low air speed), labelled as a derived metric.",
+          "how_to_fix": "Add 'Output:Variable, *, Zone Mean Air Temperature, hourly;' (and MRT).",
+          "source": "RULE 6 provenance; CIBSE operative-temperature practice",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-OUT-02",
+          "title": "Output variables",
+          "severity": "ok",
+          "detected": "3 object(s)",
+          "required": "hourly MAT + MRT at minimum",
+          "why_it_matters": "\u2014",
+          "how_to_fix": "\u2014",
+          "source": "plan \u00a712.4",
+          "source_object": "*"
+        }
+      ]
+    },
+    "energyplus": {
+      "status": "complete",
+      "fatal": [],
+      "severe": [],
+      "warnings": 0
+    },
+    "harvested_zones": [
+      "S1",
+      "S2"
+    ],
+    "rh_zones": [],
+    "tm59_2017_overall": "PASS",
+    "tm59_2017_rooms": 2
+  },
+  {
+    "file": "56TR_end_terrace.idf",
+    "sha256": "2d03d470cb1e1e3eeaf70fd57ebde1d08db52fcefa2bc50e20b62cacf197e3a9",
+    "parse": "OK",
+    "n_zones": 2,
+    "zone_names": [
+      "S1",
+      "S2"
+    ],
+    "readiness": {
+      "path": "/Users/mohamedali/Library/CloudStorage/OneDrive-LeedsBeckettUniversity/Work/GITHUB REPO/OverheatLens/data/archetypes/idf/56TR_end_terrace.idf",
+      "sha256": "2d03d470cb1e1e3eeaf70fd57ebde1d08db52fcefa2bc50e20b62cacf197e3a9",
+      "status": "FAIL",
+      "rows": [
+        {
+          "check_id": "IDF-VER-01",
+          "title": "EnergyPlus version object",
+          "severity": "error",
+          "detected": "missing",
+          "required": "a Version object matching the pinned engine",
+          "why_it_matters": "The engine must know which IDD the input targets; a missing version object risks silent misinterpretation of fields.",
+          "how_to_fix": "Add e.g. 'Version, 25.1;'",
+          "source": "EnergyPlus IDD / plan \u00a711.1",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-TSP-01",
+          "title": "Simulation timestep",
+          "severity": "ok",
+          "detected": "6/hour",
+          "required": ">= 6/h recommended for overheating assessment",
+          "why_it_matters": "Coarse timesteps can miss peak temperatures and distort exceedance hour counts.",
+          "how_to_fix": "Increase to 6+/hour if computationally feasible.",
+          "source": "TM59 methodology practice (plan \u00a711.1)",
+          "source_object": "6"
+        },
+        {
+          "check_id": "IDF-RUN-01",
+          "title": "Run period",
+          "severity": "ok",
+          "detected": "1/1 to /12",
+          "required": "full-year weather-file run",
+          "why_it_matters": "Criteria are assessed over the year/summer.",
+          "how_to_fix": "\u2014",
+          "source": "TM59:2017 \u00a74 / TM59:2026 \u00a72.4",
+          "source_object": "Annual"
+        },
+        {
+          "check_id": "IDF-ZON-01",
+          "title": "Zones",
+          "severity": "ok",
+          "detected": "2 zones: S1, S2",
+          "required": ">= 1 zone per habitable room",
+          "why_it_matters": "Every assessed space must be a zone.",
+          "how_to_fix": "\u2014",
+          "source": "plan \u00a711.1",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-ZON-03",
+          "title": "Bedroom detection",
+          "severity": "warning",
+          "detected": "no zone classified as bedroom",
+          "required": "at least one bedroom for TM59 criteria (b)/(2026 b)",
+          "why_it_matters": "The sleep-related criteria cannot be assessed without a bedroom.",
+          "how_to_fix": "Check zone naming.",
+          "source": "TM59:2017 \u00a74.2(b)",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-OCC-01",
+          "title": "Occupancy",
+          "severity": "ok",
+          "detected": "2 People objects",
+          "required": "People objects in every assessed zone",
+          "why_it_matters": "\u2014",
+          "how_to_fix": "\u2014",
+          "source": "TM59:2017 \u00a75 / TM59:2026 \u00a75",
+          "source_object": "S1_P"
+        },
+        {
+          "check_id": "IDF-SCH-01",
+          "title": "Schedule references",
+          "severity": "ok",
+          "detected": "1 reference(s) resolved",
+          "required": "every referenced schedule exists",
+          "why_it_matters": "\u2014",
+          "how_to_fix": "\u2014",
+          "source": "plan \u00a711.1",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-INF-01",
+          "title": "Infiltration",
+          "severity": "ok",
+          "detected": "2 object(s)",
+          "required": "infiltration per zone",
+          "why_it_matters": "\u2014",
+          "how_to_fix": "\u2014",
+          "source": "TM59:2017 \u00a73",
+          "source_object": "S1_I"
+        },
+        {
+          "check_id": "IDF-WIN-01",
+          "title": "Operable window openings",
+          "severity": "warning",
+          "detected": "none found",
+          "required": "opening objects for the natural-ventilation route",
+          "why_it_matters": "Without operable openings the home is effectively the mechanical route (fixed-temperature criteria apply).",
+          "how_to_fix": "Add AirflowNetwork or ZoneVentilation objects, or assess via the mechanical route.",
+          "source": "TM59:2017 \u00a74.1/\u00a74.3",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-OUT-01",
+          "title": "Output:Variable 'zone mean radiant temperature'",
+          "severity": "warning",
+          "detected": "missing",
+          "required": "hourly output for the harvest",
+          "why_it_matters": "Required: MRT for operative-temperature derivation. OverheatLens derives operative temperature as 0.5*(MAT+MRT) (low air speed), labelled as a derived metric.",
+          "how_to_fix": "Add 'Output:Variable, *, Zone Mean Air Temperature, hourly;' (and MRT).",
+          "source": "RULE 6 provenance; CIBSE operative-temperature practice",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-OUT-02",
+          "title": "Output variables",
+          "severity": "ok",
+          "detected": "3 object(s)",
+          "required": "hourly MAT + MRT at minimum",
+          "why_it_matters": "\u2014",
+          "how_to_fix": "\u2014",
+          "source": "plan \u00a712.4",
+          "source_object": "*"
+        }
+      ]
+    },
+    "energyplus": {
+      "status": "complete",
+      "fatal": [],
+      "severe": [],
+      "warnings": 0
+    },
+    "harvested_zones": [
+      "S1",
+      "S2"
+    ],
+    "rh_zones": [],
+    "tm59_2017_overall": "PASS",
+    "tm59_2017_rooms": 2
+  },
+  {
+    "file": "Bungalow_55AD_derived.idf",
+    "sha256": "263394f4df7f4ad663d3429abd833a5678f79c7ec398fc79edb1a346261aa2dc",
+    "parse": "OK",
+    "n_zones": 1,
+    "zone_names": [
+      "S1"
+    ],
+    "readiness": {
+      "path": "/Users/mohamedali/Library/CloudStorage/OneDrive-LeedsBeckettUniversity/Work/GITHUB REPO/OverheatLens/data/archetypes/idf/Bungalow_55AD_derived.idf",
+      "sha256": "263394f4df7f4ad663d3429abd833a5678f79c7ec398fc79edb1a346261aa2dc",
+      "status": "FAIL",
+      "rows": [
+        {
+          "check_id": "IDF-VER-01",
+          "title": "EnergyPlus version object",
+          "severity": "error",
+          "detected": "missing",
+          "required": "a Version object matching the pinned engine",
+          "why_it_matters": "The engine must know which IDD the input targets; a missing version object risks silent misinterpretation of fields.",
+          "how_to_fix": "Add e.g. 'Version, 25.1;'",
+          "source": "EnergyPlus IDD / plan \u00a711.1",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-TSP-01",
+          "title": "Simulation timestep",
+          "severity": "ok",
+          "detected": "6/hour",
+          "required": ">= 6/h recommended for overheating assessment",
+          "why_it_matters": "Coarse timesteps can miss peak temperatures and distort exceedance hour counts.",
+          "how_to_fix": "Increase to 6+/hour if computationally feasible.",
+          "source": "TM59 methodology practice (plan \u00a711.1)",
+          "source_object": "6"
+        },
+        {
+          "check_id": "IDF-RUN-01",
+          "title": "Run period",
+          "severity": "ok",
+          "detected": "1/1 to /12",
+          "required": "full-year weather-file run",
+          "why_it_matters": "Criteria are assessed over the year/summer.",
+          "how_to_fix": "\u2014",
+          "source": "TM59:2017 \u00a74 / TM59:2026 \u00a72.4",
+          "source_object": "Annual"
+        },
+        {
+          "check_id": "IDF-ZON-01",
+          "title": "Zones",
+          "severity": "ok",
+          "detected": "1 zones: S1",
+          "required": ">= 1 zone per habitable room",
+          "why_it_matters": "Every assessed space must be a zone.",
+          "how_to_fix": "\u2014",
+          "source": "plan \u00a711.1",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-ZON-03",
+          "title": "Bedroom detection",
+          "severity": "warning",
+          "detected": "no zone classified as bedroom",
+          "required": "at least one bedroom for TM59 criteria (b)/(2026 b)",
+          "why_it_matters": "The sleep-related criteria cannot be assessed without a bedroom.",
+          "how_to_fix": "Check zone naming.",
+          "source": "TM59:2017 \u00a74.2(b)",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-OCC-01",
+          "title": "Occupancy",
+          "severity": "ok",
+          "detected": "1 People objects",
+          "required": "People objects in every assessed zone",
+          "why_it_matters": "\u2014",
+          "how_to_fix": "\u2014",
+          "source": "TM59:2017 \u00a75 / TM59:2026 \u00a75",
+          "source_object": "S1_P"
+        },
+        {
+          "check_id": "IDF-SCH-01",
+          "title": "Schedule references",
+          "severity": "ok",
+          "detected": "1 reference(s) resolved",
+          "required": "every referenced schedule exists",
+          "why_it_matters": "\u2014",
+          "how_to_fix": "\u2014",
+          "source": "plan \u00a711.1",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-INF-01",
+          "title": "Infiltration",
+          "severity": "ok",
+          "detected": "1 object(s)",
+          "required": "infiltration per zone",
+          "why_it_matters": "\u2014",
+          "how_to_fix": "\u2014",
+          "source": "TM59:2017 \u00a73",
+          "source_object": "S1_I"
+        },
+        {
+          "check_id": "IDF-WIN-01",
+          "title": "Operable window openings",
+          "severity": "warning",
+          "detected": "none found",
+          "required": "opening objects for the natural-ventilation route",
+          "why_it_matters": "Without operable openings the home is effectively the mechanical route (fixed-temperature criteria apply).",
+          "how_to_fix": "Add AirflowNetwork or ZoneVentilation objects, or assess via the mechanical route.",
+          "source": "TM59:2017 \u00a74.1/\u00a74.3",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-OUT-01",
+          "title": "Output:Variable 'zone mean radiant temperature'",
+          "severity": "warning",
+          "detected": "missing",
+          "required": "hourly output for the harvest",
+          "why_it_matters": "Required: MRT for operative-temperature derivation. OverheatLens derives operative temperature as 0.5*(MAT+MRT) (low air speed), labelled as a derived metric.",
+          "how_to_fix": "Add 'Output:Variable, *, Zone Mean Air Temperature, hourly;' (and MRT).",
+          "source": "RULE 6 provenance; CIBSE operative-temperature practice",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-OUT-02",
+          "title": "Output variables",
+          "severity": "ok",
+          "detected": "3 object(s)",
+          "required": "hourly MAT + MRT at minimum",
+          "why_it_matters": "\u2014",
+          "how_to_fix": "\u2014",
+          "source": "plan \u00a712.4",
+          "source_object": "*"
+        }
+      ]
+    },
+    "energyplus": {
+      "status": "complete",
+      "fatal": [],
+      "severe": [],
+      "warnings": 0
+    },
+    "harvested_zones": [
+      "S1"
+    ],
+    "rh_zones": [],
+    "tm59_2017_overall": "PASS",
+    "tm59_2017_rooms": 1
+  },
+  {
+    "file": "Flat_TM59Example4.idf",
+    "sha256": "7b6ea3a1510105c8f07cbdb4a8a95076c20ed9336c10462ce74530c1736138c3",
+    "parse": "OK",
+    "n_zones": 4,
+    "zone_names": [
+      "LIVING",
+      "KITCHEN",
+      "BEDROOM1",
+      "BEDROOM2"
+    ],
+    "readiness": {
+      "path": "/Users/mohamedali/Library/CloudStorage/OneDrive-LeedsBeckettUniversity/Work/GITHUB REPO/OverheatLens/data/archetypes/idf/Flat_TM59Example4.idf",
+      "sha256": "7b6ea3a1510105c8f07cbdb4a8a95076c20ed9336c10462ce74530c1736138c3",
+      "status": "FAIL",
+      "rows": [
+        {
+          "check_id": "IDF-VER-01",
+          "title": "EnergyPlus version object",
+          "severity": "error",
+          "detected": "missing",
+          "required": "a Version object matching the pinned engine",
+          "why_it_matters": "The engine must know which IDD the input targets; a missing version object risks silent misinterpretation of fields.",
+          "how_to_fix": "Add e.g. 'Version, 25.1;'",
+          "source": "EnergyPlus IDD / plan \u00a711.1",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-TSP-01",
+          "title": "Simulation timestep",
+          "severity": "ok",
+          "detected": "6/hour",
+          "required": ">= 6/h recommended for overheating assessment",
+          "why_it_matters": "Coarse timesteps can miss peak temperatures and distort exceedance hour counts.",
+          "how_to_fix": "Increase to 6+/hour if computationally feasible.",
+          "source": "TM59 methodology practice (plan \u00a711.1)",
+          "source_object": "6"
+        },
+        {
+          "check_id": "IDF-RUN-01",
+          "title": "Run period",
+          "severity": "ok",
+          "detected": "1/1 to /12",
+          "required": "full-year weather-file run",
+          "why_it_matters": "Criteria are assessed over the year/summer.",
+          "how_to_fix": "\u2014",
+          "source": "TM59:2017 \u00a74 / TM59:2026 \u00a72.4",
+          "source_object": "Flat Annual"
+        },
+        {
+          "check_id": "IDF-ZON-01",
+          "title": "Zones",
+          "severity": "ok",
+          "detected": "4 zones: LIVING, KITCHEN, BEDROOM1, BEDROOM2",
+          "required": ">= 1 zone per habitable room",
+          "why_it_matters": "Every assessed space must be a zone.",
+          "how_to_fix": "\u2014",
+          "source": "plan \u00a711.1",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-OCC-01",
+          "title": "Occupancy",
+          "severity": "ok",
+          "detected": "4 People objects",
+          "required": "People objects in every assessed zone",
+          "why_it_matters": "\u2014",
+          "how_to_fix": "\u2014",
+          "source": "TM59:2017 \u00a75 / TM59:2026 \u00a75",
+          "source_object": "LIVING_People"
+        },
+        {
+          "check_id": "IDF-SCH-01",
+          "title": "Schedule references",
+          "severity": "ok",
+          "detected": "3 reference(s) resolved",
+          "required": "every referenced schedule exists",
+          "why_it_matters": "\u2014",
+          "how_to_fix": "\u2014",
+          "source": "plan \u00a711.1",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-INF-01",
+          "title": "Infiltration",
+          "severity": "ok",
+          "detected": "4 object(s)",
+          "required": "infiltration per zone",
+          "why_it_matters": "\u2014",
+          "how_to_fix": "\u2014",
+          "source": "TM59:2017 \u00a73",
+          "source_object": "LIVING_Inf"
+        },
+        {
+          "check_id": "IDF-WIN-01",
+          "title": "Operable window openings",
+          "severity": "warning",
+          "detected": "none found",
+          "required": "opening objects for the natural-ventilation route",
+          "why_it_matters": "Without operable openings the home is effectively the mechanical route (fixed-temperature criteria apply).",
+          "how_to_fix": "Add AirflowNetwork or ZoneVentilation objects, or assess via the mechanical route.",
+          "source": "TM59:2017 \u00a74.1/\u00a74.3",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-CLG-01",
+          "title": "Mechanical cooling",
+          "severity": "info",
+          "detected": "4 object(s)",
+          "required": "n/a \u2014 detection only",
+          "why_it_matters": "Cooling changes the applicable criteria (TM59:2026 criterion c; TM59:2017 \u00a74.3 fixed method).",
+          "how_to_fix": "Select the mechanical route for assessment.",
+          "source": "TM59:2017 \u00a74.3",
+          "source_object": "LIVING_IdealLoads"
+        },
+        {
+          "check_id": "IDF-OUT-01",
+          "title": "Output:Variable 'zone mean radiant temperature'",
+          "severity": "warning",
+          "detected": "missing",
+          "required": "hourly output for the harvest",
+          "why_it_matters": "Required: MRT for operative-temperature derivation. OverheatLens derives operative temperature as 0.5*(MAT+MRT) (low air speed), labelled as a derived metric.",
+          "how_to_fix": "Add 'Output:Variable, *, Zone Mean Air Temperature, hourly;' (and MRT).",
+          "source": "RULE 6 provenance; CIBSE operative-temperature practice",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-OUT-02",
+          "title": "Output variables",
+          "severity": "ok",
+          "detected": "4 object(s)",
+          "required": "hourly MAT + MRT at minimum",
+          "why_it_matters": "\u2014",
+          "how_to_fix": "\u2014",
+          "source": "plan \u00a712.4",
+          "source_object": "*"
+        }
+      ]
+    },
+    "energyplus": {
+      "status": "complete",
+      "fatal": [],
+      "severe": [],
+      "warnings": 0
+    },
+    "harvested_zones": [
+      "BEDROOM1",
+      "BEDROOM2",
+      "KITCHEN",
+      "LIVING"
+    ],
+    "rh_zones": [
+      "BEDROOM1",
+      "BEDROOM2",
+      "KITCHEN",
+      "LIVING"
+    ],
+    "tm59_2017_overall": "FAIL",
+    "tm59_2017_rooms": 4
+  },
+  {
+    "file": "GroundFloorFlat_27BG_derived.idf",
+    "sha256": "36a401279137ebeedc3dfc260b4cd0ef9e8d4aa20e7d6207624617bf5afd53f2",
+    "parse": "OK",
+    "n_zones": 1,
+    "zone_names": [
+      "S1"
+    ],
+    "readiness": {
+      "path": "/Users/mohamedali/Library/CloudStorage/OneDrive-LeedsBeckettUniversity/Work/GITHUB REPO/OverheatLens/data/archetypes/idf/GroundFloorFlat_27BG_derived.idf",
+      "sha256": "36a401279137ebeedc3dfc260b4cd0ef9e8d4aa20e7d6207624617bf5afd53f2",
+      "status": "FAIL",
+      "rows": [
+        {
+          "check_id": "IDF-VER-01",
+          "title": "EnergyPlus version object",
+          "severity": "error",
+          "detected": "missing",
+          "required": "a Version object matching the pinned engine",
+          "why_it_matters": "The engine must know which IDD the input targets; a missing version object risks silent misinterpretation of fields.",
+          "how_to_fix": "Add e.g. 'Version, 25.1;'",
+          "source": "EnergyPlus IDD / plan \u00a711.1",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-TSP-01",
+          "title": "Simulation timestep",
+          "severity": "ok",
+          "detected": "6/hour",
+          "required": ">= 6/h recommended for overheating assessment",
+          "why_it_matters": "Coarse timesteps can miss peak temperatures and distort exceedance hour counts.",
+          "how_to_fix": "Increase to 6+/hour if computationally feasible.",
+          "source": "TM59 methodology practice (plan \u00a711.1)",
+          "source_object": "6"
+        },
+        {
+          "check_id": "IDF-RUN-01",
+          "title": "Run period",
+          "severity": "ok",
+          "detected": "1/1 to /12",
+          "required": "full-year weather-file run",
+          "why_it_matters": "Criteria are assessed over the year/summer.",
+          "how_to_fix": "\u2014",
+          "source": "TM59:2017 \u00a74 / TM59:2026 \u00a72.4",
+          "source_object": "Annual"
+        },
+        {
+          "check_id": "IDF-ZON-01",
+          "title": "Zones",
+          "severity": "ok",
+          "detected": "1 zones: S1",
+          "required": ">= 1 zone per habitable room",
+          "why_it_matters": "Every assessed space must be a zone.",
+          "how_to_fix": "\u2014",
+          "source": "plan \u00a711.1",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-ZON-03",
+          "title": "Bedroom detection",
+          "severity": "warning",
+          "detected": "no zone classified as bedroom",
+          "required": "at least one bedroom for TM59 criteria (b)/(2026 b)",
+          "why_it_matters": "The sleep-related criteria cannot be assessed without a bedroom.",
+          "how_to_fix": "Check zone naming.",
+          "source": "TM59:2017 \u00a74.2(b)",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-OCC-01",
+          "title": "Occupancy",
+          "severity": "ok",
+          "detected": "1 People objects",
+          "required": "People objects in every assessed zone",
+          "why_it_matters": "\u2014",
+          "how_to_fix": "\u2014",
+          "source": "TM59:2017 \u00a75 / TM59:2026 \u00a75",
+          "source_object": "S1_P"
+        },
+        {
+          "check_id": "IDF-SCH-01",
+          "title": "Schedule references",
+          "severity": "ok",
+          "detected": "1 reference(s) resolved",
+          "required": "every referenced schedule exists",
+          "why_it_matters": "\u2014",
+          "how_to_fix": "\u2014",
+          "source": "plan \u00a711.1",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-INF-01",
+          "title": "Infiltration",
+          "severity": "ok",
+          "detected": "1 object(s)",
+          "required": "infiltration per zone",
+          "why_it_matters": "\u2014",
+          "how_to_fix": "\u2014",
+          "source": "TM59:2017 \u00a73",
+          "source_object": "S1_I"
+        },
+        {
+          "check_id": "IDF-WIN-01",
+          "title": "Operable window openings",
+          "severity": "warning",
+          "detected": "none found",
+          "required": "opening objects for the natural-ventilation route",
+          "why_it_matters": "Without operable openings the home is effectively the mechanical route (fixed-temperature criteria apply).",
+          "how_to_fix": "Add AirflowNetwork or ZoneVentilation objects, or assess via the mechanical route.",
+          "source": "TM59:2017 \u00a74.1/\u00a74.3",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-OUT-01",
+          "title": "Output:Variable 'zone mean radiant temperature'",
+          "severity": "warning",
+          "detected": "missing",
+          "required": "hourly output for the harvest",
+          "why_it_matters": "Required: MRT for operative-temperature derivation. OverheatLens derives operative temperature as 0.5*(MAT+MRT) (low air speed), labelled as a derived metric.",
+          "how_to_fix": "Add 'Output:Variable, *, Zone Mean Air Temperature, hourly;' (and MRT).",
+          "source": "RULE 6 provenance; CIBSE operative-temperature practice",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-OUT-02",
+          "title": "Output variables",
+          "severity": "ok",
+          "detected": "3 object(s)",
+          "required": "hourly MAT + MRT at minimum",
+          "why_it_matters": "\u2014",
+          "how_to_fix": "\u2014",
+          "source": "plan \u00a712.4",
+          "source_object": "*"
+        }
+      ]
+    },
+    "energyplus": {
+      "status": "complete",
+      "fatal": [],
+      "severe": [],
+      "warnings": 0
+    },
+    "harvested_zones": [
+      "S1"
+    ],
+    "rh_zones": [],
+    "tm59_2017_overall": "PASS",
+    "tm59_2017_rooms": 1
+  },
+  {
+    "file": "HighRiseFlat_EHS_derived.idf",
+    "sha256": "14184a63985a41722c512e196b0b3135bad0fbcc8903d7b7df0ebb3a467c0710",
+    "parse": "OK",
+    "n_zones": 1,
+    "zone_names": [
+      "S1"
+    ],
+    "readiness": {
+      "path": "/Users/mohamedali/Library/CloudStorage/OneDrive-LeedsBeckettUniversity/Work/GITHUB REPO/OverheatLens/data/archetypes/idf/HighRiseFlat_EHS_derived.idf",
+      "sha256": "14184a63985a41722c512e196b0b3135bad0fbcc8903d7b7df0ebb3a467c0710",
+      "status": "FAIL",
+      "rows": [
+        {
+          "check_id": "IDF-VER-01",
+          "title": "EnergyPlus version object",
+          "severity": "error",
+          "detected": "missing",
+          "required": "a Version object matching the pinned engine",
+          "why_it_matters": "The engine must know which IDD the input targets; a missing version object risks silent misinterpretation of fields.",
+          "how_to_fix": "Add e.g. 'Version, 25.1;'",
+          "source": "EnergyPlus IDD / plan \u00a711.1",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-TSP-01",
+          "title": "Simulation timestep",
+          "severity": "ok",
+          "detected": "6/hour",
+          "required": ">= 6/h recommended for overheating assessment",
+          "why_it_matters": "Coarse timesteps can miss peak temperatures and distort exceedance hour counts.",
+          "how_to_fix": "Increase to 6+/hour if computationally feasible.",
+          "source": "TM59 methodology practice (plan \u00a711.1)",
+          "source_object": "6"
+        },
+        {
+          "check_id": "IDF-RUN-01",
+          "title": "Run period",
+          "severity": "ok",
+          "detected": "1/1 to /12",
+          "required": "full-year weather-file run",
+          "why_it_matters": "Criteria are assessed over the year/summer.",
+          "how_to_fix": "\u2014",
+          "source": "TM59:2017 \u00a74 / TM59:2026 \u00a72.4",
+          "source_object": "Annual"
+        },
+        {
+          "check_id": "IDF-ZON-01",
+          "title": "Zones",
+          "severity": "ok",
+          "detected": "1 zones: S1",
+          "required": ">= 1 zone per habitable room",
+          "why_it_matters": "Every assessed space must be a zone.",
+          "how_to_fix": "\u2014",
+          "source": "plan \u00a711.1",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-ZON-03",
+          "title": "Bedroom detection",
+          "severity": "warning",
+          "detected": "no zone classified as bedroom",
+          "required": "at least one bedroom for TM59 criteria (b)/(2026 b)",
+          "why_it_matters": "The sleep-related criteria cannot be assessed without a bedroom.",
+          "how_to_fix": "Check zone naming.",
+          "source": "TM59:2017 \u00a74.2(b)",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-OCC-01",
+          "title": "Occupancy",
+          "severity": "ok",
+          "detected": "1 People objects",
+          "required": "People objects in every assessed zone",
+          "why_it_matters": "\u2014",
+          "how_to_fix": "\u2014",
+          "source": "TM59:2017 \u00a75 / TM59:2026 \u00a75",
+          "source_object": "S1_P"
+        },
+        {
+          "check_id": "IDF-SCH-01",
+          "title": "Schedule references",
+          "severity": "ok",
+          "detected": "1 reference(s) resolved",
+          "required": "every referenced schedule exists",
+          "why_it_matters": "\u2014",
+          "how_to_fix": "\u2014",
+          "source": "plan \u00a711.1",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-INF-01",
+          "title": "Infiltration",
+          "severity": "ok",
+          "detected": "1 object(s)",
+          "required": "infiltration per zone",
+          "why_it_matters": "\u2014",
+          "how_to_fix": "\u2014",
+          "source": "TM59:2017 \u00a73",
+          "source_object": "S1_I"
+        },
+        {
+          "check_id": "IDF-WIN-01",
+          "title": "Operable window openings",
+          "severity": "warning",
+          "detected": "none found",
+          "required": "opening objects for the natural-ventilation route",
+          "why_it_matters": "Without operable openings the home is effectively the mechanical route (fixed-temperature criteria apply).",
+          "how_to_fix": "Add AirflowNetwork or ZoneVentilation objects, or assess via the mechanical route.",
+          "source": "TM59:2017 \u00a74.1/\u00a74.3",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-OUT-01",
+          "title": "Output:Variable 'zone mean radiant temperature'",
+          "severity": "warning",
+          "detected": "missing",
+          "required": "hourly output for the harvest",
+          "why_it_matters": "Required: MRT for operative-temperature derivation. OverheatLens derives operative temperature as 0.5*(MAT+MRT) (low air speed), labelled as a derived metric.",
+          "how_to_fix": "Add 'Output:Variable, *, Zone Mean Air Temperature, hourly;' (and MRT).",
+          "source": "RULE 6 provenance; CIBSE operative-temperature practice",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-OUT-02",
+          "title": "Output variables",
+          "severity": "ok",
+          "detected": "3 object(s)",
+          "required": "hourly MAT + MRT at minimum",
+          "why_it_matters": "\u2014",
+          "how_to_fix": "\u2014",
+          "source": "plan \u00a712.4",
+          "source_object": "*"
+        }
+      ]
+    },
+    "energyplus": {
+      "status": "complete",
+      "fatal": [],
+      "severe": [],
+      "warnings": 0
+    },
+    "harvested_zones": [
+      "S1"
+    ],
+    "rh_zones": [],
+    "tm59_2017_overall": "PASS",
+    "tm59_2017_rooms": 1
+  },
+  {
+    "file": "ModernHouse_PartL2021_derived.idf",
+    "sha256": "749d3dfbf08b8627f9f269186a835590784a38169bfae8ae4024ea1d43915fc7",
+    "parse": "OK",
+    "n_zones": 2,
+    "zone_names": [
+      "S1",
+      "S2"
+    ],
+    "readiness": {
+      "path": "/Users/mohamedali/Library/CloudStorage/OneDrive-LeedsBeckettUniversity/Work/GITHUB REPO/OverheatLens/data/archetypes/idf/ModernHouse_PartL2021_derived.idf",
+      "sha256": "749d3dfbf08b8627f9f269186a835590784a38169bfae8ae4024ea1d43915fc7",
+      "status": "FAIL",
+      "rows": [
+        {
+          "check_id": "IDF-VER-01",
+          "title": "EnergyPlus version object",
+          "severity": "error",
+          "detected": "missing",
+          "required": "a Version object matching the pinned engine",
+          "why_it_matters": "The engine must know which IDD the input targets; a missing version object risks silent misinterpretation of fields.",
+          "how_to_fix": "Add e.g. 'Version, 25.1;'",
+          "source": "EnergyPlus IDD / plan \u00a711.1",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-TSP-01",
+          "title": "Simulation timestep",
+          "severity": "ok",
+          "detected": "6/hour",
+          "required": ">= 6/h recommended for overheating assessment",
+          "why_it_matters": "Coarse timesteps can miss peak temperatures and distort exceedance hour counts.",
+          "how_to_fix": "Increase to 6+/hour if computationally feasible.",
+          "source": "TM59 methodology practice (plan \u00a711.1)",
+          "source_object": "6"
+        },
+        {
+          "check_id": "IDF-RUN-01",
+          "title": "Run period",
+          "severity": "ok",
+          "detected": "1/1 to /12",
+          "required": "full-year weather-file run",
+          "why_it_matters": "Criteria are assessed over the year/summer.",
+          "how_to_fix": "\u2014",
+          "source": "TM59:2017 \u00a74 / TM59:2026 \u00a72.4",
+          "source_object": "Annual"
+        },
+        {
+          "check_id": "IDF-ZON-01",
+          "title": "Zones",
+          "severity": "ok",
+          "detected": "2 zones: S1, S2",
+          "required": ">= 1 zone per habitable room",
+          "why_it_matters": "Every assessed space must be a zone.",
+          "how_to_fix": "\u2014",
+          "source": "plan \u00a711.1",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-ZON-03",
+          "title": "Bedroom detection",
+          "severity": "warning",
+          "detected": "no zone classified as bedroom",
+          "required": "at least one bedroom for TM59 criteria (b)/(2026 b)",
+          "why_it_matters": "The sleep-related criteria cannot be assessed without a bedroom.",
+          "how_to_fix": "Check zone naming.",
+          "source": "TM59:2017 \u00a74.2(b)",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-OCC-01",
+          "title": "Occupancy",
+          "severity": "ok",
+          "detected": "2 People objects",
+          "required": "People objects in every assessed zone",
+          "why_it_matters": "\u2014",
+          "how_to_fix": "\u2014",
+          "source": "TM59:2017 \u00a75 / TM59:2026 \u00a75",
+          "source_object": "S1_P"
+        },
+        {
+          "check_id": "IDF-SCH-01",
+          "title": "Schedule references",
+          "severity": "ok",
+          "detected": "1 reference(s) resolved",
+          "required": "every referenced schedule exists",
+          "why_it_matters": "\u2014",
+          "how_to_fix": "\u2014",
+          "source": "plan \u00a711.1",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-INF-01",
+          "title": "Infiltration",
+          "severity": "ok",
+          "detected": "2 object(s)",
+          "required": "infiltration per zone",
+          "why_it_matters": "\u2014",
+          "how_to_fix": "\u2014",
+          "source": "TM59:2017 \u00a73",
+          "source_object": "S1_I"
+        },
+        {
+          "check_id": "IDF-WIN-01",
+          "title": "Operable window openings",
+          "severity": "warning",
+          "detected": "none found",
+          "required": "opening objects for the natural-ventilation route",
+          "why_it_matters": "Without operable openings the home is effectively the mechanical route (fixed-temperature criteria apply).",
+          "how_to_fix": "Add AirflowNetwork or ZoneVentilation objects, or assess via the mechanical route.",
+          "source": "TM59:2017 \u00a74.1/\u00a74.3",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-OUT-01",
+          "title": "Output:Variable 'zone mean radiant temperature'",
+          "severity": "warning",
+          "detected": "missing",
+          "required": "hourly output for the harvest",
+          "why_it_matters": "Required: MRT for operative-temperature derivation. OverheatLens derives operative temperature as 0.5*(MAT+MRT) (low air speed), labelled as a derived metric.",
+          "how_to_fix": "Add 'Output:Variable, *, Zone Mean Air Temperature, hourly;' (and MRT).",
+          "source": "RULE 6 provenance; CIBSE operative-temperature practice",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-OUT-02",
+          "title": "Output variables",
+          "severity": "ok",
+          "detected": "3 object(s)",
+          "required": "hourly MAT + MRT at minimum",
+          "why_it_matters": "\u2014",
+          "how_to_fix": "\u2014",
+          "source": "plan \u00a712.4",
+          "source_object": "*"
+        }
+      ]
+    },
+    "energyplus": {
+      "status": "complete",
+      "fatal": [],
+      "severe": [],
+      "warnings": 0
+    },
+    "harvested_zones": [
+      "S1",
+      "S2"
+    ],
+    "rh_zones": [],
+    "tm59_2017_overall": "PASS",
+    "tm59_2017_rooms": 2
+  },
+  {
+    "file": "TopFloorFlat_17BG_derived.idf",
+    "sha256": "39155d00068bcbfae3b50d5082d5dc69c826332d11469d11db7bda39dbc70ba1",
+    "parse": "OK",
+    "n_zones": 1,
+    "zone_names": [
+      "S1"
+    ],
+    "readiness": {
+      "path": "/Users/mohamedali/Library/CloudStorage/OneDrive-LeedsBeckettUniversity/Work/GITHUB REPO/OverheatLens/data/archetypes/idf/TopFloorFlat_17BG_derived.idf",
+      "sha256": "39155d00068bcbfae3b50d5082d5dc69c826332d11469d11db7bda39dbc70ba1",
+      "status": "FAIL",
+      "rows": [
+        {
+          "check_id": "IDF-VER-01",
+          "title": "EnergyPlus version object",
+          "severity": "error",
+          "detected": "missing",
+          "required": "a Version object matching the pinned engine",
+          "why_it_matters": "The engine must know which IDD the input targets; a missing version object risks silent misinterpretation of fields.",
+          "how_to_fix": "Add e.g. 'Version, 25.1;'",
+          "source": "EnergyPlus IDD / plan \u00a711.1",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-TSP-01",
+          "title": "Simulation timestep",
+          "severity": "ok",
+          "detected": "6/hour",
+          "required": ">= 6/h recommended for overheating assessment",
+          "why_it_matters": "Coarse timesteps can miss peak temperatures and distort exceedance hour counts.",
+          "how_to_fix": "Increase to 6+/hour if computationally feasible.",
+          "source": "TM59 methodology practice (plan \u00a711.1)",
+          "source_object": "6"
+        },
+        {
+          "check_id": "IDF-RUN-01",
+          "title": "Run period",
+          "severity": "ok",
+          "detected": "1/1 to /12",
+          "required": "full-year weather-file run",
+          "why_it_matters": "Criteria are assessed over the year/summer.",
+          "how_to_fix": "\u2014",
+          "source": "TM59:2017 \u00a74 / TM59:2026 \u00a72.4",
+          "source_object": "Annual"
+        },
+        {
+          "check_id": "IDF-ZON-01",
+          "title": "Zones",
+          "severity": "ok",
+          "detected": "1 zones: S1",
+          "required": ">= 1 zone per habitable room",
+          "why_it_matters": "Every assessed space must be a zone.",
+          "how_to_fix": "\u2014",
+          "source": "plan \u00a711.1",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-ZON-03",
+          "title": "Bedroom detection",
+          "severity": "warning",
+          "detected": "no zone classified as bedroom",
+          "required": "at least one bedroom for TM59 criteria (b)/(2026 b)",
+          "why_it_matters": "The sleep-related criteria cannot be assessed without a bedroom.",
+          "how_to_fix": "Check zone naming.",
+          "source": "TM59:2017 \u00a74.2(b)",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-OCC-01",
+          "title": "Occupancy",
+          "severity": "ok",
+          "detected": "1 People objects",
+          "required": "People objects in every assessed zone",
+          "why_it_matters": "\u2014",
+          "how_to_fix": "\u2014",
+          "source": "TM59:2017 \u00a75 / TM59:2026 \u00a75",
+          "source_object": "S1_P"
+        },
+        {
+          "check_id": "IDF-SCH-01",
+          "title": "Schedule references",
+          "severity": "ok",
+          "detected": "1 reference(s) resolved",
+          "required": "every referenced schedule exists",
+          "why_it_matters": "\u2014",
+          "how_to_fix": "\u2014",
+          "source": "plan \u00a711.1",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-INF-01",
+          "title": "Infiltration",
+          "severity": "ok",
+          "detected": "1 object(s)",
+          "required": "infiltration per zone",
+          "why_it_matters": "\u2014",
+          "how_to_fix": "\u2014",
+          "source": "TM59:2017 \u00a73",
+          "source_object": "S1_I"
+        },
+        {
+          "check_id": "IDF-WIN-01",
+          "title": "Operable window openings",
+          "severity": "warning",
+          "detected": "none found",
+          "required": "opening objects for the natural-ventilation route",
+          "why_it_matters": "Without operable openings the home is effectively the mechanical route (fixed-temperature criteria apply).",
+          "how_to_fix": "Add AirflowNetwork or ZoneVentilation objects, or assess via the mechanical route.",
+          "source": "TM59:2017 \u00a74.1/\u00a74.3",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-OUT-01",
+          "title": "Output:Variable 'zone mean radiant temperature'",
+          "severity": "warning",
+          "detected": "missing",
+          "required": "hourly output for the harvest",
+          "why_it_matters": "Required: MRT for operative-temperature derivation. OverheatLens derives operative temperature as 0.5*(MAT+MRT) (low air speed), labelled as a derived metric.",
+          "how_to_fix": "Add 'Output:Variable, *, Zone Mean Air Temperature, hourly;' (and MRT).",
+          "source": "RULE 6 provenance; CIBSE operative-temperature practice",
+          "source_object": null
+        },
+        {
+          "check_id": "IDF-OUT-02",
+          "title": "Output variables",
+          "severity": "ok",
+          "detected": "3 object(s)",
+          "required": "hourly MAT + MRT at minimum",
+          "why_it_matters": "\u2014",
+          "how_to_fix": "\u2014",
+          "source": "plan \u00a712.4",
+          "source_object": "*"
+        }
+      ]
+    },
+    "energyplus": {
+      "status": "complete",
+      "fatal": [],
+      "severe": [],
+      "warnings": 0
+    },
+    "harvested_zones": [
+      "S1"
+    ],
+    "rh_zones": [],
+    "tm59_2017_overall": "PASS",
+    "tm59_2017_rooms": 1
+  }
+]

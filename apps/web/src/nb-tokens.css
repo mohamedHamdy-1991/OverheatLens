@@ -1,0 +1,200 @@
+/* OverheatLens Neo-Brutalist tokens — single source of truth (v2.0).
+   Warm editorial Neo-Brutalism shared with EPW Doctor; OverheatLens owns the
+   thermal usage: heat coral/red, solar yellow, cool cyan, violet = research-only.
+   Legacy --paper/--brand/... aliases are kept during migration; new code must
+   use --nb-* tokens only. */
+
+:root {
+  /* ---- core palette (guideline verbatim) ---- */
+  --nb-bg: #F6E8D2;
+  --nb-surface: #FBFAF6;
+  --nb-ink: #161616;
+  --nb-yellow: #FCDD28;
+  --nb-orange: #F36D30;
+  --nb-pink: #FF4F85;
+  --nb-cyan: #12C8B0;
+  --nb-violet: #8167F5;
+  --nb-green: #4BD14A;
+  --nb-muted: #D8CCB9;
+
+  /* ---- functional extensions (same spirit, AA-checked pairs) ---- */
+  --nb-ink-soft: #3d3d3d;
+  --nb-grey: #777777;
+  --nb-line-soft: #e4d7c1;
+  --nb-danger: #D63A2F;          /* fail red, deeper than pink for text contrast */
+  --nb-danger-soft: #FDE3E0;
+  --nb-pass-soft: #DFF5DC;
+  --nb-warn-soft: #FFF3CF;
+  --nb-info-soft: #D9F4EE;
+  --nb-violet-soft: #E6E0FE;
+
+  /* ---- geometry ---- */
+  --nb-border-1: 1px solid var(--nb-ink);
+  --nb-border-2: 2px solid var(--nb-ink);
+  --nb-border-3: 3px solid var(--nb-ink);
+  --nb-shadow-sm: 3px 3px 0 var(--nb-ink);
+  --nb-shadow-md: 5px 5px 0 var(--nb-ink);
+  --nb-shadow-lg: 8px 8px 0 var(--nb-ink);
+  --nb-radius-sm: 4px;
+  --nb-radius-md: 8px;
+
+  /* ---- spacing (8px rhythm) ---- */
+  --nb-space-1: 4px; --nb-space-2: 8px; --nb-space-3: 12px;
+  --nb-space-4: 16px; --nb-space-5: 24px; --nb-space-6: 32px;
+  --nb-space-7: 40px; --nb-space-8: 48px; --nb-space-9: 64px;
+  --nb-space-10: 80px;
+
+  /* ---- type ---- */
+  --nb-font-display: "Arial Black", "Helvetica Neue", Arial, sans-serif;
+  --nb-font-body: Inter, Arial, sans-serif;
+  --nb-font-mono: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+  --nb-focus: 3px solid var(--nb-violet);
+
+  /* ---- layout ---- */
+  --nb-rail-w: 248px;
+  --nb-topbar-h: 64px;
+  --nb-max-w: 1440px;
+
+  /* ---- chart palette (flat, black-outlined series; never rainbow) ---- */
+  --nb-chart-1: #161616;   /* primary series — ink */
+  --nb-chart-2: #F36D30;   /* secondary — orange */
+  --nb-chart-3: #12C8B0;   /* tertiary — cyan */
+  --nb-chart-4: #8167F5;   /* research-only — violet */
+  --nb-chart-5: #FF4F85;   /* exceedance — pink */
+  --nb-chart-6: #4BD14A;   /* pass/reference — green */
+  --nb-threshold: #D63A2F; /* threshold rules — fail red, dashed */
+
+  /* ---- legacy aliases (migration shim — do not use in new code) ---- */
+  --paper: var(--nb-bg);
+  --surface: var(--nb-surface);
+  --ink: var(--nb-ink);
+  --muted-ink: #6b6257;
+  --line: var(--nb-line-soft);
+  --line-strong: var(--nb-muted);
+  --brand: var(--nb-ink);
+  --brand-dark: #000000;
+  --brand-soft: var(--nb-yellow);
+  --accent: var(--nb-orange);
+  --cyan: var(--nb-cyan);
+  --cyan-deep: #0a7a6e;
+  --lime: var(--nb-yellow);
+  --heat-1: var(--nb-yellow);
+  --heat-2: var(--nb-orange);
+  --heat-3: var(--nb-pink);
+  --heat-4: var(--nb-danger);
+  --pass: #1e7a3c;
+  --warning: #9a6200;
+  --fail: var(--nb-danger);
+  --info: #0a7a6e;
+  --font-ui: var(--nb-font-body);
+  --font-serif: var(--nb-font-display);
+  --font-mono: var(--nb-font-mono);
+  --rail-w: var(--nb-rail-w);
+  --topbar-h: var(--nb-topbar-h);
+  --max-w: var(--nb-max-w);
+  --radius: var(--nb-radius-md);
+  --radius-lg: var(--nb-radius-md);
+  --shadow: var(--nb-shadow-md);
+  --scale-cool: var(--nb-cyan);
+  --scale-mid-cool: #8fe3d4;
+  --scale-warm-1: var(--nb-yellow);
+  --scale-warm-2: var(--nb-orange);
+  --scale-warm-3: var(--nb-pink);
+  --scale-warm-4: var(--nb-danger);
+}
+
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; }
+
+body {
+  margin: 0;
+  color: var(--nb-ink);
+  font-family: var(--nb-font-body);
+  font-size: 15px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  background: var(--nb-bg);
+  background-image:
+    linear-gradient(var(--nb-line-soft) 1px, transparent 1px),
+    linear-gradient(90deg, var(--nb-line-soft) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+::selection { background: var(--nb-yellow); color: var(--nb-ink); }
+:focus-visible { outline: var(--nb-focus); outline-offset: 2px; }
+* { scrollbar-width: thin; scrollbar-color: var(--nb-ink) transparent; }
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-thumb { background: var(--nb-ink); border: 2px solid var(--nb-bg); }
+*::-webkit-scrollbar-track { background: transparent; }
+
+h1, h2, h3 { margin: 0; }
+p { margin: 0; }
+a { color: inherit; }
+button, input, select { font: inherit; color: inherit; }
+
+/* shared primitives */
+.nb-card {
+  background: var(--nb-surface);
+  border: var(--nb-border-2);
+  box-shadow: var(--nb-shadow-md);
+  padding: 24px;
+  border-radius: var(--nb-radius-md);
+}
+.nb-btn {
+  min-height: 44px;
+  border: var(--nb-border-2);
+  box-shadow: var(--nb-shadow-sm);
+  background: var(--nb-yellow);
+  color: var(--nb-ink);
+  font-weight: 800;
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  border-radius: var(--nb-radius-sm);
+}
+.nb-btn:hover { transform: translate(-1px, -1px); box-shadow: 5px 5px 0 var(--nb-ink); }
+.nb-btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--nb-ink); }
+.nb-btn:focus-visible { outline: var(--nb-focus); outline-offset: 3px; }
+.nb-btn.secondary { background: var(--nb-surface); }
+.nb-btn.dark { background: var(--nb-ink); color: var(--nb-surface); }
+.nb-btn.danger { background: var(--nb-pink); }
+.nb-btn:disabled { opacity: 0.55; cursor: default; transform: none; }
+.nb-input {
+  min-height: 46px;
+  border: var(--nb-border-2);
+  background: var(--nb-surface);
+  padding: 10px 12px;
+  font: inherit;
+  color: var(--nb-ink);
+  border-radius: var(--nb-radius-sm);
+  width: 100%;
+}
+.nb-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: var(--nb-border-1);
+  padding: 5px 9px;
+  background: var(--nb-bg);
+  font: 700 12px/1 var(--nb-font-mono);
+  border-radius: var(--nb-radius-sm);
+}
+.nb-kpi {
+  border: var(--nb-border-2);
+  box-shadow: var(--nb-shadow-md);
+  background: var(--nb-yellow);
+  padding: 20px;
+  border-radius: var(--nb-radius-md);
+}
+.nb-kpi strong { display: block; font: 900 36px/1 var(--nb-font-mono); margin-top: 18px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

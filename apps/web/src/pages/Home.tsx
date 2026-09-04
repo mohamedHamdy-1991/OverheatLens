@@ -9,20 +9,22 @@ import {
   type RunEntry,
 } from "../api";
 import { ThermalRibbon } from "../ThermalRibbon";
-import { StatusPill } from "../components";
-import { useChart, MONTHS } from "../charts";
+import { EmptyState, StatusPill } from "../components";
+import { useChart, MONTHS, NB_INK, NB_PAPER } from "../charts";
 import { ExportBar } from "../ExportBar";
 
+const BASE = import.meta.env.BASE_URL || "./";
 const DEFAULT_WEATHER = "Leeds_DSY1_2020High50_.epw";
 
-/* Overview dashboard — every number comes from the real EPW through the core. */
+/* Laboratory desktop: entry actions, case-file modules, live climate
+   evidence from the real EPW through the core. */
 export function Home() {
   const [version, setVersion] = useState<VersionInfo | null>(null);
   const [check, setCheck] = useState<WeatherCheck | null>(null);
   const [series, setSeries] = useState<WeatherSeries | null>(null);
   const [runs, setRuns] = useState<RunEntry[]>([]);
+  const [packs, setPacks] = useState<{ rule_pack: string }[]>([]);
   const [err, setErr] = useState<string | null>(null);
-  const [uploading, setUploading] = useState(false);
 
   const load = (path: string) => {
     Promise.all([api.weatherCheck(path), api.weatherSeries(path)])
@@ -31,10 +33,11 @@ export function Home() {
   };
 
   useEffect(() => {
-    Promise.all([api.version(), api.weatherList(), api.runs()])
-      .then(async ([v, w, r]: [VersionInfo, WeatherFileEntry[], RunEntry[]]) => {
+    Promise.all([api.version(), api.weatherList(), api.runs(), api.rulePacks()])
+      .then(async ([v, w, r, p]: [VersionInfo, WeatherFileEntry[], RunEntry[], { rule_pack: string }[]]) => {
         setVersion(v);
         setRuns(r);
+        setPacks(p);
         const pick = w.find((f) => f.name === DEFAULT_WEATHER) ?? w[0];
         if (pick) load(pick.path);
       })
@@ -42,106 +45,83 @@ export function Home() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const onUpload = async (file: File) => {
-    setUploading(true);
-    setErr(null);
-    try {
-      const res = await api.uploadWeather(file);
-      load(res.path);
-    } catch (e) {
-      setErr(String((e as Error).message ?? e));
-    } finally {
-      setUploading(false);
-    }
-  };
-
   const summary = check?.weather_summary ?? null;
   const fingerprint = series ? [
     { label: "Dry-bulb (°C)", vals: series.monthly_db, unit: "", color: tempColor },
     { label: "RH (%)", vals: series.monthly_rh, unit: "", color: rhColor },
     { label: "GHI (kWh/m²)", vals: series.monthly_ghi, unit: "", color: ghiColor },
-    { label: "Wind (m/s)", vals: series.monthly_wind, unit: "", color: () => "rgba(82,104,168,.16)" },
+    { label: "Wind (m/s)", vals: series.monthly_wind, unit: "", color: () => "#FBFAF6" },
   ] : null;
 
   return (
     <>
-      <section className="headline-row">
-        <div>
-          <h1>Overview</h1>
-          <div className="breadcrumb">Home dashboard · <b>{check ? check.path.split("/").pop() : "loading…"}</b></div>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", justifyContent: "flex-end" }}>
-          <div className="privacy-note">
-            <strong>✓ Runs locally on your machine</strong><br />
-            Weather files never leave this device
+      {/* ---- laboratory hero ---- */}
+      <section className="lab-hero">
+        <img className="hero-art" src={`${BASE}img/cover-home.png`}
+          alt="Neo-Brutalist collage of terraced houses, a tower block, sun path and heat plume"
+          onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+        <div className="hero-copy">
+          <h1>OVERHEATLENS</h1>
+          <span className="tagline">BUILDING × WEATHER × HEAT × EVIDENCE</span>
+          <p style={{ marginTop: 14, maxWidth: "70ch", fontSize: 14 }}>
+            A digital overheating laboratory: weather quality → model readiness →
+            EnergyPlus simulation → versioned standards → comfort → mitigation →
+            reproducible evidence. Local-first — your files never leave this machine.
+          </p>
+          <div className="hero-actions">
+            <Link className="nb-btn" to="/analyze">RUN A MODEL</Link>
+            <Link className="nb-btn secondary" to="/atlas">EXPLORE ARCHETYPE ATLAS</Link>
+            <Link className="nb-btn dark" to="/weather">OPEN WEATHER LAB</Link>
           </div>
-          <span className="screening-pill">
-            Version-aware overheating screening<br />
-            <span style={{ fontWeight: 600 }}>EPW · dwelling templates · EnergyPlus</span>
-          </span>
         </div>
       </section>
 
       {err && <div className="note warn" style={{ marginBottom: 16 }}><strong>Could not load data.</strong> {err}</div>}
 
-      {/* ---- hero cards ---- */}
-      <section className="hero-grid">
-        <article className="hero-card location">
-          <span className="location-pill">⌖ {check ? `${check.city?.trim() || "—"}, ${check.country?.trim() || "—"}` : "…"}</span>
-          <h2>{check?.city?.trim() || "—"}<br />{series ? "Climate snapshot" : ""}</h2>
-          <div className="coords">
-            {check ? `${Math.abs(check.latitude ?? 0).toFixed(2)}° ${((check.latitude ?? 0) >= 0 ? "N" : "S")}, ${Math.abs(check.longitude ?? 0).toFixed(2)}° ${((check.longitude ?? 0) >= 0 ? "E" : "W")} · ${check.elevation?.toFixed(0)} m` : ""}
-          </div>
-          <div className="loc-meta">
-            <div className="mini-glass"><span>Dataset</span><strong>{check ? `${check.n_rows.toLocaleString()} hours` : "—"}</strong></div>
-            <div className="mini-glass"><span>Records</span><strong>{check ? `${(check.n_rows / 24).toFixed(0)} days` : "—"}</strong></div>
-          </div>
-          <label className="upload-label" style={{
-            display: "flex", alignItems: "center", justifyContent: "center", gap: 7,
-            marginTop: 10, border: "1px dashed rgba(21,38,58,.25)", borderRadius: 13,
-            padding: 9, fontSize: 10.5, fontWeight: 800, cursor: "pointer",
-            position: "relative", zIndex: 3, background: "rgba(255,255,255,.38)",
-          }}>
-            {uploading ? "Uploading…" : "＋ Load another EPW"}
-            <input type="file" accept=".epw" style={{ display: "none" }}
-              onChange={(e) => { const f = e.target.files?.[0]; if (f) onUpload(f); }} />
-          </label>
-        </article>
-
-        <article className="hero-card weather">
-          <h3>{series ? `Annual snapshot · ${series.name.replace(/_/g, " ")}` : "Annual snapshot"}</h3>
-          <div className="temp-now">{summary?.annual_mean_dry_bulb != null ? `${summary.annual_mean_dry_bulb.toFixed(1)}°C` : "…"}</div>
-          <div className="weather-desc">Mean dry-bulb · full weather-file year</div>
-          <div className="weather-bottom">
-            <div className="weather-stat"><span>Hottest hour</span><strong>{summary ? `${summary.hottest_hour}°C` : "—"}</strong></div>
-            <div className="weather-stat"><span>Coldest hour</span><strong>{summary ? `${summary.coldest_hour}°C` : "—"}</strong></div>
-            <div className="weather-stat"><span>Hours &gt; 26 °C</span><strong>{summary ? `${summary.exceedance_hours_26c} h` : "—"}</strong></div>
-          </div>
-        </article>
-
-        <article className="hero-card health">
-          <div className="file-title">{check ? check.path.split("/").pop() : "…"}</div>
-          <div className="file-loc">{check ? `${check.city}, ${check.country} · EPW weather file` : ""}</div>
-          <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-            <div>
-              <StatusPill status={check?.status ?? "INFO"} />
-              <p style={{ fontSize: 9.5, color: "var(--muted-ink)", lineHeight: 1.45, margin: "8px 0" }}>
-                {check
-                  ? `${check.issues.length} QC finding${check.issues.length === 1 ? "" : "s"} · ${check.n_rows.toLocaleString()} hourly records · SHA-256 verified`
-                  : "Running quality checks…"}
-              </p>
-              <Link to="/weather" style={{ fontSize: 10.5, fontWeight: 800 }}>Open Weather Lab ›</Link>
-            </div>
-          </div>
-          <div className="meta-list">
-            <span className="meta-tag">☁ {check?.country || "—"}</span>
-            <span className="meta-tag">🕐 {check ? `${check.n_rows.toLocaleString()} h` : "—"}</span>
-            <span className="meta-tag">⚙ E+ {version?.energyplus_version ?? "—"}</span>
-          </div>
-        </article>
+      {/* ---- research status strip ---- */}
+      <section className="metrics" aria-label="Research status" style={{ gridTemplateColumns: "repeat(4, 1fr)" }}>
+        <div className="metric">
+          <div className="m-val">{packs.length}<span className="m-unit">packs</span></div>
+          <div className="m-label">Versioned standards · source-verified</div>
+        </div>
+        <div className="metric">
+          <div className="m-val">{version?.energyplus_version ?? "—"}</div>
+          <div className="m-label">EnergyPlus engine (local)</div>
+        </div>
+        <div className="metric">
+          <div className="m-val">{runs.length}<span className="m-unit">runs</span></div>
+          <div className="m-label">Experiments in archive</div>
+        </div>
+        <div className="metric">
+          <div className="m-val">{check ? check.n_rows.toLocaleString() : "—"}<span className="m-unit">h</span></div>
+          <div className="m-label">{check ? check.path.split("/").pop() : "Reference weather"}</div>
+        </div>
       </section>
 
-      {/* ---- metrics strip ---- */}
+      {/* ---- case-file modules ---- */}
+      <section aria-label="Laboratory modules">
+        <h2 className="section-h" style={{ marginBottom: 12 }}>Laboratory desktop</h2>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 16, marginBottom: 20 }}>
+          <ModuleFolder to="/analyze" tab="01" title="ANALYZE" desc="Model × weather × standard → EnergyPlus run" accent="var(--nb-yellow)" />
+          <ModuleFolder to="/weather" tab="02" title="WEATHER LAB" desc="EPW quality, dossier & compatibility" accent="var(--nb-cyan)" />
+          <ModuleFolder to="/atlas" tab="03" title="ARCHETYPE ATLAS" desc="15 research models + templates" accent="var(--nb-orange)" />
+          <ModuleFolder to="/comfort" tab="04" title="COMFORT LAB" desc="PMV · adaptive · UTCI, gated" accent="var(--nb-green)" />
+          <ModuleFolder to="/compare" tab="05" title="COMPARE" desc="Weather · runs · scenarios" accent="var(--nb-pink)" />
+          <ModuleFolder to="/mitigation" tab="06" title="MITIGATION LAB" desc="Harehills parametric evidence" accent="var(--nb-violet)" />
+          <ModuleFolder to="/runs" tab="07" title="RUN ARCHIVE" desc="Every experiment, reproducible" accent="var(--nb-bg)" />
+          <ModuleFolder to="/validation" tab="08" title="VALIDATION" desc="Live evidence register" accent="var(--nb-bg)" />
+        </div>
+      </section>
+
+      {/* ---- live climate evidence ---- */}
+      <section className="headline-row" style={{ marginBottom: 12 }}>
+        <h2 className="section-h">Reference climate · {check ? check.path.split("/").pop() : "loading…"}</h2>
+        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+          <StatusPill status={check?.status ?? "INFO"} />
+          <Link className="nb-btn secondary" style={{ minHeight: 38 }} to="/weather">Open Weather Lab ›</Link>
+        </div>
+      </section>
+
       {summary && (
         <section className="metrics" aria-label="Key climate metrics">
           <div className="metric"><div className="m-val">{summary.annual_mean_dry_bulb}<span className="m-unit">°C</span></div><div className="m-label">Mean dry-bulb</div></div>
@@ -153,7 +133,6 @@ export function Home() {
         </section>
       )}
 
-      {/* ---- dashboard grid ---- */}
       <section className="dashboard-grid">
         <div className="stack">
           {fingerprint && (
@@ -170,7 +149,7 @@ export function Home() {
                         <td>{row.label}</td>
                         {row.vals.map((v, i) => (
                           <td key={i}>
-                            <span className="heat-cell" style={{ background: v === null ? "#f2f4f2" : row.color(v) }}>
+                            <span className="heat-cell" style={{ background: v === null ? "#F1E8D6" : row.color(v) }}>
                               {v === null ? "–" : v}
                             </span>
                           </td>
@@ -184,16 +163,6 @@ export function Home() {
           )}
 
           {series && <ThermalRibbon dryBulb={series.dry_bulb} figNo="FIG 1" place={series.name.replace(/_/g, " ")} compact height={140} />}
-
-          <article className="card">
-            <div className="card-head"><h3>Quick actions</h3><span className="subtle">continue</span></div>
-            <div className="quick-actions">
-              <Link className="qa-btn" to="/analyze"><strong>Analyze a dwelling</strong><span>EnergyPlus + versioned standards</span></Link>
-              <Link className="qa-btn" to="/compare"><strong>Compare weather files</strong><span>2–8 EPWs side by side</span></Link>
-              <Link className="qa-btn" to="/comfort"><strong>Comfort Lab</strong><span>PMV · adaptive · UTCI</span></Link>
-              <Link className="qa-btn" to="/atlas"><strong>Archetype Atlas</strong><span>Leeds dwelling templates</span></Link>
-            </div>
-          </article>
         </div>
 
         <div className="stack">
@@ -203,11 +172,12 @@ export function Home() {
 
         <div className="stack">
           <article className="card">
-            <div className="card-head"><h3>Runs this session</h3><Link className="subtle" to="/analyze">Run one →</Link></div>
+            <div className="card-head"><h3>Recent experiments</h3><Link className="subtle" to="/runs">Archive →</Link></div>
             {runs.length === 0 && (
-              <p style={{ fontSize: 10.5, color: "var(--muted-ink)" }}>
-                No assessments yet — run one from Analyze and it appears here.
-              </p>
+              <EmptyState img="empty-runs.png" alt="Empty experiment shelf illustration"
+                title="NO EXPERIMENTS YET"
+                body="Run your first model × weather × standard analysis and it lands here with a run ID, hashes and provenance."
+                action={<Link className="nb-btn" to="/analyze">Run EnergyPlus</Link>} />
             )}
             {runs.slice(0, 5).map((r) => (
               <div className="recent-item" key={r.run_id}>
@@ -227,10 +197,23 @@ export function Home() {
   );
 }
 
+function ModuleFolder({ to, tab, title, desc, accent }: {
+  to: string; tab: string; title: string; desc: string; accent: string;
+}) {
+  return (
+    <Link to={to} className="case-folder" style={{ textDecoration: "none", color: "inherit" }}>
+      <span className="case-tab">{tab}</span>
+      <span className="case-body" style={{ display: "block", background: accent }}>
+        <span className="case-title" style={{ fontSize: 17 }}>{title}</span>
+        <span style={{ display: "block", fontSize: 11.5, marginTop: 4 }}>{desc}</span>
+        <span className="nb-chip" style={{ marginTop: 10 }}>OPEN ›</span>
+      </span>
+    </Link>
+  );
+}
+
 /* ---- honest severity indicators (thresholds stated, no invented score) ---- */
 function SeverityGrid({ series, check }: { series: WeatherSeries; check: WeatherCheck | null }) {
-  const h26 = series ? series.daily_mean.length : 0; // placeholder to satisfy types
-  void h26;
   const summary = check?.weather_summary;
   const items = [
     {
@@ -290,18 +273,40 @@ function DegreeDayChart({ series }: { series: WeatherSeries }) {
   const ref = useRef<HTMLDivElement>(null);
   const chartRef = useChart(ref, null, []);
   useChart(ref, {
-    grid: { left: 44, right: 10, top: 26, bottom: 22 },
+    backgroundColor: NB_PAPER,
+    grid: { left: 44, right: 10, top: 30, bottom: 24 },
     legend: {
-      top: 0, left: 0, icon: "rect", itemWidth: 10, itemHeight: 8,
-      textStyle: { fontFamily: "IBM Plex Mono", fontSize: 9.5, color: "#61707d" },
+      top: 0, left: 0, icon: "rect", itemWidth: 14, itemHeight: 10,
+      textStyle: { fontFamily: "IBM Plex Mono, monospace", fontSize: 10, color: NB_INK },
     },
-    xAxis: { type: "category", data: MONTHS, axisLabel: { fontSize: 9, color: "#7c8998" }, axisLine: { show: false }, axisTick: { show: false } },
-    yAxis: { type: "value", axisLabel: { fontSize: 9, color: "#7c8998" }, splitLine: { lineStyle: { color: "#edf0ee" } } },
+    xAxis: {
+      type: "category", data: MONTHS,
+      axisLine: { show: true, lineStyle: { color: NB_INK, width: 2 } },
+      axisTick: { show: false },
+      axisLabel: { fontSize: 10, color: NB_INK, fontFamily: "IBM Plex Mono, monospace" },
+    },
+    yAxis: {
+      type: "value",
+      axisLine: { show: true, lineStyle: { color: NB_INK, width: 2 } },
+      axisLabel: { fontSize: 10, color: NB_INK, fontFamily: "IBM Plex Mono, monospace" },
+      splitLine: { lineStyle: { color: "#D8CCB9", type: [4, 4] } },
+    },
     series: [
-      { name: "HDD 15.5 (°C-day)", type: "bar", stack: "dd", data: series.hdd15_5, itemStyle: { color: "#182b42", borderRadius: [4, 4, 0, 0] }, barWidth: "52%" },
-      { name: "CDD 18 (°C-day)", type: "bar", stack: "dd", data: series.cdd18, itemStyle: { color: "#f39a3c", borderRadius: [4, 4, 0, 0] } },
+      {
+        name: "HDD 15.5 (°C-day)", type: "bar", stack: "dd", data: series.hdd15_5,
+        itemStyle: { color: "#161616", borderColor: "#161616", borderWidth: 1 }, barWidth: "54%",
+      },
+      {
+        name: "CDD 18 (°C-day)", type: "bar", stack: "dd", data: series.cdd18,
+        itemStyle: { color: "#F36D30", borderColor: "#161616", borderWidth: 1 },
+      },
     ],
-    tooltip: { trigger: "axis", confine: true },
+    tooltip: {
+      trigger: "axis", confine: true, backgroundColor: "#FCDD28",
+      borderColor: NB_INK, borderWidth: 2,
+      textStyle: { color: NB_INK, fontFamily: "IBM Plex Mono, monospace", fontSize: 12 },
+      extraCssText: "box-shadow: 4px 4px 0 #161616; border-radius: 4px;",
+    },
   }, [series]);
 
   return (
@@ -315,7 +320,7 @@ function DegreeDayChart({ series }: { series: WeatherSeries }) {
   );
 }
 
-/* ---- lime calendar card driven by the real daily means ---- */
+/* ---- calendar card driven by the real daily means ---- */
 function CalendarCard({ dailyMean }: { dailyMean: number[] }) {
   const [month, setMonth] = useState(6); // 0-based: July
   const [day, setDay] = useState(15);
@@ -342,7 +347,7 @@ function CalendarCard({ dailyMean }: { dailyMean: number[] }) {
   return (
     <article className="card calendar-card">
       <div className="calendar-top">
-        <div><span className="subtle" style={{ color: "#647335" }}>EPW calendar · daily means</span><h3>{monthNames[month]}</h3></div>
+        <div><span className="subtle">EPW calendar · daily means</span><h3>{monthNames[month]}</h3></div>
         <div className="calendar-nav">
           <button className="cal-btn" aria-label="Previous month" onClick={() => setMonth((m) => (m + 11) % 12)}>‹</button>
           <button className="cal-btn" aria-label="Next month" onClick={() => setMonth((m) => (m + 1) % 12)}>›</button>
@@ -367,20 +372,23 @@ function CalendarCard({ dailyMean }: { dailyMean: number[] }) {
   );
 }
 
-/* ---- colour helpers for the fingerprint heat cells ---- */
+/* ---- stepped heat fills for the fingerprint cells ---- */
 function tempColor(v: number): string {
-  const t = Math.max(0, Math.min(1, (v + 5) / 25));
-  const ramp = [[71, 185, 207], [167, 221, 225], [215, 239, 120], [243, 154, 60], [229, 111, 47], [201, 68, 54]];
-  const idx = Math.min(ramp.length - 2, Math.floor(t * (ramp.length - 1)));
-  const f = t * (ramp.length - 1) - idx;
-  const c = ramp[idx].map((ch, k) => Math.round(ch + (ramp[idx + 1][k] - ch) * f));
-  return `rgba(${c[0]},${c[1]},${c[2]},${0.18 + 0.4 * t})`;
+  if (v < 0) return "#12C8B0";
+  if (v < 5) return "#8FE3D4";
+  if (v < 10) return "#FCDD28";
+  if (v < 15) return "#F36D30";
+  if (v < 20) return "#FF4F85";
+  return "#D63A2F";
 }
 function rhColor(v: number): string {
-  const t = Math.max(0, Math.min(1, (v - 60) / 30));
-  return `rgba(71, 185, 207, ${0.12 + 0.4 * t})`;
+  if (v < 70) return "#FBFAF6";
+  if (v < 78) return "#8FE3D4";
+  return "#12C8B0";
 }
 function ghiColor(v: number): string {
-  const t = Math.max(0, Math.min(1, v / 180));
-  return `rgba(243, 154, 60, ${0.1 + 0.45 * t})`;
+  if (v < 40) return "#FBFAF6";
+  if (v < 90) return "#FCDD28";
+  if (v < 150) return "#F36D30";
+  return "#FF4F85";
 }
