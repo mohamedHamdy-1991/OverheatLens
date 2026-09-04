@@ -55,7 +55,7 @@ export function Runs() {
 
       {runs && runs.length > 0 && (
         <section className="table-wrap">
-          <table className="data">
+          <table className="data runs-table">
             <thead>
               <tr>
                 <th>Run ID</th><th>Model</th><th>Weather</th><th>Standard</th>
@@ -70,15 +70,15 @@ export function Runs() {
                   <td className="mono" style={{ fontSize: 11.5 }}>{r.weather}</td>
                   <td className="mono" style={{ fontSize: 11.5 }}>{r.pack_id}</td>
                   <td><StatusPill status={r.overall ?? "INFO"} /></td>
-                  <td className="mono subtle" style={{ fontSize: 11 }}>{r.created_utc ?? r.source ?? "—"}</td>
+                  <td className="mono subtle" style={{ fontSize: 11 }}>{r.created_utc ? String(r.created_utc).replace("T", " ").slice(0, 16) : (r.source ?? "—")}</td>
                   <td style={{ whiteSpace: "nowrap" }}>
                     {r.run_id && (
                       <>
-                        <Link className="nb-btn secondary" style={{ minHeight: 34, fontSize: 12 }}
+                        <Link className="nb-btn secondary btn-mini"
                           to={`/analyze?run=${encodeURIComponent(r.run_id)}`}>OPEN</Link>{" "}
-                        <a className="nb-btn secondary" style={{ minHeight: 34, fontSize: 12 }}
+                        <a className="nb-btn secondary btn-mini"
                           href={api.bundleUrl(r.run_id)}>ZIP ↓</a>{" "}
-                        <button className="nb-btn secondary" style={{ minHeight: 34, fontSize: 12 }}
+                        <button className="nb-btn secondary btn-mini"
                           disabled={deleting === r.run_id} onClick={() => remove(r.run_id!)}>
                           {deleting === r.run_id ? "…" : "DELETE"}
                         </button>

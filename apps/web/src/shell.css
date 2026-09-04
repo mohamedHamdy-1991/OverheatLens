@@ -596,6 +596,12 @@ select.nb-input { cursor: pointer; }
   .context-cell { border-right: 0; border-bottom: 2px solid var(--nb-surface); flex: 1 1 40%; }
 }
 
+/* compact in-table action buttons (Run Archive) — every button stays inside
+   the table edge instead of being clipped by the horizontal scroll */
+.btn-mini { min-height: 30px; padding: 4px 8px; font-size: 11px; }
+table.data.runs-table td { padding: 7px 9px; }
+table.data.runs-table { min-width: 0; }
+
 /* ---------- mobile fine-tuning (phones) ---------- */
 @media (max-width: 620px) {
   .page-cover { max-height: 150px; }
