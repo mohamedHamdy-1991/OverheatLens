@@ -177,6 +177,43 @@ the 3 % criterion in both. Absolute criterion percentages differ between the
 two engines and are reported, not thresholded.
 **Reference:** the author's DesignBuilder TM59 export (PhD data, kept local).
 
+### V13 — Displayed numbers recomputed from primary data (L3/L4 — strictest)
+**Method:** every headline number the app shows is recomputed from primary data
+by fresh code written from the published definitions — never by calling the
+app's own functions — and compared exactly: (1) Weather Lab metrics (records,
+annual mean, hottest hour, hours >26 °C, degree-hours >26 °C) recomputed from
+the raw EPW bytes by plain column indexing; (2) criterion A % for the lounge of
+the 01BA Safer_Heat run recomputed from the raw E+ harvest with a fresh TM52
+Eq 2.2/2.3 running-mean chain, the 0.5 K rounding rule and the 1 989 h living
+basis; (3) the displayed adaptive-comfort percentage recomputed from the same
+series with the running mean re-derived through the library's documented
+α = 0.8 7-day chain (renormalised α^k weights, 0.1 °C rounding — semantics
+verified empirically against the wrapped utility) and the documented library
+entry point `adaptive_en(…, limit_inputs=False)` for EN 16798-1 Category II
+acceptability. Per RULE 4 the library is the calculator — the validator
+re-derives every input from primary data and calls the same documented entry
+point; it never reimplements library mathematics. Tolerances: exact for
+counts, ±0.01 pp / ±0.1 pp for rounded values.
+**Reference:** CIBSE definitions (packs SHA-pinned) + raw primary data.
+
+### V14 — TM59:2026 and Part O boundary flips (L3)
+**Method:** (a) TM59:2026 criterion a: living 59/60 h flip at the clamp threshold
+25.1 °C (Trm 10 °C, 9 am–10 pm occupancy, night heat excluded); bedroom 110/111 h
+flip (all hours); ΔT rounding 0.49 K counts 0 vs 0.50 K counts all; (b) criterion
+b night counting: 4 hot nights PASS / 5 FAIL (Cat II Tn 27 °C, 23:00–08:00, mean
+night temperature); (c) criterion d communal 28 °C fixed: 110/111 h flip;
+**V14b** Part O dynamic inherits uk_tm59_2017 and applies the same boundaries
+through its own engine (living 59/60 h flip verified through the Part O pack).
+**Reference:** CIBSE TM59:2026 + ADO (packs SHA-pinned; Part O inherits TM59:2017
+criteria by design, documented in its verification note).
+
+### V15 — Served-numbers three-way integrity (L5)
+**Method:** the series the API serves for an archived run (what every chart and
+table plots, verbatim) must equal a fresh independent harvest of the E+ output
+file on disk, zone by zone, value by value. Proves the numbers on screen are the
+primary simulation output with nothing altered in between.
+**Reference:** `data/runs/` archive + `eplusout.csv` + local API.
+
 ## 4. Verdict rules
 
 | Verdict | Meaning |

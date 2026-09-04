@@ -93,6 +93,73 @@ export function Validation() {
               </tbody>
             </table>
           </div>
+          {(() => {
+            const v12 = campaign.results.cases.find((c) => c.id === "V12");
+            const zones = (v12?.detail?.zones ?? []) as {
+              db_zone: string; app_room: string; db_verdict: string;
+              app_verdict: string; agree: boolean; db_critA_pct?: number;
+              app_critA_pct?: number; delta_pp?: number | null;
+              db_critB_hr?: number | null; app_critB_hr?: number | null;
+            }[];
+            if (!v12 || !zones.length) return null;
+            const corr = (v12.detail?.corridors ?? {}) as {
+              app_pct?: number; db_stairsdown_pct?: number;
+              db_stairsup_pct?: number; both_below_3pct?: boolean;
+            };
+            const notes = (v12.detail?.classification_notes ?? []) as string[];
+            return (
+              <div style={{ marginTop: 14 }}>
+                <h3 className="section-h" style={{ fontSize: 14 }}>
+                  V12 results · 01BA baseline — app vs DesignBuilder (same model, same weather)
+                </h3>
+                <p className="subtle" style={{ margin: "2px 0 8px", maxWidth: "95ch" }}>
+                  The dwelling verdict is <strong>FAIL in both engines</strong> and every
+                  habitable zone agrees. Absolute percentages differ between the two
+                  simulation engines (E+ 25.1 vs DesignBuilder's internal E+ 23.1) —
+                  deltas are reported, not hidden. Full report:{" "}
+                  <span className="mono">validation/MODEL_01BA_DESIGNBUILDER_CROSSCHECK.md</span>
+                </p>
+                <div className="table-wrap">
+                  <table className="data">
+                    <thead>
+                      <tr><th>Zone</th><th>DB verdict</th><th className="num">DB Crit A</th>
+                        <th className="num">App Crit A</th><th className="num">Δ</th>
+                        <th className="num">DB Crit B</th><th className="num">App Crit B</th>
+                        <th>Agree</th></tr>
+                    </thead>
+                    <tbody>
+                      {zones.map((z) => (
+                        <tr key={z.db_zone}>
+                          <td className="mono" style={{ fontSize: 11.5 }}>{z.db_zone}</td>
+                          <td>{z.db_verdict}</td>
+                          <td className="mono num">{z.db_critA_pct ?? "—"}%</td>
+                          <td className="mono num">{z.app_critA_pct ?? "—"}%</td>
+                          <td className="mono num" style={{ color: z.delta_pp == null ? undefined : Math.abs(z.delta_pp) > 5 ? "var(--nb-danger)" : undefined }}>
+                            {z.delta_pp == null ? "—" : `${z.delta_pp > 0 ? "+" : ""}${z.delta_pp} pp`}
+                          </td>
+                          <td className="mono num">{z.db_critB_hr ?? "—"}</td>
+                          <td className="mono num">{z.app_critB_hr ?? "—"}</td>
+                          <td><StatusPill status={z.agree ? "PASS" : "FAIL"} /></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                {corr.app_pct != null && (
+                  <p className="subtle" style={{ marginTop: 8 }}>
+                    Corridor (stairs): app {corr.app_pct}% vs DesignBuilder{" "}
+                    {corr.db_stairsdown_pct}/{corr.db_stairsup_pct}% — below the 3% criterion
+                    in both engines (Pass).
+                  </p>
+                )}
+                {notes.length > 0 && (
+                  <ul className="subtle" style={{ margin: "6px 0 0 18px", maxWidth: "95ch" }}>
+                    {notes.map((n, i) => <li key={i} style={{ marginBottom: 4 }}>{n}</li>)}
+                  </ul>
+                )}
+              </div>
+            );
+          })()}
         </section>
       )}
 

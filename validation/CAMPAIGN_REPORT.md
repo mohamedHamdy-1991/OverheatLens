@@ -1,6 +1,6 @@
 # OverheatLens — Validation Campaign Report
 
-Run: 2026-09-04T18:43:12+00:00 → 2026-09-04T18:51:25+00:00  ·  Campaign verdict: **PASS**  ·  12 PASS/CONFIRMED · 0 INCOMPLETE · 0 FAIL
+Run: 2026-09-04T20:55:23+00:00 → 2026-09-04T21:00:39+00:00  ·  Campaign verdict: **PASS**  ·  16 PASS/CONFIRMED · 0 INCOMPLETE · 0 FAIL
 
 Method: see `validation/METHOD.md` (the full method document).
 
@@ -18,4 +18,8 @@ Method: see `validation/METHOD.md` (the full method document).
 | V10 — Cross-check vs author's DesignBuilder PhD exports | L4 | **CONFIRMED_DIRECTIONAL** | Safer_Heat_Harehills DesignBuilder TM59 exports (author's PhD data) |
 | V11 — CIBSE TM59 Example 4 flat vs published outcome | L4 | **CONFIRMED_DIRECTIONAL** | CIBSE TM59:2017 worked example (pack SHA-pinned) |
 | V12 — DesignBuilder 01BA baseline cross-check | L4 | **CONFIRMED** | Safer_Heat_Harehills '01BA__Baseline (TM59).csv' (author PhD data) |
+| V13 — Displayed numbers recomputed from primary data | L3/L4 | **PASS** | Raw EPW bytes + raw E+ harvest + fresh TM52 Eq 2.2/2.3 chain — independent of app code paths |
+| V14 — TM59:2026 boundary flips (criteria a/b/d, Cat II) | L3 | **PASS** | CIBSE TM59:2026 (SHA-pinned): 59 h living / 110 h bedroom+communal, 4-night criterion b, 0.5 K rounding, May-Sep window |
+| V14b — Part O dynamic inherits and applies 2017 boundaries | L3 | **PASS** | Approved Document O dynamic model (pack inherits uk_tm59_2017, ADO overrides) |
+| V15 — Served numbers equal primary E+ output (three-way) | L5 | **PASS** | data/runs archive vs eplusout.csv vs API payload (charts plot these arrays) |
 

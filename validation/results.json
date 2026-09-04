@@ -1,12 +1,12 @@
 {
   "campaign_verdict": "PASS",
-  "started_utc": "2026-09-04T18:43:12+00:00",
-  "finished_utc": "2026-09-04T18:51:25+00:00",
+  "started_utc": "2026-09-04T20:55:23+00:00",
+  "finished_utc": "2026-09-04T21:00:39+00:00",
   "summary": {
-    "cases": 12,
+    "cases": 16,
     "fail": 0,
     "incomplete": 0,
-    "pass_or_confirmed": 12
+    "pass_or_confirmed": 16
   },
   "cases": [
     {
@@ -287,6 +287,7 @@
             "agree": true,
             "db_critA_pct": 5.45,
             "app_critA_pct": 4.12,
+            "delta_pp": -1.33,
             "db_critB_hr": null,
             "app_critB_hr": null
           },
@@ -298,6 +299,7 @@
             "agree": true,
             "db_critA_pct": 5.19,
             "app_critA_pct": 4.22,
+            "delta_pp": -0.97,
             "db_critB_hr": null,
             "app_critB_hr": null
           },
@@ -309,6 +311,7 @@
             "agree": true,
             "db_critA_pct": 4.67,
             "app_critA_pct": 5.56,
+            "delta_pp": 0.89,
             "db_critB_hr": 39.83,
             "app_critB_hr": 141.0
           },
@@ -320,12 +323,140 @@
             "agree": true,
             "db_critA_pct": 14.13,
             "app_critA_pct": 5.12,
+            "delta_pp": -9.01,
             "db_critB_hr": 117.67,
             "app_critB_hr": 120.0
           }
-        ]
+        ],
+        "classification_notes": [
+          "BATHROOM and LANDING: DesignBuilder assesses them under the corridors criterion (Pass); the app classifies them as living rooms (criterion a -> FAIL). Dwelling verdict is FAIL either way.",
+          "App-only geometry-artefact zones (CHIMNEY, VOID, LOFT, CUPBOARD) are not listed in the DB report."
+        ],
+        "corridors": {
+          "app_pct": 1.5,
+          "db_stairsdown_pct": 0.87,
+          "db_stairsup_pct": 0.78,
+          "both_below_3pct": true
+        }
       },
       "reference": "Safer_Heat_Harehills '01BA__Baseline (TM59).csv' (author PhD data)"
+    },
+    {
+      "id": "V13",
+      "title": "Displayed numbers recomputed from primary data",
+      "layer": "L3/L4",
+      "verdict": "PASS",
+      "detail": {
+        "weather": {
+          "records": [
+            8760,
+            8760
+          ],
+          "annual_mean": [
+            11.487,
+            11.487
+          ],
+          "hottest_hour": [
+            31.3,
+            31.3
+          ],
+          "hours_gt_26c": [
+            102,
+            102
+          ],
+          "degree_hours_26c": [
+            142.2,
+            142.2
+          ],
+          "criterion_a_lounge_pct": [
+            4.22,
+            4.22
+          ]
+        },
+        "criterion_a_lounge": {
+          "fresh_pct": 4.22,
+          "app_pct": 4.2232,
+          "counted_hours": 84,
+          "basis_hours": 1989
+        },
+        "comfort_adaptive_lounge": [
+          81.6,
+          81.7
+        ]
+      },
+      "reference": "Raw EPW bytes + raw E+ harvest + fresh TM52 Eq 2.2/2.3 chain \u2014 independent of app code paths"
+    },
+    {
+      "id": "V14",
+      "title": "TM59:2026 boundary flips (criteria a/b/d, Cat II)",
+      "layer": "L3",
+      "verdict": "PASS",
+      "detail": {
+        "flips": {
+          "living_59h": "PASS",
+          "living_60h": "FAIL",
+          "bedroom_110h": "PASS",
+          "bedroom_111h": "FAIL",
+          "rounding": {
+            "dt0.49": 0.0,
+            "dt0.50": 3672.0
+          },
+          "nights_4": "PASS",
+          "nights_5": "FAIL",
+          "communal_110h": "PASS",
+          "communal_111h": "FAIL"
+        },
+        "part_o": {
+          "flips": {
+            "59h": "PASS",
+            "60h": "FAIL"
+          },
+          "inherits_tm59_2017": true
+        }
+      },
+      "reference": "CIBSE TM59:2026 (SHA-pinned): 59 h living / 110 h bedroom+communal, 4-night criterion b, 0.5 K rounding, May-Sep window"
+    },
+    {
+      "id": "V14b",
+      "title": "Part O dynamic inherits and applies 2017 boundaries",
+      "layer": "L3",
+      "verdict": "PASS",
+      "detail": {
+        "flips": {
+          "living_59h": "PASS",
+          "living_60h": "FAIL",
+          "bedroom_110h": "PASS",
+          "bedroom_111h": "FAIL",
+          "rounding": {
+            "dt0.49": 0.0,
+            "dt0.50": 3672.0
+          },
+          "nights_4": "PASS",
+          "nights_5": "FAIL",
+          "communal_110h": "PASS",
+          "communal_111h": "FAIL"
+        },
+        "part_o": {
+          "flips": {
+            "59h": "PASS",
+            "60h": "FAIL"
+          },
+          "inherits_tm59_2017": true
+        }
+      },
+      "reference": "Approved Document O dynamic model (pack inherits uk_tm59_2017, ADO overrides)"
+    },
+    {
+      "id": "V15",
+      "title": "Served numbers equal primary E+ output (three-way)",
+      "layer": "L5",
+      "verdict": "PASS",
+      "detail": {
+        "zones": 12,
+        "series_identical_to_disk": true,
+        "run_id": "d7de6ef73387"
+      },
+      "reference": "data/runs archive vs eplusout.csv vs API payload (charts plot these arrays)"
     }
   ]
 }

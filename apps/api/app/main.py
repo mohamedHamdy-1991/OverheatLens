@@ -1037,6 +1037,18 @@ def validation_campaign():
         raw = json.loads(VALIDATION_RESULTS.read_text())
     except (OSError, ValueError) as e:
         raise HTTPException(500, f"Cannot read validation results: {e}") from e
+    # enrich V12 with the full cross-check record (zone deltas, corridor, notes)
+    cross = REPO_ROOT / "validation" / "model_crosscheck_01ba.json"
+    if cross.is_file():
+        try:
+            x = json.loads(cross.read_text())
+            for c in raw.get("cases", []):
+                if c.get("id") == "V12":
+                    c["detail"]["zones"] = x.get("zones", c["detail"].get("zones", []))
+                    c["detail"]["corridors"] = x.get("corridors", {})
+                    c["detail"]["classification_notes"] = x.get("classification_notes", [])
+        except (OSError, ValueError):
+            pass
     return {"status": "ready", "results": raw,
             "method": "validation/METHOD.md"}
 
